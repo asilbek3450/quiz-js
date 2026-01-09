@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% block title %}Test natijalari{% endblock %}
+
+{% block extra_css %}
+<style>
+    .result-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .result-header {
+        background: white;
+        padding: 40px;
+        border-radius: 20px;
+        text-align: center;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        animation: zoomIn 0.5s ease;
+    }
+
+    @keyframes zoomIn {
+        from {
+            transform: scale(0.8);
+            opacity: 0;
+        }
+
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    .result-icon {
+        font-size: 5rem;
+        margin-bottom: 20px;
+    }
+
+    .icon-excellent {
+        color: #10b981;
+    }
+
+    .icon-good {
+        color: #06b6d4;
+    }
+
+    .icon-satisfactory {
+        color: #f59e0b;
+    }
+
+    .icon-fail {
+        color: #ef4444;
+    }
+
+    .result-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .result-subtitle {
+        font-size: 1.2rem;
+        color: #64748b;
+    }
+
+    .score-display {
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        margin: 30px 0;
+        flex-wrap: wrap;
+    }
+
+    .score-item {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 25px 40px;
+        border-radius: 15px;
+        min-width: 150px;
+    }
+
+    .score-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin-bottom: 5px;
+    }
+
+    .score-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+
+    .grade-badge {
+        display: inline-block;
+        padding: 15px 40px;
+        border-radius: 50px;
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-top: 10px;
+    }
+
+    .grade-excellent {
+        background: #10b981;
+        color: white;
+    }
+
+    .grade-good {
+        background: #06b6d4;
+        color: white;
+    }
+
+    .grade-satisfactory {
+        background: #f59e0b;
+        color: white;
+    }
+
+    .grade-fail {
+        background: #ef4444;
+        color: white;
+    }
+
+    .detailed-results {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .result-item {
+        border-left: 4px solid #e2e8f0;
+        padding: 20px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+        background: #f8fafc;
+        transition: all 0.3s ease;
+    }
+
+    .result-item:hover {
+        transform: translateX(5px);
+    }
+
+    .result-item.correct {
+        border-left-color: #10b981;
+        background: #f0fdf4;
+    }
+
+    .result-item.incorrect {
+        border-left-color: #ef4444;
+        background: #fef2f2;
+    }
+
+    .question-number {
+        font-weight: bold;
+        color: #475569;
+        margin-bottom: 10px;
+    }
+
+    .question-text {
+        font-size: 1.1rem;
+        color: #1e293b;
+        margin-bottom: 10px;
+    }
+
+    .answer-info {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .answer-badge {
+        padding: 5px 15px;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+
+    .badge-correct {
+        background: #10b981;
+        color: white;
+    }
+
+    .badge-incorrect {
+        background: #ef4444;
+        color: white;
+    }
+
+    .badge-info {
+        background: #06b6d4;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="result-container">
+    <div class="result-header">
+        {% if percentage >= 90 %}
+        <div class="result-icon icon-excellent">
+            <i class="fas fa-trophy"></i>
+        </div>
+        {% elif percentage >= 70 %}
+        <div class="result-icon icon-good">
+            <i class="fas fa-smile"></i>
+        </div>
+        {% elif percentage >= 50 %}
+        <div class="result-icon icon-satisfactory">
+            <i class="fas fa-meh"></i>
+        </div>
+        {% else %}
+        <div class="result-icon icon-fail">
+            <i class="fas fa-sad-tear"></i>
+        </div>
+        {% endif %}
+
+        <h1 class="result-title">Test yakunlandi!</h1>
+        <p class="result-subtitle">Sizning natijalaringiz</p>
+
+        <div class="score-display">
+            <div class="score-item">
+                <div class="score-label">To'plangan ball</div>
+                <div class="score-value">{{ score }}</div>
+            </div>
+            <div class="score-item">
+                <div class="score-label">Maksimal ball</div>
+                <div class="score-value">{{ total }}</div>
+            </div>
+            <div class="score-item">
+                <div class="score-label">Foiz</div>
+                <div class="score-value">{{ percentage|int }}%</div>
+            </div>
+        </div>
+
+        {% if percentage >= 90 %}
+        <span class="grade-badge grade-excellent">{{ grade_text }}</span>
+        {% elif percentage >= 70 %}
+        <span class="grade-badge grade-good">{{ grade_text }}</span>
+        {% elif percentage >= 50 %}
+        <span class="grade-badge grade-satisfactory">{{ grade_text }}</span>
+        {% else %}
+        <span class="grade-badge grade-fail">{{ grade_text }}</span>
+        {% endif %}
+    </div>
+
+    <div class="detailed-results">
+        <h3 class="mb-4">
+            <i class="fas fa-list-check"></i> Batafsil natijalar
+        </h3>
+
+
+        {% for result in results %}
+        <div class="result-item {% if result.is_correct %}correct{% else %}incorrect{% endif %}">
+            <div class="question-number">
+                {% if result.is_correct %}
+                <i class="fas fa-check-circle text-success"></i>
+                {% else %}
+                <i class="fas fa-times-circle text-danger"></i>
+                {% endif %}
+                Savol {{ loop.index }}
+            </div>
+            <div class="question-text">{{ result.question }}</div>
+            <div class="answer-info">
+                {% if result.user_answer %}
+                <span class="answer-badge {% if result.is_correct %}badge-correct{% else %}badge-incorrect{% endif %}">
+                    Sizning javobingiz: {{ result.user_answer }}
+                </span>
+                {% else %}
+                <span class="answer-badge badge-incorrect">
+                    Javob berilmagan
+                </span>
+                {% endif %}
+
+                {% if not result.is_correct %}
+                <span class="answer-badge badge-info">
+                    To'g'ri javob: {{ result.correct_answer }}
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="text-center mt-4">
+        <a href="{{ url_for('student_start') }}" class="btn btn-primary btn-lg me-2">
+            <i class="fas fa-redo"></i> Yana test topshirish
+        </a>
+        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-lg">
+            <i class="fas fa-home"></i> Bosh sahifa
+        </a>
+    </div>
+</div>
+
+<div style="height: 60px;"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Natijalar sahifasida orqaga qaytishni oldini olish
+    window.history.pushState(null, "", window.location.href);
+    window.onpopstate = function () {
+        window.history.pushState(null, "", window.location.href);
+    };
+</script>
+{% endblock %}

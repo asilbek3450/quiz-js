@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Test natijalari{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="text-white">
+                <i class="fas fa-chart-bar"></i> Test natijalari
+            </h1>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                <i class="fas fa-filter"></i> Filtrlash
+            </h5>
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Fan</label>
+                    <select class="form-select" name="subject_id" onchange="this.form.submit()">
+                        <option value="">Barchasi</option>
+                        {% for subject in subjects %}
+                        <option value="{{ subject.id }}" 
+                                {% if request.args.get('subject_id')|int == subject.id %}selected{% endif %}>
+                            {{ subject.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <label class="form-label">Sinf</label>
+                    <select class="form-select" name="grade" onchange="this.form.submit()">
+                        <option value="">Barchasi</option>
+                        <option value="5" {% if request.args.get('grade') == '5' %}selected{% endif %}>5-sinf</option>
+                        <option value="6" {% if request.args.get('grade') == '6' %}selected{% endif %}>6-sinf</option>
+                        <option value="7" {% if request.args.get('grade') == '7' %}selected{% endif %}>7-sinf</option>
+                        <option value="8" {% if request.args.get('grade') == '8' %}selected{% endif %}>8-sinf</option>
+                        <option value="9" {% if request.args.get('grade') == '9' %}selected{% endif %}>9-sinf</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <label class="form-label">Chorak</label>
+                    <select class="form-select" name="quarter" onchange="this.form.submit()">
+                        <option value="">Barchasi</option>
+                        <option value="1" {% if request.args.get('quarter') == '1' %}selected{% endif %}>1-chorak</option>
+                        <option value="2" {% if request.args.get('quarter') == '2' %}selected{% endif %}>2-chorak</option>
+                        <option value="3" {% if request.args.get('quarter') == '3' %}selected{% endif %}>3-chorak</option>
+                        <option value="4" {% if request.args.get('quarter') == '4' %}selected{% endif %}>4-chorak</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title mb-4">
+                Jami: {{ results|length }} ta natija
+            </h5>
+            
+            {% if results %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>O'quvchi</th>
+                            <th>Fan</th>
+                            <th>Sinf</th>
+                            <th>Chorak</th>
+                            <th>Ball</th>
+                            <th>Foiz</th>
+                            <th>Baho</th>
+                            <th>Sana</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result in results %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>
+                                <strong>{{ result.student_name }} {{ result.student_surname }}</strong>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ result.subject.name }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-primary">{{ result.grade }}-{{ result.class_number }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ result.quarter }}-chorak</span>
+                            </td>
+                            <td>
+                                <strong>{{ result.score }}/{{ result.total_questions }}</strong>
+                            </td>
+                            <td>
+                                <div class="progress" style="height: 25px;">
+                                    <div class="progress-bar 
+                                        {% if result.percentage >= 90 %}bg-success
+                                        {% elif result.percentage >= 70 %}bg-info
+                                        {% elif result.percentage >= 50 %}bg-warning
+                                        {% else %}bg-danger{% endif %}" 
+                                        style="width: {{ result.percentage }}%">
+                                        {{ result.percentage|int }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if result.percentage >= 90 %}
+                                    <span class="badge bg-success">{{ result.grade_text }}</span>
+                                {% elif result.percentage >= 70 %}
+                                    <span class="badge bg-info">{{ result.grade_text }}</span>
+                                {% elif result.percentage >= 50 %}
+                                    <span class="badge bg-warning text-dark">{{ result.grade_text }}</span>
+                                {% else %}
+                                    <span class="badge bg-danger">{{ result.grade_text }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small>{{ result.test_date.strftime('%d.%m.%Y %H:%M') }}</small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% if results|length > 0 %}
+            <div class="mt-4">
+                <h5>Statistika</h5>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <i class="fas fa-users text-primary"></i>
+                            <h3>{{ results|length }}</h3>
+                            <p>Jami testlar</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <i class="fas fa-star text-success"></i>
+                            <h3>{{ (results|selectattr('percentage', 'ge', 90)|list|length) }}</h3>
+                            <p>A'lo baholar</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <i class="fas fa-chart-line text-info"></i>
+                            <h3>{{ ((results|sum(attribute='percentage') / results|length)|round(1)) }}%</h3>
+                            <p>O'rtacha natija</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <i class="fas fa-trophy text-warning"></i>
+                            <h3>{{ ((results|sum(attribute='score') / results|length)|round(1)) }}</h3>
+                            <p>O'rtacha ball</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+                <p class="text-muted">Natijalar topilmadi</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div style="height: 60px;"></div>
+{% endblock %}

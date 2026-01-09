@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Test - Savol {{ current }}/{{ total }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .test-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    
+    .test-header {
+        background: white;
+        padding: 25px;
+        border-radius: 15px;
+        margin-bottom: 25px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    
+    .question-number {
+        font-size: 1.2rem;
+        color: #64748b;
+        margin-bottom: 10px;
+    }
+    
+    .question-card {
+        background: white;
+        padding: 40px;
+        border-radius: 15px;
+        margin-bottom: 25px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    
+    .question-text {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 30px;
+        line-height: 1.6;
+    }
+    
+    .option-card {
+        background: #f8fafc;
+        border: 3px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+    }
+    
+    .option-card:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+        transform: translateX(5px);
+    }
+    
+    .option-card.selected {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: #667eea;
+        color: white;
+        transform: scale(1.02);
+    }
+    
+    .option-label {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: white;
+        color: #667eea;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+    
+    .option-card.selected .option-label {
+        background: white;
+        color: #667eea;
+    }
+    
+    .option-text {
+        flex: 1;
+        font-size: 1.1rem;
+    }
+    
+    .navigation-buttons {
+        background: white;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    
+    .btn-nav {
+        padding: 12px 30px;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+    
+    .progress-info {
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    
+    .progress-info h5 {
+        color: #475569;
+        margin-bottom: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="test-container">
+    <div class="test-header">
+        <div class="progress-info">
+            <h5>Test jarayoni</h5>
+            <div class="progress">
+                <div class="progress-bar" role="progressbar" 
+                     style="width: {{ (current / total * 100)|int }}%">
+                    {{ current }} / {{ total }}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="question-card">
+        <div class="question-number">
+            <i class="fas fa-question-circle"></i> Savol {{ current }} / {{ total }}
+        </div>
+        <div class="question-text">
+            {{ question.question_text }}
+        </div>
+        
+        <div class="options">
+            <div class="option-card {% if answers.get(question.id|string) == 'A' %}selected{% endif %}" 
+                 onclick="selectOption('{{ question.id }}', 'A')">
+                <div class="option-label">A</div>
+                <div class="option-text">{{ question.option_a }}</div>
+            </div>
+            
+            <div class="option-card {% if answers.get(question.id|string) == 'B' %}selected{% endif %}" 
+                 onclick="selectOption('{{ question.id }}', 'B')">
+                <div class="option-label">B</div>
+                <div class="option-text">{{ question.option_b }}</div>
+            </div>
+            
+            <div class="option-card {% if answers.get(question.id|string) == 'C' %}selected{% endif %}" 
+                 onclick="selectOption('{{ question.id }}', 'C')">
+                <div class="option-label">C</div>
+                <div class="option-text">{{ question.option_c }}</div>
+            </div>
+            
+            <div class="option-card {% if answers.get(question.id|string) == 'D' %}selected{% endif %}" 
+                 onclick="selectOption('{{ question.id }}', 'D')">
+                <div class="option-label">D</div>
+                <div class="option-text">{{ question.option_d }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="navigation-buttons">
+        <div class="row g-3">
+            {% if current > 1 %}
+            <div class="col-md-4">
+                <a href="{{ url_for('student_navigate', direction='prev') }}" 
+                   class="btn btn-outline-secondary btn-nav w-100">
+                    <i class="fas fa-arrow-left"></i> Oldingi
+                </a>
+            </div>
+            {% endif %}
+            
+            <div class="col-md-{{ '8' if current == 1 else '4' }}">
+                {% if current < total %}
+                <a href="{{ url_for('student_navigate', direction='next') }}" 
+                   class="btn btn-primary btn-nav w-100">
+                    Keyingi <i class="fas fa-arrow-right"></i>
+                </a>
+                {% else %}
+                <a href="{{ url_for('student_navigate', direction='finish') }}" 
+                   class="btn btn-success btn-nav w-100"
+                   onclick="return confirm('Testni yakunlamoqchimisiz?')">
+                    <i class="fas fa-check-circle"></i> Testni yakunlash
+                </a>
+                {% endif %}
+            </div>
+            
+            {% if current > 1 and current < total %}
+            <div class="col-md-4">
+                <a href="{{ url_for('student_navigate', direction='finish') }}" 
+                   class="btn btn-warning btn-nav w-100"
+                   onclick="return confirm('Testni yakunlamoqchimisiz? Javob bermaganlar 0 ball hisoblanadi.')">
+                    <i class="fas fa-flag-checkered"></i> Yakunlash
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function selectOption(questionId, answer) {
+    // Barcha option-cardlardan selected klassini olib tashlash
+    document.querySelectorAll('.option-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    
+    // Tanlangan option-cardga selected klassi qo'shish
+    event.currentTarget.classList.add('selected');
+    
+    // Javobni serverga yuborish
+    fetch('{{ url_for("student_answer") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            question_id: questionId,
+            answer: answer
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Javob saqlandi');
+        }
+    })
+    .catch(error => console.error('Xato:', error));
+}
+</script>
+{% endblock %}
