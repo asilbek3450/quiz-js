@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4 animate-fade-in-up">
+    <div class="col-md-8">
+        <h2 class="fw-bold text-gradient"><i class="fas fa-book me-2"></i> Fanlar ro'yxati</h2>
+        <p class="text-muted">Tizimdagi mavjud fanlar va ularning sinflari</p>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <a href="{{ url_for('admin_subject_add') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i> Yangi fan qo'shish
+        </a>
+    </div>
+</div>
+
+<div class="card animate-fade-in-up" style="animation-delay: 0.1s;">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">ID</th>
+                        <th>Fan nomi</th>
+                        <th>Sinflar</th>
+                        <th>Savollar soni</th>
+                        <th>Natijalar</th>
+                        <th class="text-end pe-4">Amallar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for subject in subjects %}
+                    <tr>
+                        <td class="ps-4 fw-bold text-muted">#{{ subject.id }}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="icon-square bg-light text-primary rounded-3 me-3 d-flex align-items-center justify-content-center"
+                                    style="width: 40px; height: 40px;">
+                                    <i class="fas fa-book-open"></i>
+                                </div>
+                                <span class="fw-bold">{{ subject.name }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            {% for grade in subject.grades.split(',') %}
+                            <span class="badge bg-soft-primary text-primary rounded-pill me-1">{{ grade }}-sinf</span>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">{{ subject.questions|length }} ta</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">{{ subject.results|length }} ta</span>
+                        </td>
+                        <td class="text-end pe-4">
+                            <a href="{{ url_for('admin_subject_edit', id=subject.id) }}"
+                                class="btn btn-sm btn-outline-primary me-2">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{{ url_for('admin_subject_delete', id=subject.id) }}"
+                                class="btn btn-sm btn-outline-danger"
+                                onclick="return confirm('Haqiqatan ham bu fanni o\'chirmoqchimisiz? Unga bog\'liq barcha ma\'lumotlar tekshiriladi.')">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <img src="https://cdn-icons-png.flaticon.com/512/7486/7486777.png" alt="Empty"
+                                style="width: 64px; opacity: 0.5; margin-bottom: 15px;">
+                            <p class="text-muted fw-medium">Hozircha fanlar mavjud emas</p>
+                            <a href="{{ url_for('admin_subject_add') }}" class="btn btn-sm btn-primary">Birinchi fanni
+                                qo'shish</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-soft-primary {
+        background-color: rgba(99, 102, 241, 0.1);
+    }
+
+    .text-gradient {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .animate-fade-in-up {
+        animation: fadeInUp 0.5s ease forwards;
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    @keyframes fadeInUp {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}

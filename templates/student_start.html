@@ -1,153 +1,149 @@
 {% extends "base.html" %}
 
-{% block title %}Testni boshlash{% endblock %}
-
-{% block extra_css %}
-<style>
-    .start-container {
-        max-width: 600px;
-        margin: 0 auto;
-    }
-    
-    .form-card {
-        background: white;
-        padding: 40px;
-        margin-top: 20px;
-    }
-    
-    .form-header {
-        text-align: center;
-        margin-bottom: 30px;
-    }
-    
-    .form-header i {
-        font-size: 4rem;
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 15px;
-    }
-    
-    .form-header h2 {
-        color: #1e293b;
-        font-weight: bold;
-    }
-    
-    .form-label {
-        font-weight: 600;
-        color: #475569;
-        margin-bottom: 8px;
-    }
-    
-    .form-group {
-        margin-bottom: 20px;
-    }
-    
-    .required {
-        color: #ef4444;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="start-container">
-    <div class="card form-card">
-        <div class="form-header">
-            <i class="fas fa-user-graduate"></i>
-            <h2>Ma'lumotlaringizni kiriting</h2>
-            <p class="text-muted">Testni boshlash uchun quyidagi ma'lumotlarni to'ldiring</p>
+<div class="row justify-content-center animate-fade-in-up">
+    <div class="col-md-8 col-lg-6">
+        <div class="text-center mb-5">
+            <h1 class="fw-bold text-gradient mb-3">Bilimingizni sinang</h1>
+            <p class="text-muted fs-5">Test ishlash uchun ma'lumotlaringizni kiriting</p>
         </div>
-        
-        <form method="POST" id="startForm">
-            <div class="form-group">
-                <label class="form-label">Ismingiz <span class="required">*</span></label>
-                <input type="text" class="form-control" name="name" required 
-                       placeholder="Masalan: Akmal">
+
+        <div class="card border-0 shadow-xl">
+            <div class="card-body p-4 p-md-5">
+                <form method="POST">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Ism</label>
+                            <input type="text" name="name" class="form-control" required placeholder="Ismingiz">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Familiya</label>
+                            <input type="text" name="surname" class="form-control" required placeholder="Familiyangiz">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Sinf</label>
+                            <select name="grade" class="form-select" required id="grade-select">
+                                <option value="" selected disabled>Tanlang...</option>
+                                <option value="5">5-sinf</option>
+                                <option value="6">6-sinf</option>
+                                <option value="7">7-sinf</option>
+                                <option value="8">8-sinf</option>
+                                <option value="9">9-sinf</option>
+                                <option value="10">10-sinf</option>
+                                <option value="11">11-sinf</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Sinf harfi/raqami</label>
+                            <input type="text" name="class_number" class="form-control" required
+                                placeholder="Masalan: A yoki 1">
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Chorak</label>
+                            <div class="row g-2">
+                                {% for i in range(1, 5) %}
+                                <div class="col-3">
+                                    <input type="radio" class="btn-check" name="quarter" id="q{{ i }}" value="{{ i }}"
+                                        required>
+                                    <label class="btn btn-outline-primary w-100" for="q{{ i }}">{{ i }}</label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Fan</label>
+                            <select name="subject_id" class="form-select" required id="subject-select">
+                                <option value="" selected disabled>Oldin sinfni tanlang</option>
+                                <!-- JS orqali to'ldiriladi -->
+                            </select>
+                            <div id="subject-warning" class="form-text text-danger d-none">
+                                <i class="fas fa-exclamation-circle"></i> Bu sinf uchun fanlar topilmadi
+                            </div>
+                        </div>
+
+                        <div class="col-12 mt-4">
+                            <button type="submit" class="btn btn-primary w-100 py-3 fs-5">
+                                <i class="fas fa-play me-2"></i> Testni Boshlash
+                            </button>
+                        </div>
+                    </div>
+                </form>
             </div>
-            
-            <div class="form-group">
-                <label class="form-label">Familiyangiz <span class="required">*</span></label>
-                <input type="text" class="form-control" name="surname" required 
-                       placeholder="Masalan: Aliyev">
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Fan <span class="required">*</span></label>
-                <select class="form-select" name="subject_id" id="subjectSelect" required>
-                    <option value="">Fanni tanlang</option>
-                    {% for subject in subjects %}
-                    <option value="{{ subject.id }}" data-grades="{{ subject.grades }}">
-                        {{ subject.name }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Sinf <span class="required">*</span></label>
-                <select class="form-select" name="grade" id="gradeSelect" required disabled>
-                    <option value="">Avval fanni tanlang</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Sinf raqami <span class="required">*</span></label>
-                <select class="form-select" name="class_number" required>
-                    <option value="">Sinf raqamini tanlang</option>
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                </select>
-                <small class="text-muted">Masalan: 5-sinf 2-xona = "2"</small>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Chorak <span class="required">*</span></label>
-                <select class="form-select" name="quarter" required>
-                    <option value="">Chorakni tanlang</option>
-                    <option value="1">1-chorak</option>
-                    <option value="2">2-chorak</option>
-                    <option value="3">3-chorak</option>
-                    <option value="4">4-chorak</option>
-                </select>
-            </div>
-            
-            <div class="d-grid gap-2">
-                <button type="submit" class="btn btn-primary btn-lg">
-                    <i class="fas fa-play-circle"></i> Testni boshlash
-                </button>
-                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left"></i> Orqaga
-                </a>
-            </div>
-        </form>
+        </div>
+
+        <div class="text-center mt-4">
+            <a href="{{ url_for('admin_login') }}" class="text-muted text-decoration-none small hover-primary">
+                <i class="fas fa-lock me-1"></i> O'qituvchi uchun kirish
+            </a>
+        </div>
     </div>
 </div>
-{% endblock %}
+
+<style>
+    .text-gradient {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .hover-primary:hover {
+        color: var(--primary) !important;
+    }
+
+    .animate-fade-in-up {
+        animation: fadeInUp 0.5s ease forwards;
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    @keyframes fadeInUp {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
 
 {% block extra_js %}
 <script>
-document.getElementById('subjectSelect').addEventListener('change', function() {
-    const gradeSelect = document.getElementById('gradeSelect');
-    const selectedOption = this.options[this.selectedIndex];
-    const grades = selectedOption.dataset.grades;
-    
-    if (grades) {
-        const gradesList = grades.split(',');
-        gradeSelect.innerHTML = '<option value="">Sinfni tanlang</option>';
-        gradesList.forEach(grade => {
-            const option = document.createElement('option');
-            option.value = grade;
-            option.textContent = grade + '-sinf';
-            gradeSelect.appendChild(option);
-        });
-        gradeSelect.disabled = false;
-    } else {
-        gradeSelect.innerHTML = '<option value="">Avval fanni tanlang</option>';
-        gradeSelect.disabled = true;
-    }
-});
+    const subjects = [
+        {% for subject in subjects %}
+    {
+        id: { { subject.id } },
+        name: "{{ subject.name }}",
+            grades: [{{ subject.grades }}]
+        },
+    {% endfor %}
+    ];
+
+    const gradeSelect = document.getElementById('grade-select');
+    const subjectSelect = document.getElementById('subject-select');
+    const subjectWarning = document.getElementById('subject-warning');
+
+    gradeSelect.addEventListener('change', function () {
+        const selectedGrade = parseInt(this.value);
+        subjectSelect.innerHTML = '<option value="" selected disabled>Fanni tanlang</option>';
+
+        const availableSubjects = subjects.filter(sub => sub.grades.includes(selectedGrade));
+
+        if (availableSubjects.length > 0) {
+            availableSubjects.forEach(sub => {
+                const option = document.createElement('option');
+                option.value = sub.id;
+                option.textContent = sub.name;
+                subjectSelect.appendChild(option);
+            });
+            subjectSelect.disabled = false;
+            subjectWarning.classList.add('d-none');
+        } else {
+            subjectSelect.disabled = true;
+            subjectWarning.classList.remove('d-none');
+        }
+    });
 </script>
+{% endblock %}
 {% endblock %}
