@@ -4,16 +4,18 @@
 
 {% block content %}
 <div class="container">
-    <div class="card">
-        <div class="card-header bg-gradient text-white d-flex justify-content-between align-items-center"
-            style="background: linear-gradient(135deg, #4f46e5, #06b6d4);">
-            <h3 class="mb-0">
-                <i class="fas fa-question-circle me-2"></i> Savollar boshqaruvi
-            </h3>
-            <a href="{{ url_for('admin_question_add') }}" class="btn btn-light">
+    <div class="row mb-4 animate-fade-in-up">
+        <div class="col-md-8">
+            <h2 class="fw-bold text-gradient"><i class="fas fa-question-circle me-2"></i> Savollar boshqaruvi</h2>
+            <p class="text-muted">Test savollarini yaratish va boshqarish bo'limi</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{{ url_for('admin_question_add') }}" class="btn btn-primary">
                 <i class="fas fa-plus me-2"></i> Yangi savol
             </a>
         </div>
+    </div>
+    <div class="card animate-fade-in-up" style="animation-delay: 0.1s;">
         <div class="card-body">
             <!-- Filtrlar -->
             <form method="GET" class="mb-4">

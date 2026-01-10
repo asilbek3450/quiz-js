@@ -294,6 +294,9 @@ def student_result():
 
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
+    if 'admin_id' in session:
+        return redirect(url_for('admin_dashboard'))
+
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -451,6 +454,66 @@ def admin_results():
     return render_template('admin_results.html', 
                          results=results, 
                          subjects=subjects)
+
+@app.route('/admin/subjects')
+def admin_subjects():
+    if 'admin_id' not in session:
+        return redirect(url_for('admin_login'))
+    
+    subjects = Subject.query.all()
+    return render_template('admin_subjects.html', subjects=subjects)
+
+@app.route('/admin/subject/add', methods=['GET', 'POST'])
+def admin_subject_add():
+    if 'admin_id' not in session:
+        return redirect(url_for('admin_login'))
+    
+    if request.method == 'POST':
+        name = request.form['name']
+        grades = request.form['grades'] # e.g., "5,6"
+        
+        subject = Subject(name=name, grades=grades)
+        db.session.add(subject)
+        db.session.commit()
+        flash('Fan muvaffaqiyatli qo\'shildi', 'success')
+        return redirect(url_for('admin_subjects'))
+    
+    return render_template('admin_subject_form.html', subject=None)
+
+@app.route('/admin/subject/edit/<int:id>', methods=['GET', 'POST'])
+def admin_subject_edit(id):
+    if 'admin_id' not in session:
+        return redirect(url_for('admin_login'))
+    
+    subject = Subject.query.get_or_404(id)
+    
+    if request.method == 'POST':
+        subject.name = request.form['name']
+        subject.grades = request.form['grades']
+        
+        db.session.commit()
+        flash('Fan muvaffaqiyatli o\'zgartirildi', 'success')
+        return redirect(url_for('admin_subjects'))
+    
+    return render_template('admin_subject_form.html', subject=subject)
+
+@app.route('/admin/subject/delete/<int:id>')
+def admin_subject_delete(id):
+    if 'admin_id' not in session:
+        return redirect(url_for('admin_login'))
+    
+    subject = Subject.query.get_or_404(id)
+    
+    # Check if subject has questions or results
+    if subject.questions or subject.results:
+        flash('Bu fanga tegishli savollar yoki natijalar mavjud. Oldin ularni o\'chiring.', 'danger')
+        return redirect(url_for('admin_subjects'))
+        
+    db.session.delete(subject)
+    db.session.commit()
+    flash('Fan o\'chirildi', 'success')
+    return redirect(url_for('admin_subjects'))
+
 
 if __name__ == '__main__':
     init_db()

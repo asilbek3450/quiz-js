@@ -1,159 +1,125 @@
 {% extends "base.html" %}
 
-{% block title %}Admin Dashboard{% endblock %}
-
 {% block content %}
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h1 class="text-white">
-                <i class="fas fa-tachometer-alt"></i> Dashboard
-            </h1>
-            <p class="text-white-50">Xush kelibsiz, {{ session.admin_name }}!</p>
-        </div>
+<div class="row mb-5 animate-fade-in-up">
+    <div class="col-12">
+        <h2 class="fw-bold text-gradient mb-1">Admin Dashboard</h2>
+        <p class="text-muted">Tizim holati va statistika</p>
     </div>
-    
-    <div class="row g-4 mb-4">
-        <div class="col-md-4">
-            <div class="stat-card">
-                <i class="fas fa-question-circle text-primary"></i>
-                <h3 class="text-primary">{{ total_questions }}</h3>
+</div>
+
+<div class="row mb-5 animate-fade-in-up" style="animation-delay: 0.1s;">
+    <div class="col-md-3 mb-4 mb-md-0">
+        <a href="{{ url_for('admin_questions') }}" class="text-decoration-none">
+            <div class="stat-card h-100">
+                <i class="fas fa-question-circle"></i>
+                <h3>{{ total_questions }}</h3>
                 <p>Jami savollar</p>
-                <a href="{{ url_for('admin_questions') }}" class="btn btn-sm btn-outline-primary">
-                    Ko'rish
-                </a>
             </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="stat-card">
-                <i class="fas fa-file-alt text-success"></i>
-                <h3 class="text-success">{{ total_results }}</h3>
-                <p>Test natijalari</p>
-                <a href="{{ url_for('admin_results') }}" class="btn btn-sm btn-outline-success">
-                    Ko'rish
-                </a>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="stat-card">
-                <i class="fas fa-book text-info"></i>
-                <h3 class="text-info">{{ subjects|length }}</h3>
+        </a>
+    </div>
+    <div class="col-md-3 mb-4 mb-md-0">
+        <a href="{{ url_for('admin_subjects') }}" class="text-decoration-none">
+            <div class="stat-card h-100">
+                <i class="fas fa-book"></i>
+                <h3>{{ subjects|length }}</h3>
                 <p>Fanlar</p>
             </div>
+        </a>
+    </div>
+    <div class="col-md-3 mb-4 mb-md-0">
+        <a href="{{ url_for('admin_results') }}" class="text-decoration-none">
+            <div class="stat-card h-100">
+                <i class="fas fa-chart-bar"></i>
+                <h3>{{ total_results }}</h3>
+                <p>Natijalar</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card h-100 bg-gradient text-white"
+            style="background: linear-gradient(135deg, var(--primary), var(--secondary));">
+            <i class="fas fa-clock text-white bg-white bg-opacity-25"></i>
+            <h3 class="text-white">{{ recent_results|length }}</h3>
+            <p class="text-white opacity-75">Oxirgi faollik</p>
         </div>
     </div>
-    
-    <div class="row g-4">
-        <div class="col-lg-6">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title mb-4">
-                        <i class="fas fa-tasks"></i> Tezkor harakatlar
-                    </h5>
-                    <div class="list-group">
-                        <a href="{{ url_for('admin_question_add') }}" 
-                           class="list-group-item list-group-item-action">
-                            <i class="fas fa-plus-circle text-success"></i>
-                            Yangi savol qo'shish
-                        </a>
-                        <a href="{{ url_for('admin_questions') }}" 
-                           class="list-group-item list-group-item-action">
-                            <i class="fas fa-list text-primary"></i>
-                            Barcha savollar
-                        </a>
-                        <a href="{{ url_for('admin_results') }}" 
-                           class="list-group-item list-group-item-action">
-                            <i class="fas fa-chart-bar text-info"></i>
-                            Natijalar tahlili
-                        </a>
-                    </div>
-                </div>
+</div>
+
+<div class="row animate-fade-in-up" style="animation-delay: 0.2s;">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0"><i class="fas fa-history me-2 text-primary"></i> Oxirgi natijalar</h5>
+                <a href="{{ url_for('admin_results') }}" class="btn btn-sm btn-light">Barchasini ko'rish</a>
             </div>
-        </div>
-        
-        <div class="col-lg-6">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title mb-4">
-                        <i class="fas fa-clock"></i> So'nggi natijalar
-                    </h5>
-                    {% if recent_results %}
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>O'quvchi</th>
-                                    <th>Sinf</th>
-                                    <th>Ball</th>
-                                    <th>Baho</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for result in recent_results[:2] %}
-                                <tr>
-                                    <td>{{ result.student_name }} {{ result.student_surname }}</td>
-                                    <td>{{ result.grade }}-{{ result.class_number }}</td>
-                                    <td>{{ result.score }}/{{ result.total_questions }}</td>
-                                    <td>
-                                        {% if result.percentage >= 90 %}
-                                            <span class="badge bg-success">{{ result.grade_text }}</span>
-                                        {% elif result.percentage >= 70 %}
-                                            <span class="badge bg-info">{{ result.grade_text }}</span>
-                                        {% elif result.percentage >= 50 %}
-                                            <span class="badge bg-warning">{{ result.grade_text }}</span>
-                                        {% else %}
-                                            <span class="badge bg-danger">{{ result.grade_text }}</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <p class="text-muted text-center">Hozircha natijalar yo'q</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title mb-4">
-                        <i class="fas fa-info-circle"></i> Tizim haqida
-                    </h5>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6>Fanlar:</h6>
-                            <ul>
-                                {% for subject in subjects %}
-                                <li>
-                                    <strong>{{ subject.name }}</strong> - 
-                                    {{ subject.grades }} sinflar
-                                </li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                        <div class="col-md-6">
-                            <h6>Xususiyatlar:</h6>
-                            <ul>
-                                <li>Har bir test: 20 ta savol</li>
-                                <li>Tasodifiy savollar tanlash</li>
-                                <li>Avtomatik baholash</li>
-                                <li>Natijalarni saqlash</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">O'quvchi</th>
+                            <th>Fan</th>
+                            <th>Sinf</th>
+                            <th>Ball</th>
+                            <th>Foiz</th>
+                            <th>Sana</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result in recent_results %}
+                        <tr>
+                            <td class="ps-4">
+                                <span class="fw-bold">{{ result.full_name }}</span>
+                            </td>
+                            <td>{{ result.subject.name }}</td>
+                            <td>
+                                <span class="badge bg-light text-dark border">{{ result.grade }}-{{ result.class_number
+                                    }}</span>
+                            </td>
+                            <td>{{ result.score }}/{{ result.total_questions }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                                        <div class="progress-bar {% if result.percentage >= 80 %}bg-success{% elif result.percentage >= 60 %}bg-warning{% else %}bg-danger{% endif %}"
+                                            role="progressbar" style="width: {{ result.percentage }}%"></div>
+                                    </div>
+                                    <span class="small fw-bold">{{ "%.1f"|format(result.percentage) }}%</span>
+                                </div>
+                            </td>
+                            <td class="text-muted small">
+                                {{ result.test_date.strftime('%d.%m.%Y %H:%M') }}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">Hozircha natijalar yo'q</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 </div>
 
-<div style="height: 60px;"></div>
+<style>
+    .text-gradient {
+        background: linear-gradient(135deg, #0d9410, #0a750c);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .animate-fade-in-up {
+        animation: fadeInUp 0.5s ease forwards;
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    @keyframes fadeInUp {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
 {% endblock %}
