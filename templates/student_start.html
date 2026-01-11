@@ -36,9 +36,10 @@
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label fw-bold small text-uppercase text-muted">Sinf harfi/raqami</label>
-                            <input type="text" name="class_number" class="form-control" required
-                                placeholder="Masalan: A yoki 1">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Sinf raqami</label>
+                            <!-- max son 5 -->
+                            <input type="number" name="class_number" class="form-control" required
+                                placeholder="Masalan: 1" max="5">
                         </div>
 
                         <div class="col-12">
@@ -59,6 +60,9 @@
                             <select name="subject_id" class="form-select" required id="subject-select">
                                 <option value="" selected disabled>Oldin sinfni tanlang</option>
                                 <!-- JS orqali to'ldiriladi -->
+                                {% for subject in subjects %}
+                                <option value="{{ subject.id }}">{{ subject.name }}</option>
+                                {% endfor %}
                             </select>
                             <div id="subject-warning" class="form-text text-danger d-none">
                                 <i class="fas fa-exclamation-circle"></i> Bu sinf uchun fanlar topilmadi
@@ -86,6 +90,7 @@
 <style>
     .text-gradient {
         background: linear-gradient(135deg, var(--primary), var(--secondary));
+        background-clip: text;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
     }
@@ -107,6 +112,8 @@
         }
     }
 </style>
+
+{% endblock %}
 
 {% block extra_js %}
 <script>
@@ -145,5 +152,4 @@
         }
     });
 </script>
-{% endblock %}
 {% endblock %}

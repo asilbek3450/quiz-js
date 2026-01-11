@@ -58,9 +58,15 @@
 
     <div class="card animate-fade-in-up" style="animation-delay: 0.2s;">
         <div class="card-body">
-            <h5 class="card-title mb-4">
-                Jami: {{ results|length }} ta natija
-            </h5>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="card-title mb-0">
+                    Jami: {{ results|length }} ta natija
+                </h5>
+                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal"
+                    data-bs-target="#deleteByDateModal">
+                    <i class="fas fa-trash-alt me-2"></i> Kun bo'yicha o'chirish
+                </button>
+            </div>
 
             {% if results %}
             <div class="table-responsive">
@@ -76,6 +82,7 @@
                             <th>Foiz</th>
                             <th>Baho</th>
                             <th>Sana</th>
+                            <th>Amallar</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -121,6 +128,14 @@
                             </td>
                             <td>
                                 <small>{{ result.test_date.strftime('%d.%m.%Y %H:%M') }}</small>
+                            </td>
+                            <td>
+                                <form action="{{ url_for('admin_result_delete', id=result.id) }}" method="POST"
+                                    onsubmit="return confirm('Bu natijani o\'chirishni tasdiqlaysizmi?')">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                         {% endfor %}
@@ -175,4 +190,34 @@
 </div>
 
 <div style="height: 60px;"></div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Delete By Date Modal -->
+<div class="modal fade" id="deleteByDateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Kun bo'yicha o'chirish</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin_results_delete_by_date') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Sanani tanlang</label>
+                        <input type="date" name="delete_date" class="form-control" required>
+                    </div>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Diqqat! Tanlangan kundagi barcha natijalar o'chiriladi va qayta tiklanmaydi.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Bekor qilish</button>
+                    <button type="submit" class="btn btn-danger">O'chirish</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}

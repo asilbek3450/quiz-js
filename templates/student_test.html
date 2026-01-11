@@ -179,15 +179,25 @@
         });
     }
 
-    // Simple Timer
-    let seconds = 0;
-    setInterval(() => {
-        seconds++;
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        document.getElementById('timer').textContent =
-            `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }, 1000);
+    // Global Timer
+    const startTimePayload = {{ session.get('start_time', 0) }};
+    const startTimeC = startTimePayload ? startTimePayload * 1000 : Date.now(); // Convert to milliseconds
+
+    function updateTimer() {
+        const now = Date.now();
+        const diff = Math.floor((now - startTimeC) / 1000);
+
+        if (diff >= 0) {
+            const mins = Math.floor(diff / 60);
+            const secs = diff % 60;
+            document.getElementById('timer').textContent =
+                `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+    }
+
+    // Update immediately and then every second
+    updateTimer();
+    setInterval(updateTimer, 1000);
 </script>
 {% endblock %}
 {% endblock %}

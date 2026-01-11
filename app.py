@@ -1,11 +1,13 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta
 import random
 import json
 
-app = Flask(__name__)
+
+
+app = Flask(__name__, template_folder="templates")
 app.config['SECRET_KEY'] = 'your-secret-key-here-change-in-production'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test_platform.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -43,7 +45,7 @@ class TestResult(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     full_name = db.Column(db.String(100), nullable=False)
     grade = db.Column(db.Integer, nullable=False)
-    class_number = db.Column(db.Integer, nullable=False)
+    class_number = db.Column(db.String(10), nullable=False)  # Changed to String to accept 'A', 'B', etc.
     quarter = db.Column(db.Integer, nullable=False)
     subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
     score = db.Column(db.Integer, nullable=False)
@@ -59,11 +61,11 @@ class TestResult(db.Model):
 
 def calculate_grade(score, total=20):
     percentage = (score / total) * 100
-    if percentage >= 90:
+    if percentage >= 85:
         return "A'lo (5)"
     elif percentage >= 70:
         return "Yaxshi (4)"
-    elif percentage >= 50:
+    elif percentage >= 65:
         return "Qoniqarli (3)"
     else:
         return "Qoniqarsiz (2)"
@@ -141,7 +143,7 @@ def init_db():
 
 # ============= ROUTES =============
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def index():
     return render_template('index.html')
 
@@ -152,9 +154,10 @@ def student_start():
         session['student_name'] = request.form['name']
         session['student_surname'] = request.form['surname']
         session['grade'] = int(request.form['grade'])
-        session['class_number'] = int(request.form['class_number'])
+        session['class_number'] = request.form['class_number']  # Keep as string
         session['quarter'] = int(request.form['quarter'])
         session['subject_id'] = int(request.form['subject_id'])
+        session['start_time'] = datetime.now().timestamp()
         
         # Testni boshlash
         subject = Subject.query.get(session['subject_id'])
@@ -258,12 +261,30 @@ def student_result():
     
     total = len(question_ids)
     percentage = (score / total) * 100
+    
+    # Calculate duration
+    start_time = session.get('start_time')
+    duration_text = "00:00"
+    # Timezone correction: Tashkent is UTC+5, datetime.now() usually returns local system time.
+    # We will ensure the saved time is accurate.
+    current_time = datetime.now()
+    
+    if start_time:
+        duration_seconds = int(current_time.timestamp() - start_time)
+        mins = duration_seconds // 60
+        secs = duration_seconds % 60
+        duration_text = f"{mins:02d}:{secs:02d}"
+    
     grade_text = calculate_grade(score, total)
     
     # Natijani saqlash
+    full_name = f"{session['student_name']} {session['student_surname']}"
+    
+    # Tashkent time is UTC+5
+    tashkent_time = datetime.utcnow() + timedelta(hours=5)
+    
     result = TestResult(
-        student_name=session['student_name'],
-        student_surname=session['student_surname'],
+        full_name=full_name,
         grade=session['grade'],
         class_number=session['class_number'],
         quarter=session['quarter'],
@@ -272,10 +293,13 @@ def student_result():
         total_questions=total,
         percentage=percentage,
         grade_text=grade_text,
+        test_date=tashkent_time,
         answers_json=json.dumps(answers)
     )
     db.session.add(result)
     db.session.commit()
+    
+
     
     # Sessionni tozalash
     keys_to_keep = []
@@ -430,6 +454,45 @@ def admin_question_delete(id):
     db.session.commit()
     flash('Savol o\'chirildi', 'success')
     return redirect(url_for('admin_questions'))
+
+@app.route('/admin/result/delete/<int:id>', methods=['POST'])
+def admin_result_delete(id):
+    if 'admin_id' not in session:
+        return redirect(url_for('admin_login'))
+    
+    result = TestResult.query.get_or_404(id)
+    db.session.delete(result)
+    db.session.commit()
+    flash('Natija muvaffaqiyatli o\'chirildi', 'success')
+    return redirect(url_for('admin_results'))
+
+@app.route('/admin/results/delete-by-date', methods=['POST'])
+def admin_results_delete_by_date():
+    if 'admin_id' not in session:
+        return redirect(url_for('admin_login'))
+    
+    date_str = request.form['delete_date']
+    try:
+        # Parse date from string YYYY-MM-DD
+        target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        
+        # We need to filter by the date part of the datetime column
+        # SQLite specific: strftime based filtering might be needed or range check
+        # Let's try range check for safety
+        start_dt = datetime.combine(target_date, datetime.min.time())
+        end_dt = datetime.combine(target_date, datetime.max.time())
+        
+        deleted_count = TestResult.query.filter(
+            TestResult.test_date >= start_dt,
+            TestResult.test_date <= end_dt
+        ).delete()
+        
+        db.session.commit()
+        flash(f'{deleted_count} ta natija o\'chirildi', 'success')
+    except Exception as e:
+        flash(f'Xatolik yuz berdi: {str(e)}', 'danger')
+        
+    return redirect(url_for('admin_results'))
 
 @app.route('/admin/results')
 def admin_results():
