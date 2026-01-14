@@ -329,7 +329,7 @@ def admin_login():
         if admin and check_password_hash(admin.password_hash, password):
             session['admin_id'] = admin.id
             session['admin_name'] = admin.full_name
-            flash('Xush kelibsiz!', 'success')
+            flash(f'Xush kelibsiz {admin.full_name}!', 'success')
             return redirect(url_for('admin_dashboard'))
         else:
             flash('Login yoki parol noto\'g\'ri', 'danger')
@@ -353,11 +353,19 @@ def admin_dashboard():
     subjects = Subject.query.all()
     recent_results = TestResult.query.order_by(TestResult.test_date.desc()).limit(10).all()
     
+    # Prepare data for charts
+    subject_names = [s.name for s in subjects]
+    question_counts = [len(s.questions) for s in subjects]
+    result_counts = [len(s.results) for s in subjects]
+    
     return render_template('admin_dashboard.html',
                          total_questions=total_questions,
                          total_results=total_results,
                          subjects=subjects,
-                         recent_results=recent_results)
+                         recent_results=recent_results,
+                         subject_names=subject_names,
+                         question_counts=question_counts,
+                         result_counts=result_counts)
 
 @app.route('/admin/questions')
 def admin_questions():
@@ -580,4 +588,4 @@ def admin_subject_delete(id):
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True)
+    app.run(debug=True, port=5001)

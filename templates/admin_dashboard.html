@@ -1,125 +1,336 @@
 {% extends "base.html" %}
 
-{% block content %}
-<div class="row mb-5 animate-fade-in-up">
-    <div class="col-12">
-        <h2 class="fw-bold text-gradient mb-1">Admin Dashboard</h2>
-        <p class="text-muted">Tizim holati va statistika</p>
-    </div>
-</div>
-
-<div class="row mb-5 animate-fade-in-up" style="animation-delay: 0.1s;">
-    <div class="col-md-3 mb-4 mb-md-0">
-        <a href="{{ url_for('admin_questions') }}" class="text-decoration-none">
-            <div class="stat-card h-100">
-                <i class="fas fa-question-circle"></i>
-                <h3>{{ total_questions }}</h3>
-                <p>Jami savollar</p>
-            </div>
-        </a>
-    </div>
-    <div class="col-md-3 mb-4 mb-md-0">
-        <a href="{{ url_for('admin_subjects') }}" class="text-decoration-none">
-            <div class="stat-card h-100">
-                <i class="fas fa-book"></i>
-                <h3>{{ subjects|length }}</h3>
-                <p>Fanlar</p>
-            </div>
-        </a>
-    </div>
-    <div class="col-md-3 mb-4 mb-md-0">
-        <a href="{{ url_for('admin_results') }}" class="text-decoration-none">
-            <div class="stat-card h-100">
-                <i class="fas fa-chart-bar"></i>
-                <h3>{{ total_results }}</h3>
-                <p>Natijalar</p>
-            </div>
-        </a>
-    </div>
-    <div class="col-md-3">
-        <div class="stat-card h-100 bg-gradient text-white"
-            style="background: linear-gradient(135deg, var(--primary), var(--secondary));">
-            <i class="fas fa-clock text-white bg-white bg-opacity-25"></i>
-            <h3 class="text-white">{{ recent_results|length }}</h3>
-            <p class="text-white opacity-75">Oxirgi faollik</p>
-        </div>
-    </div>
-</div>
-
-<div class="row animate-fade-in-up" style="animation-delay: 0.2s;">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
-                <h5 class="fw-bold mb-0"><i class="fas fa-history me-2 text-primary"></i> Oxirgi natijalar</h5>
-                <a href="{{ url_for('admin_results') }}" class="btn btn-sm btn-light">Barchasini ko'rish</a>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead>
-                        <tr>
-                            <th class="ps-4">O'quvchi</th>
-                            <th>Fan</th>
-                            <th>Sinf</th>
-                            <th>Ball</th>
-                            <th>Foiz</th>
-                            <th>Sana</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for result in recent_results %}
-                        <tr>
-                            <td class="ps-4">
-                                <span class="fw-bold">{{ result.full_name }}</span>
-                            </td>
-                            <td>{{ result.subject.name }}</td>
-                            <td>
-                                <span class="badge bg-light text-dark border">{{ result.grade }}-{{ result.class_number
-                                    }}</span>
-                            </td>
-                            <td>{{ result.score }}/{{ result.total_questions }}</td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="progress flex-grow-1 me-2" style="height: 6px;">
-                                        <div class="progress-bar {% if result.percentage >= 80 %}bg-success{% elif result.percentage >= 60 %}bg-warning{% else %}bg-danger{% endif %}"
-                                            role="progressbar" style="width: {{ result.percentage }}%"></div>
-                                    </div>
-                                    <span class="small fw-bold">{{ "%.1f"|format(result.percentage) }}%</span>
-                                </div>
-                            </td>
-                            <td class="text-muted small">
-                                {{ result.test_date.strftime('%d.%m.%Y %H:%M') }}
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="6" class="text-center py-4 text-muted">Hozircha natijalar yo'q</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
-
+{% block extra_css %}
+<!-- Chart.js is required for charts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-    .text-gradient {
-        background: linear-gradient(135deg, #0d9410, #0a750c);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+    .stat-card {
+        border-radius: 1rem;
+        border: none;
+        transition: transform 0.2s;
+        overflow: hidden;
+        position: relative;
     }
 
-    .animate-fade-in-up {
-        animation: fadeInUp 0.5s ease forwards;
-        opacity: 0;
-        transform: translateY(20px);
+    .stat-card:hover {
+        transform: translateY(-5px);
     }
 
-    @keyframes fadeInUp {
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+    .stat-card .card-body {
+        position: relative;
+        z-index: 2;
+    }
+
+    .stat-card .icon-bg {
+        position: absolute;
+        right: -10px;
+        bottom: -10px;
+        font-size: 5rem;
+        opacity: 0.15;
+        z-index: 1;
+        transform: rotate(-15deg);
+    }
+
+    .bg-gradient-primary {
+        background: linear-gradient(45deg, #4e73df, #224abe);
+        color: white;
+    }
+
+    .bg-gradient-success {
+        background: linear-gradient(45deg, #1cc88a, #13855c);
+        color: white;
+    }
+
+    .bg-gradient-info {
+        background: linear-gradient(45deg, #36b9cc, #258391);
+        color: white;
+    }
+
+    .bg-gradient-warning {
+        background: linear-gradient(45deg, #f6c23e, #dda20a);
+        color: white;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+
+    .table-custom tr td {
+        vertical-align: middle;
+    }
+
+    .avatar-circle {
+        width: 40px;
+        height: 40px;
+        background-color: #e2e8f0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: #475569;
     }
 </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="fw-bold mb-1">Admin Dashboard</h2>
+            <p class="text-muted">Tizim holati va statistika</p>
+        </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="row mb-4">
+        <!-- Jami Savollar -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card bg-gradient-warning h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-uppercase mb-1 opacity-75">Jami Savollar</div>
+                            <div class="h3 mb-0 fw-bold">{{ total_questions }}</div>
+                            <div class="mt-2 text-xs opacity-75">Barcha fanlar</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-question-circle fa-2x"></i>
+                        </div>
+                    </div>
+                    <i class="fas fa-question icon-bg"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fanlar -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card bg-gradient-success h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-uppercase mb-1 opacity-75">Fanlar</div>
+                            <div class="h3 mb-0 fw-bold">{{ subjects|length }}</div>
+                            <div class="mt-2 text-xs opacity-75">{{ subjects|map(attribute='name')|join(', ') }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-book-open fa-2x"></i>
+                        </div>
+                    </div>
+                    <i class="fas fa-book icon-bg"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Natijalar -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card bg-gradient-primary h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-uppercase mb-1 opacity-75">Natijalar</div>
+                            <div class="h3 mb-0 fw-bold">{{ total_results }}</div>
+                            <div class="mt-2 text-xs opacity-75">Topshirilgan testlar</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x"></i>
+                        </div>
+                    </div>
+                    <i class="fas fa-chart-bar icon-bg"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Oxirgi Faollik -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card bg-gradient-info h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-uppercase mb-1 opacity-75">Oxirgi Faollik</div>
+                            <div class="h3 mb-0 fw-bold">{{ recent_results|length }}</div>
+                            <div class="mt-2 text-xs opacity-75">So'nggi testlar</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-history fa-2x"></i>
+                        </div>
+                    </div>
+                    <i class="fas fa-clock icon-bg"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header py-3 bg-white d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 fw-bold text-primary">Testlar Statistikasi</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header py-3 bg-white d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 fw-bold text-primary">Savollar Taqsimoti</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="doughnutChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Results Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header py-3 bg-white border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="m-0 fw-bold text-dark"><i class="fas fa-table me-2 text-muted"></i>Oxirgi Test Natijalari
+                    </h5>
+                    <a href="{{ url_for('admin_results') }}"
+                        class="btn btn-sm btn-outline-primary rounded-pill px-4">Barchasi</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover table-custom align-middle mb-0">
+                        <thead class="bg-light text-muted">
+                            <tr>
+                                <th class="ps-4">O'quvchi</th>
+                                <th>Fan</th>
+                                <th>Sinf</th>
+                                <th>Ball</th>
+                                <th>Foiz</th>
+                                <th>Sana</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in recent_results %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle me-3">
+                                            {{ result.full_name[:1] }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark">{{ result.full_name }}</div>
+                                            <div class="small text-muted">ID: #{{ result.id }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-light text-dark border">{{ result.subject.name }}</span></td>
+                                <td>{{ result.grade }}-{{ result.class_number }}</td>
+                                <td>
+                                    <span class="fw-bold">{{ result.score }}/{{ result.total_questions }}</span>
+                                </td>
+                                <td>
+                                    {% if result.percentage >= 85 %}
+                                    <span class="badge bg-success rounded-pill px-3">A'lo ({{
+                                        "%.0f"|format(result.percentage) }}%)</span>
+                                    {% elif result.percentage >= 70 %}
+                                    <span class="badge bg-info rounded-pill px-3">Yaxshi ({{
+                                        "%.0f"|format(result.percentage) }}%)</span>
+                                    {% elif result.percentage >= 60 %}
+                                    <span class="badge bg-warning rounded-pill px-3">Qoniqarli ({{
+                                        "%.0f"|format(result.percentage) }}%)</span>
+                                    {% else %}
+                                    <span class="badge bg-danger rounded-pill px-3">Yomon ({{
+                                        "%.0f"|format(result.percentage) }}%)</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-muted small">
+                                    <i class="far fa-calendar-alt me-1"></i> {{ result.test_date.strftime('%Y-%m-%d
+                                    %H:%M') }}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">Hozircha natijalar mavjud emas</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Data for charts - Passed directly from backend
+        // Use 'safe' filter to ensure JSON is not escaped if needed, although 'tojson' handles it.
+        const subjects = {{ subject_names| tojson
+    }};
+    const questionCounts = {{ question_counts| tojson }};
+    const resultCounts = {{ result_counts| tojson }};
+
+    // Bar Chart (Test Results)
+    const ctxBar = document.getElementById('barChart').getContext('2d');
+    new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+            labels: subjects,
+            datasets: [{
+                label: 'Topshirilgan Testlar',
+                data: resultCounts,
+                backgroundColor: '#4e73df',
+                hoverBackgroundColor: '#2e59d9',
+                borderColor: '#4e73df',
+                borderRadius: 5
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 },
+                    grid: { borderDash: [2] }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+
+    // Doughnut Chart (Questions Distribution)
+    const ctxDoughnut = document.getElementById('doughnutChart').getContext('2d');
+    new Chart(ctxDoughnut, {
+        type: 'doughnut',
+        data: {
+            labels: subjects,
+            datasets: [{
+                data: questionCounts,
+                backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796'],
+                hoverBorderColor: "rgba(234, 236, 244, 1)",
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' }
+            },
+            cutout: '70%',
+        }
+    });
+    });
+</script>
 {% endblock %}
