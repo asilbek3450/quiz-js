@@ -5,4 +5,5 @@ gspread==6.0.0
 google-auth==2.27.0
 google-auth-oauthlib==1.2.0
 gunicorn
-Flask-Babel==4.0.0deep-translator
+Flask-Babel==4.0.0
+deep-translator
