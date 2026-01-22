@@ -6,12 +6,13 @@
 <div class="container">
     <div class="row mb-4 animate-fade-in-up">
         <div class="col-md-8">
-            <h2 class="fw-bold text-gradient"><i class="fas fa-question-circle me-2"></i> Savollar boshqaruvi</h2>
-            <p class="text-muted">Test savollarini yaratish va boshqarish bo'limi</p>
+            <h2 class="fw-bold text-gradient"><i class="fas fa-question-circle me-2"></i> {{ _('Savollar boshqaruvi') }}
+            </h2>
+            <p class="text-muted">{{ _('Test savollarini yaratish va boshqarish bo\'limi') }}</p>
         </div>
         <div class="col-md-4 text-md-end">
             <a href="{{ url_for('admin_question_add') }}" class="btn btn-primary">
-                <i class="fas fa-plus me-2"></i> Yangi savol
+                <i class="fas fa-plus me-2"></i> {{ _('Yangi savol') }}
             </a>
         </div>
     </div>
@@ -22,10 +23,10 @@
                 <div class="row g-3">
                     <div class="col-md-4">
                         <label class="form-label fw-bold">
-                            <i class="fas fa-book text-primary"></i> Fan
+                            <i class="fas fa-book text-primary"></i> {{ _('Fan') }}
                         </label>
                         <select name="subject_id" class="form-select" onchange="this.form.submit()">
-                            <option value="">Barchasi</option>
+                            <option value="">{{ _('Barchasi') }}</option>
                             {% for subject in subjects %}
                             <option value="{{ subject.id }}" {% if request.args.get('subject_id')|int==subject.id
                                 %}selected{% endif %}>
@@ -36,26 +37,26 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-bold">
-                            <i class="fas fa-users text-success"></i> Sinf
+                            <i class="fas fa-users text-success"></i> {{ _('Sinf') }}
                         </label>
                         <select name="grade" class="form-select" onchange="this.form.submit()">
-                            <option value="">Barchasi</option>
+                            <option value="">{{ _('Barchasi') }}</option>
                             {% for g in range(5, 10) %}
                             <option value="{{ g }}" {% if request.args.get('grade')|int==g %}selected{% endif %}>
-                                {{ g }}-sinf
+                                {{ g }}-{{ _('sinf') }}
                             </option>
                             {% endfor %}
                         </select>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-bold">
-                            <i class="fas fa-calendar text-warning"></i> Chorak
+                            <i class="fas fa-calendar text-warning"></i> {{ _('Chorak') }}
                         </label>
                         <select name="quarter" class="form-select" onchange="this.form.submit()">
-                            <option value="">Barchasi</option>
+                            <option value="">{{ _('Barchasi') }}</option>
                             {% for q in range(1, 5) %}
                             <option value="{{ q }}" {% if request.args.get('quarter')|int==q %}selected{% endif %}>
-                                {{ q }}-chorak
+                                {{ q }}-{{ _('chorak') }}
                             </option>
                             {% endfor %}
                         </select>
@@ -66,12 +67,13 @@
             <!-- Statistika -->
             <div class="alert alert-info mb-4">
                 <i class="fas fa-info-circle me-2"></i>
-                <strong>Ko'rsatilmoqda:</strong> {{ questions|length }} ta savol ({{ pagination.page }}-sahifa, {{
-                pagination.per_page }} tadan)
+                <strong>{{ _('Ko\'rsatilmoqda') }}:</strong> {{ questions|length }} {{ _('ta savol') }} ({{
+                pagination.page }}-{{ _('sahifa') }}, {{
+                pagination.per_page }} {{ _('tadan') }})
                 <br>
-                <strong>Jami:</strong> {{ pagination.total }} ta savol
+                <strong>{{ _('Jami') }}:</strong> {{ pagination.total }} {{ _('ta savol') }}
                 {% if request.args.get('subject_id') or request.args.get('grade') or request.args.get('quarter') %}
-                (filtrlangan)
+                ({{ _('filtrlangan') }})
                 {% endif %}
             </div>
 
@@ -82,12 +84,12 @@
                     <thead>
                         <tr>
                             <th style="width: 50px;">#</th>
-                            <th>Savol</th>
-                            <th style="width: 120px;">Fan</th>
-                            <th style="width: 80px;">Sinf</th>
-                            <th style="width: 80px;">Chorak</th>
-                            <th style="width: 100px;">To'g'ri</th>
-                            <th style="width: 150px;">Amallar</th>
+                            <th>{{ _('Savol') }}</th>
+                            <th style="width: 120px;">{{ _('Fan') }}</th>
+                            <th style="width: 80px;">{{ _('Sinf') }}</th>
+                            <th style="width: 80px;">{{ _('Chorak') }}</th>
+                            <th style="width: 100px;">{{ _('To\'g\'ri') }}</th>
+                            <th style="width: 150px;">{{ _('Amallar') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -121,13 +123,13 @@
                             <td>
                                 <div class="btn-group btn-group-sm">
                                     <a href="{{ url_for('admin_question_edit', id=question.id) }}"
-                                        class="btn btn-outline-primary" title="Tahrirlash">
+                                        class="btn btn-outline-primary" title="{{ _('Tahrirlash') }}">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <a href="{{ url_for('admin_question_delete', id=question.id) }}"
                                         class="btn btn-outline-danger"
-                                        onclick="return confirm('Savolni o\'chirishni tasdiqlaysizmi?')"
-                                        title="O'chirish">
+                                        onclick="return confirm('{{ _('Savolni o\'chirishni tasdiqlaysizmi?') }}')"
+                                        title="{{ _('O\'chirish') }}">
                                         <i class="fas fa-trash"></i>
                                     </a>
                                 </div>
@@ -146,7 +148,7 @@
                     <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
                         <a class="page-link"
                             href="{% if pagination.has_prev %}{{ url_for('admin_questions', page=pagination.prev_num, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter')) }}{% else %}#{% endif %}">
-                            <i class="fas fa-chevron-left"></i> Oldingi
+                            <i class="fas fa-chevron-left"></i> {{ _('Oldingi') }}
                         </a>
                     </li>
 
@@ -171,7 +173,7 @@
                     <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
                         <a class="page-link"
                             href="{% if pagination.has_next %}{{ url_for('admin_questions', page=pagination.next_num, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter')) }}{% else %}#{% endif %}">
-                            Keyingi <i class="fas fa-chevron-right"></i>
+                            {{ _('Keyingi') }} <i class="fas fa-chevron-right"></i>
                         </a>
                     </li>
                 </ul>
@@ -180,10 +182,10 @@
             {% else %}
             <div class="alert alert-warning text-center">
                 <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
-                <h5>Savollar topilmadi</h5>
-                <p class="mb-0">Tanlangan filtrlar bo'yicha savollar mavjud emas.</p>
+                <h5>{{ _('Savollar topilmadi') }}</h5>
+                <p class="mb-0">{{ _('Tanlangan filtrlar bo\'yicha savollar mavjud emas.') }}</p>
                 <a href="{{ url_for('admin_question_add') }}" class="btn btn-primary mt-3">
-                    <i class="fas fa-plus me-2"></i> Birinchi savolni qo'shish
+                    <i class="fas fa-plus me-2"></i> {{ _('Birinchi savolni qo\'shish') }}
                 </a>
             </div>
             {% endif %}
@@ -196,7 +198,7 @@
             <div class="card">
                 <div class="card-header bg-light">
                     <h5 class="mb-0">
-                        <i class="fas fa-chart-bar me-2"></i> Savollar statistikasi
+                        <i class="fas fa-chart-bar me-2"></i> {{ _('Savollar statistikasi') }}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -208,12 +210,12 @@
                                 <table class="table table-sm table-bordered">
                                     <thead>
                                         <tr>
-                                            <th>Sinf</th>
-                                            <th>1-ch</th>
-                                            <th>2-ch</th>
-                                            <th>3-ch</th>
-                                            <th>4-ch</th>
-                                            <th>Jami</th>
+                                            <th>{{ _('Sinf') }}</th>
+                                            <th>1-{{ _('ch') }}</th>
+                                            <th>2-{{ _('ch') }}</th>
+                                            <th>3-{{ _('ch') }}</th>
+                                            <th>4-{{ _('ch') }}</th>
+                                            <th>{{ _('Jami') }}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -243,10 +245,10 @@
                     </div>
                     <div class="alert alert-info mb-0 mt-3">
                         <i class="fas fa-info-circle me-2"></i>
-                        <strong>Eslatma:</strong>
-                        <span class="badge bg-success">Yashil</span> - 200+ savol (yetarli),
-                        <span class="badge bg-warning">Sariq</span> - 20-199 savol,
-                        <span class="badge bg-danger">Qizil</span> - 20 dan kam savol
+                        <strong>{{ _('Eslatma') }}:</strong>
+                        <span class="badge bg-success">{{ _('Yashil') }}</span> - 200+ {{ _('savol (yetarli)') }},
+                        <span class="badge bg-warning">{{ _('Sariq') }}</span> - 20-199 {{ _('savol') }},
+                        <span class="badge bg-danger">{{ _('Qizil') }}</span> - 20 {{ _('dan kam savol') }}
                     </div>
                 </div>
             </div>

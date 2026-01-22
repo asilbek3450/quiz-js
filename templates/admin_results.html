@@ -6,8 +6,8 @@
 <div class="container-fluid">
     <div class="row mb-4 animate-fade-in-up">
         <div class="col-md-12">
-            <h2 class="fw-bold text-gradient"><i class="fas fa-chart-bar me-2"></i> Test natijalari</h2>
-            <p class="text-muted">O'quvchilarning test natijalari va statistikasi</p>
+            <h2 class="fw-bold text-gradient"><i class="fas fa-chart-bar me-2"></i> {{ _('Test natijalari') }}</h2>
+            <p class="text-muted">{{ _('O\'quvchilarning test natijalari va statistikasi') }}</p>
         </div>
     </div>
 
@@ -18,7 +18,7 @@
             </h5>
             <form method="GET" class="row g-3">
                 <div class="col-md-4">
-                    <label class="form-label">Fan</label>
+                    <label class="form-label">{{ _('Fan') }}</label>
                     <select class="form-select" name="subject_id" onchange="this.form.submit()">
                         <option value="">Barchasi</option>
                         {% for subject in subjects %}
@@ -31,25 +31,34 @@
                 </div>
 
                 <div class="col-md-4">
-                    <label class="form-label">Sinf</label>
+                    <label class="form-label">{{ _('Sinf') }}</label>
                     <select class="form-select" name="grade" onchange="this.form.submit()">
-                        <option value="">Barchasi</option>
-                        <option value="5" {% if request.args.get('grade')=='5' %}selected{% endif %}>5-sinf</option>
-                        <option value="6" {% if request.args.get('grade')=='6' %}selected{% endif %}>6-sinf</option>
-                        <option value="7" {% if request.args.get('grade')=='7' %}selected{% endif %}>7-sinf</option>
-                        <option value="8" {% if request.args.get('grade')=='8' %}selected{% endif %}>8-sinf</option>
-                        <option value="9" {% if request.args.get('grade')=='9' %}selected{% endif %}>9-sinf</option>
+                        <option value="">{{ _('Barchasi') }}</option>
+                        <option value="5" {% if request.args.get('grade')=='5' %}selected{% endif %}>5-{{ _('sinf') }}
+                        </option>
+                        <option value="6" {% if request.args.get('grade')=='6' %}selected{% endif %}>6-{{ _('sinf') }}
+                        </option>
+                        <option value="7" {% if request.args.get('grade')=='7' %}selected{% endif %}>7-{{ _('sinf') }}
+                        </option>
+                        <option value="8" {% if request.args.get('grade')=='8' %}selected{% endif %}>8-{{ _('sinf') }}
+                        </option>
+                        <option value="9" {% if request.args.get('grade')=='9' %}selected{% endif %}>9-{{ _('sinf') }}
+                        </option>
                     </select>
                 </div>
 
                 <div class="col-md-4">
-                    <label class="form-label">Chorak</label>
+                    <label class="form-label">{{ _('Chorak') }}</label>
                     <select class="form-select" name="quarter" onchange="this.form.submit()">
-                        <option value="">Barchasi</option>
-                        <option value="1" {% if request.args.get('quarter')=='1' %}selected{% endif %}>1-chorak</option>
-                        <option value="2" {% if request.args.get('quarter')=='2' %}selected{% endif %}>2-chorak</option>
-                        <option value="3" {% if request.args.get('quarter')=='3' %}selected{% endif %}>3-chorak</option>
-                        <option value="4" {% if request.args.get('quarter')=='4' %}selected{% endif %}>4-chorak</option>
+                        <option value="">{{ _('Barchasi') }}</option>
+                        <option value="1" {% if request.args.get('quarter')=='1' %}selected{% endif %}>1-{{ _('chorak')
+                            }}</option>
+                        <option value="2" {% if request.args.get('quarter')=='2' %}selected{% endif %}>2-{{ _('chorak')
+                            }}</option>
+                        <option value="3" {% if request.args.get('quarter')=='3' %}selected{% endif %}>3-{{ _('chorak')
+                            }}</option>
+                        <option value="4" {% if request.args.get('quarter')=='4' %}selected{% endif %}>4-{{ _('chorak')
+                            }}</option>
                     </select>
                 </div>
             </form>
@@ -60,11 +69,11 @@
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h5 class="card-title mb-0">
-                    Jami: {{ results|length }} ta natija
+                    {{ _('Jami') }}: {{ results|length }} {{ _('ta natija') }}
                 </h5>
                 <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal"
                     data-bs-target="#deleteByDateModal">
-                    <i class="fas fa-trash-alt me-2"></i> Kun bo'yicha o'chirish
+                    <i class="fas fa-trash-alt me-2"></i> {{ _('Kun bo\'yicha o\'chirish') }}
                 </button>
             </div>
 
@@ -74,15 +83,15 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>O'quvchi</th>
-                            <th>Fan</th>
-                            <th>Sinf</th>
-                            <th>Chorak</th>
-                            <th>Ball</th>
-                            <th>Foiz</th>
-                            <th>Baho</th>
-                            <th>Sana</th>
-                            <th>Amallar</th>
+                            <th>{{ _('O\'quvchi') }}</th>
+                            <th>{{ _('Fan') }}</th>
+                            <th>{{ _('Sinf') }}</th>
+                            <th>{{ _('Chorak') }}</th>
+                            <th>{{ _('Ball') }}</th>
+                            <th>{{ _('Foiz') }}</th>
+                            <th>{{ _('Baho') }}</th>
+                            <th>{{ _('Sana') }}</th>
+                            <th>{{ _('Amallar') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -90,7 +99,7 @@
                         <tr>
                             <td>{{ loop.index }}</td>
                             <td>
-                                <strong>{{ result.student_name }} {{ result.student_surname }}</strong>
+                                <strong>{{ result.full_name }}</strong>
                             </td>
                             <td>
                                 <span class="badge bg-info">{{ result.subject.name }}</span>
@@ -131,7 +140,7 @@
                             </td>
                             <td>
                                 <form action="{{ url_for('admin_result_delete', id=result.id) }}" method="POST"
-                                    onsubmit="return confirm('Bu natijani o\'chirishni tasdiqlaysizmi?')">
+                                    onsubmit="return confirm('{{ _('Bu natijani o\'chirishni tasdiqlaysizmi?') }}')">
                                     <button type="submit" class="btn btn-sm btn-outline-danger">
                                         <i class="fas fa-trash"></i>
                                     </button>
@@ -145,34 +154,34 @@
 
             {% if results|length > 0 %}
             <div class="mt-4">
-                <h5>Statistika</h5>
+                <h5>{{ _('Statistika') }}</h5>
                 <div class="row">
                     <div class="col-md-3">
                         <div class="stat-card">
                             <i class="fas fa-users text-primary"></i>
                             <h3>{{ results|length }}</h3>
-                            <p>Jami testlar</p>
+                            <p>{{ _('Jami testlar') }}</p>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="stat-card">
                             <i class="fas fa-star text-success"></i>
                             <h3>{{ (results|selectattr('percentage', 'ge', 90)|list|length) }}</h3>
-                            <p>A'lo baholar</p>
+                            <p>{{ _('A\'lo baholar') }}</p>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="stat-card">
                             <i class="fas fa-chart-line text-info"></i>
                             <h3>{{ ((results|sum(attribute='percentage') / results|length)|round(1)) }}%</h3>
-                            <p>O'rtacha natija</p>
+                            <p>{{ _('O\'rtacha natija') }}</p>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="stat-card">
                             <i class="fas fa-trophy text-warning"></i>
                             <h3>{{ ((results|sum(attribute='score') / results|length)|round(1)) }}</h3>
-                            <p>O'rtacha ball</p>
+                            <p>{{ _('O\'rtacha ball') }}</p>
                         </div>
                     </div>
                 </div>
@@ -182,7 +191,7 @@
             {% else %}
             <div class="text-center py-5">
                 <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
-                <p class="text-muted">Natijalar topilmadi</p>
+                <p class="text-muted">{{ _('Natijalar topilmadi') }}</p>
             </div>
             {% endif %}
         </div>
@@ -198,23 +207,24 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Kun bo'yicha o'chirish</h5>
+                <h5 class="modal-title">{{ _('Kun bo\'yicha o\'chirish') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form action="{{ url_for('admin_results_delete_by_date') }}" method="POST">
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Sanani tanlang</label>
+                        <label class="form-label">{{ _('Sanani tanlang') }}</label>
                         <input type="date" name="delete_date" class="form-control" required>
                     </div>
                     <div class="alert alert-warning">
                         <i class="fas fa-exclamation-triangle me-2"></i>
-                        Diqqat! Tanlangan kundagi barcha natijalar o'chiriladi va qayta tiklanmaydi.
+                        {{ _('Diqqat! Tanlangan kundagi barcha natijalar o\'chiriladi va qayta tiklanmaydi.') }}
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Bekor qilish</button>
-                    <button type="submit" class="btn btn-danger">O'chirish</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Bekor qilish')
+                        }}</button>
+                    <button type="submit" class="btn btn-danger">{{ _('O\'chirish') }}</button>
                 </div>
             </form>
         </div>

@@ -6,45 +6,45 @@
 <div class="row min-vh-50 align-items-center justify-content-center text-center mb-5 animate-fade-in-up">
     <div class="col-lg-8">
         <h1 class="display-3 fw-bold mb-3 project-title">
-            <span class="text-gradient">Test topshirish</span> Platformasi
+            <span class="text-gradient">{{ _('Test topshirish') }}</span> {{ _('Platformasi') }}
         </h1>
         <p class="lead text-muted mb-5">
-            Informatika va zamonaviy texnologiyalar bo'yicha <br> interaktiv test sinovlari
+            {{ _('Informatika va zamonaviy texnologiyalar bo\'yicha') }} <br> {{ _('interaktiv test sinovlari') }}
         </p>
     </div>
 </div>
 
 <div class="row g-4 mb-5 animate-fade-in-up" style="animation-delay: 0.2s;">
     <div class="col-md-6">
-        <div class="card h-100 role-card hover-lift" onclick="window.location.href='{{ url_for('student_start') }}'">
+        <div class="card h-100 role-card hover-lift" onclick="window.location.href='{{ url_for('student_start') }}';">
             <div class="card-body p-5 text-center">
                 <div class="icon-circle bg-soft-primary text-primary mb-4 mx-auto">
                     <i class="fas fa-user-graduate"></i>
                 </div>
-                <h2 class="fw-bold mb-3">O'quvchi</h2>
+                <h2 class="fw-bold mb-3">{{ _('O\'quvchi') }}</h2>
                 <p class="text-muted mb-4">
-                    Test topshirish va bilimlarni sinash uchun maxsus bo'lim.
-                    20 ta savol, avtomatik natija.
+                    {{ _('Test topshirish va bilimlarni sinash uchun maxsus bo\'lim.') }}
+                    {{ _('20 ta savol, avtomatik natija.') }}
                 </p>
                 <a href="{{ url_for('student_start') }}" class="btn btn-primary btn-lg px-5 pill-btn">
-                    <i class="fas fa-play me-2"></i> Boshlash
+                    <i class="fas fa-play me-2"></i> {{ _('Boshlash') }}
                 </a>
             </div>
         </div>
     </div>
 
     <div class="col-md-6">
-        <div class="card h-100 role-card hover-lift" onclick="window.location.href='{{ url_for('admin_login') }}'">
+        <div class="card h-100 role-card hover-lift" onclick="window.location.href='{{ url_for('admin_login') }}';">
             <div class="card-body p-5 text-center">
                 <div class="icon-circle bg-soft-success text-success mb-4 mx-auto">
                     <i class="fas fa-user-shield"></i>
                 </div>
-                <h2 class="fw-bold mb-3">O'qituvchi</h2>
+                <h2 class="fw-bold mb-3">{{ _('O\'qituvchi') }}</h2>
                 <p class="text-muted mb-4">
-                    Tizimni boshqarish, savollar kiritish va natijalarni nazorat qilish bo'limi.
+                    {{ _('Tizimni boshqarish, savollar kiritish va natijalarni nazorat qilish bo\'limi.') }}
                 </p>
                 <a href="{{ url_for('admin_login') }}" class="btn btn-success btn-lg px-5 pill-btn">
-                    <i class="fas fa-sign-in-alt me-2"></i> Kirish
+                    <i class="fas fa-sign-in-alt me-2"></i> {{ _('Kirish') }}
                 </a>
             </div>
         </div>
@@ -53,9 +53,10 @@
 
 <div class="row g-4 mt-5 animate-fade-in-up" style="animation-delay: 0.4s;">
     {% for icon, title, text in [
-    ('fa-brain', 'Aqlli Tizim', 'Har bir urinishda savollar bazasidan tasodifiy 20 ta savol tanlab olinadi.'),
-    ('fa-chart-pie', 'Aniq Hisob', 'Test yakunida ballar va foizlar avtomatik hisoblanib, darhol ko\'rsatiladi.'),
-    ('fa-mobile-alt', 'Qulay Dizayn', 'Istalgan qurilma: telefon, planshet yoki kompyuter orqali bemalol foydalaning.')
+    ('fa-brain', _('Aqlli Tizim'), _('Har bir urinishda savollar bazasidan tasodifiy 20 ta savol tanlab olinadi.')),
+    ('fa-chart-pie', _('Aniq Hisob'), _('Test yakunida ballar va foizlar avtomatik hisoblanib, darhol ko\'rsatiladi.')),
+    ('fa-mobile-alt', _('Qulay Dizayn'), _('Istalgan qurilma: telefon, planshet yoki kompyuter orqali bemalol
+    foydalaning.'))
     ] %}
     <div class="col-md-4">
         <div class="card h-100 hover-lift border-0">
@@ -80,6 +81,7 @@
     .text-gradient {
         background: linear-gradient(135deg, var(--primary), var(--secondary));
         -webkit-background-clip: text;
+        background-clip: text;
         -webkit-text-fill-color: transparent;
     }
 

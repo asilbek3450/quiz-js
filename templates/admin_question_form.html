@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}{% if question %}Savolni tahrirlash{% else %}Yangi savol{% endif %} - Admin{% endblock %}
+{% block title %}{% if question %}{{ _('Savolni tahrirlash') }}{% else %}{{ _('Yangi savol') }}{% endif %} - Admin{%
+endblock %}
 
 {% block content %}
 <div class="container">
@@ -11,7 +12,8 @@
                     style="background: linear-gradient(135deg, #4f46e5, #06b6d4);">
                     <h3 class="mb-0">
                         <i class="fas fa-{% if question %}edit{% else %}plus{% endif %} me-2"></i>
-                        {% if question %}Savolni tahrirlash{% else %}Yangi savol qo'shish{% endif %}
+                        {% if question %}{{ _('Savolni tahrirlash') }}{% else %}{{ _('Yangi savol qo\'shish') }}{% endif
+                        %}
                     </h3>
                 </div>
                 <div class="card-body p-4">
@@ -19,7 +21,7 @@
                         <div class="row mb-3">
                             <div class="col-md-4">
                                 <label class="form-label fw-bold">
-                                    <i class="fas fa-book text-primary"></i> Fan
+                                    <i class="fas fa-book text-primary"></i> {{ _('Fan') }}
                                 </label>
                                 <select name="subject_id" class="form-select" required id="subjectSelect">
                                     {% for subject in subjects %}
@@ -32,25 +34,25 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label fw-bold">
-                                    <i class="fas fa-users text-success"></i> Sinf
+                                    <i class="fas fa-users text-success"></i> {{ _('Sinf') }}
                                 </label>
                                 <select name="grade" class="form-select" required id="gradeSelect">
                                     {% for g in range(5, 10) %}
                                     <option value="{{ g }}" {% if question and question.grade==g %}selected{% endif %}>
-                                        {{ g }}-sinf
+                                        {{ g }}-{{ _('sinf') }}
                                     </option>
                                     {% endfor %}
                                 </select>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label fw-bold">
-                                    <i class="fas fa-calendar text-warning"></i> Chorak
+                                    <i class="fas fa-calendar text-warning"></i> {{ _('Chorak') }}
                                 </label>
                                 <select name="quarter" class="form-select" required>
                                     {% for q in range(1, 5) %}
                                     <option value="{{ q }}" {% if question and question.quarter==q %}selected{% endif
                                         %}>
-                                        {{ q }}-chorak
+                                        {{ q }}-{{ _('chorak') }}
                                     </option>
                                     {% endfor %}
                                 </select>
@@ -59,50 +61,50 @@
 
                         <div class="mb-4">
                             <label class="form-label fw-bold">
-                                <i class="fas fa-question-circle text-info"></i> Savol matni
+                                <i class="fas fa-question-circle text-info"></i> {{ _('Savol matni') }}
                             </label>
                             <textarea name="question_text" class="form-control" rows="3" required
-                                placeholder="Savolni kiriting...">{% if question %}{{ question.question_text }}{% endif %}</textarea>
+                                placeholder="{{ _('Savolni kiriting...') }}">{% if question %}{{ question.question_text }}{% endif %}</textarea>
                         </div>
 
                         <div class="row mb-3">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">
-                                    <span class="badge bg-primary">A</span> Variant A
+                                    <span class="badge bg-primary">A</span> {{ _('Variant A') }}
                                 </label>
                                 <input type="text" name="option_a" class="form-control" required
-                                    placeholder="A varianti..."
+                                    placeholder="{{ _('A varianti...') }}"
                                     value="{% if question %}{{ question.option_a }}{% endif %}">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">
-                                    <span class="badge bg-success">B</span> Variant B
+                                    <span class="badge bg-success">B</span> {{ _('Variant B') }}
                                 </label>
                                 <input type="text" name="option_b" class="form-control" required
-                                    placeholder="B varianti..."
+                                    placeholder="{{ _('B varianti...') }}"
                                     value="{% if question %}{{ question.option_b }}{% endif %}">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">
-                                    <span class="badge bg-warning">C</span> Variant C
+                                    <span class="badge bg-warning">C</span> {{ _('Variant C') }}
                                 </label>
                                 <input type="text" name="option_c" class="form-control" required
-                                    placeholder="C varianti..."
+                                    placeholder="{{ _('C varianti...') }}"
                                     value="{% if question %}{{ question.option_c }}{% endif %}">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">
-                                    <span class="badge bg-danger">D</span> Variant D
+                                    <span class="badge bg-danger">D</span> {{ _('Variant D') }}
                                 </label>
                                 <input type="text" name="option_d" class="form-control" required
-                                    placeholder="D varianti..."
+                                    placeholder="{{ _('D varianti...') }}"
                                     value="{% if question %}{{ question.option_d }}{% endif %}">
                             </div>
                         </div>
 
                         <div class="mb-4">
                             <label class="form-label fw-bold">
-                                <i class="fas fa-check-circle text-success"></i> To'g'ri javob
+                                <i class="fas fa-check-circle text-success"></i> {{ _('To\'g\'ri javob') }}
                             </label>
                             <div class="btn-group w-100" role="group">
                                 {% for opt in ['A', 'B', 'C', 'D'] %}
@@ -119,10 +121,11 @@
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary flex-fill">
                                 <i class="fas fa-save me-2"></i>
-                                {% if question %}O'zgarishlarni saqlash{% else %}Savolni qo'shish{% endif %}
+                                {% if question %}{{ _('O\'zgarishlarni saqlash') }}{% else %}{{ _('Savolni qo\'shish')
+                                }}{% endif %}
                             </button>
                             <a href="{{ url_for('admin_questions') }}" class="btn btn-secondary">
-                                <i class="fas fa-times me-2"></i> Bekor qilish
+                                <i class="fas fa-times me-2"></i> {{ _('Bekor qilish') }}
                             </a>
                         </div>
                     </form>

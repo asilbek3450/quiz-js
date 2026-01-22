@@ -6,11 +6,11 @@
         <!-- Progress Info -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <span class="text-muted small text-uppercase fw-bold">Savol</span>
+                <span class="text-muted small text-uppercase fw-bold">{{ _('Savol') }}</span>
                 <div class="h3 mb-0 fw-bold">{{ current }} <span class="text-muted h5">/ {{ total }}</span></div>
             </div>
             <div class="text-end">
-                <span class="text-muted small text-uppercase fw-bold">Vaqt</span>
+                <span class="text-muted small text-uppercase fw-bold">{{ _('Vaqt') }}</span>
                 <div class="h4 mb-0 fw-bold text-primary" id="timer">00:00</div>
             </div>
         </div>
@@ -24,13 +24,13 @@
         <div class="card border-0 shadow-lg mb-4 animate-scale-in">
             <div class="card-body p-4 p-md-5">
                 <div class="question-text mb-4 text-dark user-select-none">
-                    <h4 class="lh-base fw-bold">{{ question.question_text }}</h4>
+                    <h4 class="lh-base fw-bold">{{ question_text }}</h4>
                 </div>
 
                 <div class="options-list">
                     <div class="row g-3">
-                        {% for key, value in [('A', question.option_a), ('B', question.option_b), ('C',
-                        question.option_c), ('D', question.option_d)] %}
+                        {% for key, value in [('A', option_a), ('B', option_b), ('C',
+                        option_c), ('D', option_d)] %}
                         <div class="col-12">
                             <input type="radio" class="btn-check" name="answer" id="opt{{ key }}" value="{{ key }}" {%
                                 if answers.get(question.id|string)==key %}checked{% endif %}
@@ -54,7 +54,7 @@
         <div class="d-flex justify-content-between mt-4">
             {% if current > 1 %}
             <a href="{{ url_for('student_navigate', direction='prev') }}" class="btn btn-light px-4 py-3">
-                <i class="fas fa-arrow-left me-2"></i> Oldingi
+                <i class="fas fa-arrow-left me-2"></i> {{ _('Oldingi') }}
             </a>
             {% else %}
             <div></div>
@@ -62,12 +62,12 @@
 
             {% if current < total %} <a href="{{ url_for('student_navigate', direction='next') }}"
                 class="btn btn-primary px-4 py-3">
-                Keyingi <i class="fas fa-arrow-right ms-2"></i>
+                {{ _('Keyingi') }} <i class="fas fa-arrow-right ms-2"></i>
                 </a>
                 {% else %}
                 <a href="{{ url_for('student_navigate', direction='finish') }}" class="btn btn-success px-4 py-3"
-                    onclick="return confirm('Testni yakunlashga ishonchingiz komilmi?')">
-                    <i class="fas fa-check-circle me-2"></i> Yakunlash
+                    onclick="return confirm('{{ _('Testni yakunlashga ishonchingiz komilmi?') }}')">
+                    <i class="fas fa-check-circle me-2"></i> {{ _('Yakunlash') }}
                 </a>
                 {% endif %}
         </div>

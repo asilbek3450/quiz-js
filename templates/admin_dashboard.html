@@ -79,8 +79,8 @@
 <div class="container-fluid px-0">
     <div class="row mb-4">
         <div class="col-12">
-            <h2 class="fw-bold mb-1">Admin Dashboard</h2>
-            <p class="text-muted">Tizim holati va statistika</p>
+            <h2 class="fw-bold mb-1">{{ _('Admin Dashboard') }}</h2>
+            <p class="text-muted">{{ _('Tizim holati va statistika') }}</p>
         </div>
     </div>
 
@@ -92,9 +92,9 @@
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs fw-bold text-uppercase mb-1 opacity-75">Jami Savollar</div>
+                            <div class="text-xs fw-bold text-uppercase mb-1 opacity-75">{{ _('Jami Savollar') }}</div>
                             <div class="h3 mb-0 fw-bold">{{ total_questions }}</div>
-                            <div class="mt-2 text-xs opacity-75">Barcha fanlar</div>
+                            <div class="mt-2 text-xs opacity-75">{{ _('Barcha fanlar') }}</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-question-circle fa-2x"></i>
@@ -111,7 +111,7 @@
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs fw-bold text-uppercase mb-1 opacity-75">Fanlar</div>
+                            <div class="text-xs fw-bold text-uppercase mb-1 opacity-75">{{ _('Fanlar') }}</div>
                             <div class="h3 mb-0 fw-bold">{{ subjects|length }}</div>
                             <div class="mt-2 text-xs opacity-75">{{ subjects|map(attribute='name')|join(', ') }}</div>
                         </div>
@@ -130,9 +130,9 @@
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs fw-bold text-uppercase mb-1 opacity-75">Natijalar</div>
+                            <div class="text-xs fw-bold text-uppercase mb-1 opacity-75">{{ _('Natijalar') }}</div>
                             <div class="h3 mb-0 fw-bold">{{ total_results }}</div>
-                            <div class="mt-2 text-xs opacity-75">Topshirilgan testlar</div>
+                            <div class="mt-2 text-xs opacity-75">{{ _('Topshirilgan testlar') }}</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-chart-line fa-2x"></i>
@@ -149,9 +149,9 @@
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs fw-bold text-uppercase mb-1 opacity-75">Oxirgi Faollik</div>
+                            <div class="text-xs fw-bold text-uppercase mb-1 opacity-75">{{ _('Oxirgi Faollik') }}</div>
                             <div class="h3 mb-0 fw-bold">{{ recent_results|length }}</div>
-                            <div class="mt-2 text-xs opacity-75">So'nggi testlar</div>
+                            <div class="mt-2 text-xs opacity-75">{{ _('So\'nggi testlar') }}</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-history fa-2x"></i>
@@ -168,7 +168,7 @@
         <div class="col-lg-8 mb-4">
             <div class="card shadow-sm h-100">
                 <div class="card-header py-3 bg-white d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 fw-bold text-primary">Testlar Statistikasi</h6>
+                    <h6 class="m-0 fw-bold text-primary">{{ _('Testlar Statistikasi') }}</h6>
                 </div>
                 <div class="card-body">
                     <div class="chart-container">
@@ -180,7 +180,7 @@
         <div class="col-lg-4 mb-4">
             <div class="card shadow-sm h-100">
                 <div class="card-header py-3 bg-white d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 fw-bold text-primary">Savollar Taqsimoti</h6>
+                    <h6 class="m-0 fw-bold text-primary">{{ _('Savollar Taqsimoti') }}</h6>
                 </div>
                 <div class="card-body">
                     <div class="chart-container">
@@ -196,21 +196,22 @@
         <div class="col-12">
             <div class="card shadow-sm">
                 <div class="card-header py-3 bg-white border-0 d-flex justify-content-between align-items-center">
-                    <h5 class="m-0 fw-bold text-dark"><i class="fas fa-table me-2 text-muted"></i>Oxirgi Test Natijalari
+                    <h5 class="m-0 fw-bold text-dark"><i class="fas fa-table me-2 text-muted"></i>{{ _('Oxirgi Test
+                        Natijalari') }}
                     </h5>
-                    <a href="{{ url_for('admin_results') }}"
-                        class="btn btn-sm btn-outline-primary rounded-pill px-4">Barchasi</a>
+                    <a href="{{ url_for('admin_results') }}" class="btn btn-sm btn-outline-primary rounded-pill px-4">{{
+                        _('Barchasi') }}</a>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover table-custom align-middle mb-0">
                         <thead class="bg-light text-muted">
                             <tr>
-                                <th class="ps-4">O'quvchi</th>
-                                <th>Fan</th>
-                                <th>Sinf</th>
-                                <th>Ball</th>
-                                <th>Foiz</th>
-                                <th>Sana</th>
+                                <th class="ps-4">{{ _('O\'quvchi') }}</th>
+                                <th>{{ _('Fan') }}</th>
+                                <th>{{ _('Sinf') }}</th>
+                                <th>{{ _('Ball') }}</th>
+                                <th>{{ _('Foiz') }}</th>
+                                <th>{{ _('Sana') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -234,16 +235,16 @@
                                 </td>
                                 <td>
                                     {% if result.percentage >= 85 %}
-                                    <span class="badge bg-success rounded-pill px-3">A'lo ({{
+                                    <span class="badge bg-success rounded-pill px-3">{{ _('A\'lo') }} ({{
                                         "%.0f"|format(result.percentage) }}%)</span>
                                     {% elif result.percentage >= 70 %}
-                                    <span class="badge bg-info rounded-pill px-3">Yaxshi ({{
+                                    <span class="badge bg-info rounded-pill px-3">{{ _('Yaxshi') }} ({{
                                         "%.0f"|format(result.percentage) }}%)</span>
                                     {% elif result.percentage >= 60 %}
-                                    <span class="badge bg-warning rounded-pill px-3">Qoniqarli ({{
+                                    <span class="badge bg-warning rounded-pill px-3">{{ _('Qoniqarli') }} ({{
                                         "%.0f"|format(result.percentage) }}%)</span>
                                     {% else %}
-                                    <span class="badge bg-danger rounded-pill px-3">Yomon ({{
+                                    <span class="badge bg-danger rounded-pill px-3">{{ _('Yomon') }} ({{
                                         "%.0f"|format(result.percentage) }}%)</span>
                                     {% endif %}
                                 </td>
@@ -254,7 +255,8 @@
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="6" class="text-center py-5 text-muted">Hozircha natijalar mavjud emas</td>
+                                <td colspan="6" class="text-center py-5 text-muted">{{ _('Hozircha natijalar mavjud
+                                    emas') }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -283,7 +285,7 @@
         data: {
             labels: subjects,
             datasets: [{
-                label: 'Topshirilgan Testlar',
+                label: '{{ _('Topshirilgan Testlar') }}',
                 data: resultCounts,
                 backgroundColor: '#4e73df',
                 hoverBackgroundColor: '#2e59d9',

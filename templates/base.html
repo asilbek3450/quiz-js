@@ -113,6 +113,7 @@
             font-size: 1.5rem;
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
             letter-spacing: -0.5px;
         }
@@ -278,7 +279,89 @@
             background: #94a3b8;
         }
 
+        /* Language Switcher */
+        .lang-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .lang-btn {
+            background: rgba(13, 148, 16, 0.05);
+            border: 1px solid rgba(13, 148, 16, 0.1);
+            color: var(--primary);
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .lang-btn:hover {
+            background: rgba(13, 148, 16, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .lang-menu {
+            position: absolute;
+            top: 120%;
+            right: 0;
+            background: white;
+            min-width: 160px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 8px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 1000;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .lang-dropdown:hover .lang-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .lang-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            color: var(--dark);
+            text-decoration: none;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .lang-item:hover {
+            background: rgba(13, 148, 16, 0.08);
+            color: var(--primary);
+            padding-left: 18px;
+        }
+
+        .lang-item.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .flag-icon {
+            width: 20px;
+            height: 15px;
+            object-fit: cover;
+            border-radius: 2px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
         @media (max-width: 768px) {
+
+            /* ... existing media query code ... */
             .navbar-collapse {
                 background: white;
                 border-radius: 20px;
@@ -305,39 +388,102 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto gap-2">
+                <ul class="navbar-nav ms-auto gap-2 align-items-center">
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('index') }}">
-                            <i class="fas fa-home me-1"></i> Bosh sahifa
+                            <i class="fas fa-home me-1"></i> {{ _('Bosh sahifa') }}
                         </a>
                     </li>
                     {% if session.admin_id %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
-                            <i class="fas fa-chart-pie me-1"></i> Dashboard
+                            <i class="fas fa-chart-pie me-1"></i> {{ _('Dashboard') }}
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('admin_subjects') }}">
-                            <i class="fas fa-book me-1"></i> Fanlar
+                            <i class="fas fa-book me-1"></i> {{ _('Fanlar') }}
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('admin_questions') }}">
-                            <i class="fas fa-question-circle me-1"></i> Savollar
+                            <i class="fas fa-question-circle me-1"></i> {{ _('Savollar') }}
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('admin_results') }}">
-                            <i class="fas fa-list-alt me-1"></i> Natijalar
+                            <i class="fas fa-list-alt me-1"></i> {{ _('Natijalar') }}
                         </a>
                     </li>
+
+                    <!-- Language Dropdown -->
+                    <li class="nav-item ms-lg-3">
+                        <div class="lang-dropdown">
+                            <div class="lang-btn">
+                                {% set current_lang = get_locale() %}
+                                {% if current_lang == 'uz' %}
+                                <img src="https://flagcdn.com/w40/uz.png" class="flag-icon" alt="UZ"> UZ
+                                {% elif current_lang == 'ru' %}
+                                <img src="https://flagcdn.com/w40/ru.png" class="flag-icon" alt="RU"> RU
+                                {% else %}
+                                <img src="https://flagcdn.com/w40/gb.png" class="flag-icon" alt="EN"> EN
+                                {% endif %}
+                                <i class="fas fa-chevron-down small"></i>
+                            </div>
+                            <div class="lang-menu">
+                                <a href="{{ url_for('set_language', lang='uz') }}"
+                                    class="lang-item {{ 'active' if current_lang == 'uz' else '' }}">
+                                    <img src="https://flagcdn.com/w40/uz.png" class="flag-icon" alt="UZ"> O'zbekcha
+                                </a>
+                                <a href="{{ url_for('set_language', lang='ru') }}"
+                                    class="lang-item {{ 'active' if current_lang == 'ru' else '' }}">
+                                    <img src="https://flagcdn.com/w40/ru.png" class="flag-icon" alt="RU"> Русский
+                                </a>
+                                <a href="{{ url_for('set_language', lang='en') }}"
+                                    class="lang-item {{ 'active' if current_lang == 'en' else '' }}">
+                                    <img src="https://flagcdn.com/w40/gb.png" class="flag-icon" alt="EN"> English
+                                </a>
+                            </div>
+                        </div>
+                    </li>
+
                     <li class="nav-item">
                         <a class="btn btn-danger text-white px-4 py-2 ms-2" href="{{ url_for('admin_logout') }}">
-                            <i class="fas fa-sign-out-alt me-1"></i> Chiqish
+                            <i class="fas fa-sign-out-alt me-1"></i> {{ _('Chiqish') }}
                         </a>
                     </li>
                     {% else %}
+                    <!-- Language Dropdown for Guest -->
+                    <li class="nav-item ms-lg-3">
+                        <div class="lang-dropdown">
+                            <div class="lang-btn">
+                                {% set current_lang = get_locale() %}
+                                {% if current_lang == 'uz' %}
+                                <img src="https://flagcdn.com/w40/uz.png" class="flag-icon" alt="UZ"> UZ
+                                {% elif current_lang == 'ru' %}
+                                <img src="https://flagcdn.com/w40/ru.png" class="flag-icon" alt="RU"> RU
+                                {% else %}
+                                <img src="https://flagcdn.com/w40/gb.png" class="flag-icon" alt="EN"> EN
+                                {% endif %}
+                                <i class="fas fa-chevron-down small"></i>
+                            </div>
+                            <div class="lang-menu">
+                                <a href="{{ url_for('set_language', lang='uz') }}"
+                                    class="lang-item {{ 'active' if current_lang == 'uz' else '' }}">
+                                    <img src="https://flagcdn.com/w40/uz.png" class="flag-icon" alt="UZ"> O'zbekcha
+                                </a>
+                                <a href="{{ url_for('set_language', lang='ru') }}"
+                                    class="lang-item {{ 'active' if current_lang == 'ru' else '' }}">
+                                    <img src="https://flagcdn.com/w40/ru.png" class="flag-icon" alt="RU"> Русский
+                                </a>
+                                <a href="{{ url_for('set_language', lang='en') }}"
+                                    class="lang-item {{ 'active' if current_lang == 'en' else '' }}">
+                                    <img src="https://flagcdn.com/w40/gb.png" class="flag-icon" alt="EN"> English
+                                </a>
+                            </div>
+                        </div>
+                    </li>
+
                     <li class="nav-item">
                         <a class="btn btn-primary text-white px-4 py-2 ms-2" href="{{ url_for('admin_login') }}">
                             <i class="fas fa-user-shield me-1"></i> Admin

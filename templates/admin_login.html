@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Admin Kirish{% endblock %}
+{% block title %}{{ _('Admin Kirish') }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -8,19 +8,19 @@
         max-width: 450px;
         margin: 50px auto;
     }
-    
+
     .login-card {
         background: white;
         padding: 50px;
         border-radius: 20px;
-        box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
     }
-    
+
     .login-header {
         text-align: center;
         margin-bottom: 40px;
     }
-    
+
     .login-icon {
         font-size: 4rem;
         background: linear-gradient(135deg, #10b981, #06b6d4);
@@ -28,22 +28,22 @@
         -webkit-text-fill-color: transparent;
         margin-bottom: 20px;
     }
-    
+
     .login-title {
         font-size: 2rem;
         font-weight: bold;
         color: #1e293b;
         margin-bottom: 10px;
     }
-    
+
     .login-subtitle {
         color: #64748b;
     }
-    
+
     .input-group {
         margin-bottom: 25px;
     }
-    
+
     .input-icon {
         position: absolute;
         left: 20px;
@@ -52,14 +52,15 @@
         color: #94a3b8;
         font-size: 1.2rem;
     }
-    .form-control{
+
+    .form-control {
         width: 350px;
     }
-    
+
     .form-control-icon {
         padding-left: 50px;
     }
-    
+
     .default-credentials {
         background: #f8fafc;
         border: 1px solid #e2e8f0;
@@ -68,7 +69,7 @@
         margin-top: 20px;
         font-size: 0.9rem;
     }
-    
+
     .default-credentials strong {
         color: #475569;
     }
@@ -82,37 +83,37 @@
             <div class="login-icon">
                 <i class="fas fa-user-shield"></i>
             </div>
-            <h2 class="login-title">Admin Panel</h2>
-            <p class="login-subtitle">Tizimga kirish</p>
+            <h2 class="login-title">{{ _('Admin Panel') }}</h2>
+            <p class="login-subtitle">{{ _('Tizimga kirish') }}</p>
         </div>
-        
+
         <form method="POST">
             <div class="input-group">
                 <div style="position: relative;">
                     <i class="fas fa-user input-icon"></i>
-                    <input type="text" class="form-control form-control-icon" 
-                           name="username" placeholder="Login" required autofocus>
+                    <input type="text" class="form-control form-control-icon" name="username"
+                        placeholder="{{ _('Login') }}" required autofocus>
                 </div>
             </div>
-            
+
             <div class="input-group">
                 <div style="position: relative;">
                     <i class="fas fa-lock input-icon"></i>
-                    <input type="password" class="form-control form-control-icon" 
-                           name="password" placeholder="Parol" required>
+                    <input type="password" class="form-control form-control-icon" name="password"
+                        placeholder="{{ _('Parol') }}" required>
                 </div>
             </div>
-            
+
             <div class="d-grid gap-2">
                 <button type="submit" class="btn btn-success btn-lg">
-                    <i class="fas fa-sign-in-alt"></i> Kirish
+                    <i class="fas fa-sign-in-alt"></i> {{ _('Kirish') }}
                 </button>
                 <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left"></i> Orqaga
+                    <i class="fas fa-arrow-left"></i> {{ _('Orqaga') }}
                 </a>
             </div>
         </form>
-        
+
         <!-- <div class="default-credentials">
             <strong>Standart kirish ma'lumotlari:</strong><br>
             Login: <code>admin</code><br>

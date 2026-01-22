@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Test natijalari{% endblock %}
+{% block title %}{{ _('Test natijalari') }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -211,20 +211,20 @@
         </div>
         {% endif %}
 
-        <h1 class="result-title">Test yakunlandi!</h1>
-        <p class="result-subtitle">Sizning natijalaringiz</p>
+        <h1 class="result-title">{{ _('Test yakunlandi!') }}</h1>
+        <p class="result-subtitle">{{ _('Sizning natijalaringiz') }}</p>
 
         <div class="score-display">
             <div class="score-item">
-                <div class="score-label">To'plangan ball</div>
+                <div class="score-label">{{ _('To\'plangan ball') }}</div>
                 <div class="score-value">{{ score }}</div>
             </div>
             <div class="score-item">
-                <div class="score-label">Maksimal ball</div>
+                <div class="score-label">{{ _('Maksimal ball') }}</div>
                 <div class="score-value">{{ total }}</div>
             </div>
             <div class="score-item">
-                <div class="score-label">Foiz</div>
+                <div class="score-label">{{ _('Foiz') }}</div>
                 <div class="score-value">{{ percentage|int }}%</div>
             </div>
         </div>
@@ -242,7 +242,7 @@
 
     <div class="detailed-results">
         <h3 class="mb-4">
-            <i class="fas fa-list-check"></i> Batafsil natijalar
+            <i class="fas fa-list-check"></i> {{ _('Batafsil natijalar') }}
         </h3>
 
 
@@ -254,23 +254,23 @@
                 {% else %}
                 <i class="fas fa-times-circle text-danger"></i>
                 {% endif %}
-                Savol {{ loop.index }}
+                {{ _('Savol') }} {{ loop.index }}
             </div>
             <div class="question-text">{{ result.question }}</div>
             <div class="answer-info">
                 {% if result.user_answer %}
                 <span class="answer-badge {% if result.is_correct %}badge-correct{% else %}badge-incorrect{% endif %}">
-                    Sizning javobingiz: {{ result.user_answer }}
+                    {{ _('Sizning javobingiz') }}: {{ result.user_answer }}
                 </span>
                 {% else %}
                 <span class="answer-badge badge-incorrect">
-                    Javob berilmagan
+                    {{ _('Javob berilmagan') }}
                 </span>
                 {% endif %}
 
                 {% if not result.is_correct %}
                 <span class="answer-badge badge-info">
-                    To'g'ri javob: {{ result.correct_answer }}
+                    {{ _('To\'g\'ri javob') }}: {{ result.correct_answer }}
                 </span>
                 {% endif %}
             </div>
@@ -280,10 +280,10 @@
 
     <div class="text-center mt-4">
         <a href="{{ url_for('student_start') }}" class="btn btn-primary btn-lg me-2">
-            <i class="fas fa-redo"></i> Yana test topshirish
+            <i class="fas fa-redo"></i> {{ _('Yana test topshirish') }}
         </a>
         <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-lg">
-            <i class="fas fa-home"></i> Bosh sahifa
+            <i class="fas fa-home"></i> {{ _('Bosh sahifa') }}
         </a>
     </div>
 </div>

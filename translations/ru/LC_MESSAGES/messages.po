@@ -1,0 +1,790 @@
+# Russian translations for PROJECT.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-01-22 11:15+0500\n"
+"PO-Revision-Date: 2026-01-22 11:15+0500\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ru\n"
+"Language-Team: ru <LL@li.org>\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: app.py:100
+msgid "A'lo (5)"
+msgstr "Отлично (5)"
+
+#: app.py:102
+msgid "Yaxshi (4)"
+msgstr "Хорошо (4)"
+
+#: app.py:104
+msgid "Qoniqarli (3)"
+msgstr "Удовлетворительно (3)"
+
+#: app.py:106
+msgid "Qoniqarsiz (2)"
+msgstr "Неудовлетворительно (2)"
+
+#: app.py:219
+#, python-brace-format
+msgid "Kechirasiz, bu fan va chorak uchun yetarli savollar yo'q ({} ta mavjud)"
+msgstr ""
+"К сожалению, по этому предмету и четверти недостаточно вопросов (доступно"
+" {})"
+
+#: app.py:425
+#, python-brace-format
+msgid "Xush kelibsiz {}!"
+msgstr "Добро пожаловать, {}!"
+
+#: app.py:428
+msgid "Login yoki parol noto'g'ri"
+msgstr "Неверный логин или пароль"
+
+#: app.py:436
+msgid "Tizimdan chiqdingiz"
+msgstr "Вы вышли из системы"
+
+#: app.py:533
+msgid "Savol muvaffaqiyatli qo'shildi va tarjima qilindi"
+msgstr "Вопрос успешно добавлен и переведен"
+
+#: app.py:576
+msgid "Savol muvaffaqiyatli o'zgartirildi"
+msgstr "Вопрос успешно изменен"
+
+#: app.py:590
+msgid "Savol o'chirildi"
+msgstr "Вопрос удален"
+
+#: app.py:601
+msgid "Natija muvaffaqiyatli o'chirildi"
+msgstr "Результат успешно удален"
+
+#: app.py:626
+#, python-brace-format
+msgid "{} ta natija o'chirildi"
+msgstr "{} результатов удалено"
+
+#: app.py:628
+#, python-brace-format
+msgid "Xatolik yuz berdi: {}"
+msgstr "Произошла ошибка: {}"
+
+#: app.py:681
+msgid "Fan muvaffaqiyatli qo'shildi va tarjima qilindi"
+msgstr "Предмет успешно добавлен и переведен"
+
+#: app.py:701
+msgid "Fan muvaffaqiyatli o'zgartirildi"
+msgstr "Предмет успешно изменен"
+
+#: app.py:715
+msgid "Bu fanga tegishli savollar yoki natijalar mavjud. Oldin ularni o'chiring."
+msgstr ""
+"Есть вопросы или результаты, связанные с этим предметом. Сначала удалите "
+"их."
+
+#: app.py:720
+msgid "Fan o'chirildi"
+msgstr "Предмет удален"
+
+#: templates/admin_dashboard.html:82
+msgid "Admin Dashboard"
+msgstr "Панель администратора"
+
+#: templates/admin_dashboard.html:83
+msgid "Tizim holati va statistika"
+msgstr "Состояние системы и статистика"
+
+#: templates/admin_dashboard.html:95
+msgid "Jami Savollar"
+msgstr "Всего вопросов"
+
+#: templates/admin_dashboard.html:97
+msgid "Barcha fanlar"
+msgstr "Все предметы"
+
+#: templates/admin_dashboard.html:114 templates/base.html:405
+msgid "Fanlar"
+msgstr "Предметы"
+
+#: templates/admin_dashboard.html:133 templates/admin_subjects.html:26
+#: templates/base.html:415
+msgid "Natijalar"
+msgstr "Результаты"
+
+#: templates/admin_dashboard.html:135
+msgid "Topshirilgan testlar"
+msgstr "Сданные тесты"
+
+#: templates/admin_dashboard.html:152
+msgid "Oxirgi Faollik"
+msgstr "Последняя активность"
+
+#: templates/admin_dashboard.html:154
+msgid "So'nggi testlar"
+msgstr "Последние тесты"
+
+#: templates/admin_dashboard.html:171
+msgid "Testlar Statistikasi"
+msgstr "Статистика тестов"
+
+#: templates/admin_dashboard.html:183
+msgid "Savollar Taqsimoti"
+msgstr "Распределение вопросов"
+
+#: templates/admin_dashboard.html:199
+msgid ""
+"Oxirgi Test\n"
+"                        Natijalari"
+msgstr "Результаты последних тестов"
+
+#: templates/admin_dashboard.html:203 templates/admin_questions.html:29
+#: templates/admin_questions.html:43 templates/admin_questions.html:56
+#: templates/admin_results.html:36 templates/admin_results.html:53
+msgid "Barchasi"
+msgstr "Все"
+
+#: templates/admin_dashboard.html:209 templates/admin_results.html:86
+#: templates/index.html:24
+msgid "O'quvchi"
+msgstr "Ученик"
+
+#: templates/admin_dashboard.html:210 templates/admin_question_form.html:24
+#: templates/admin_questions.html:26 templates/admin_questions.html:88
+#: templates/admin_results.html:21 templates/admin_results.html:87
+#: templates/student_start.html:63
+msgid "Fan"
+msgstr "Предмет"
+
+#: templates/admin_dashboard.html:211 templates/admin_question_form.html:37
+#: templates/admin_questions.html:40 templates/admin_questions.html:89
+#: templates/admin_questions.html:213 templates/admin_results.html:34
+#: templates/admin_results.html:88 templates/student_start.html:28
+msgid "Sinf"
+msgstr "Класс"
+
+#: templates/admin_dashboard.html:212 templates/admin_results.html:90
+msgid "Ball"
+msgstr "Балл"
+
+#: templates/admin_dashboard.html:213 templates/admin_results.html:91
+#: templates/student_result.html:227
+msgid "Foiz"
+msgstr "Процент"
+
+#: templates/admin_dashboard.html:214 templates/admin_results.html:93
+msgid "Sana"
+msgstr "Дата"
+
+#: templates/admin_dashboard.html:238
+#, fuzzy
+msgid "A'lo"
+msgstr "Отлично (5)"
+
+#: templates/admin_dashboard.html:241
+#, fuzzy
+msgid "Yaxshi"
+msgstr "Зеленый"
+
+#: templates/admin_dashboard.html:244
+#, fuzzy
+msgid "Qoniqarli"
+msgstr "Удовлетворительно (3)"
+
+#: templates/admin_dashboard.html:247
+msgid "Yomon"
+msgstr "Плохо"
+
+#: templates/admin_dashboard.html:258
+msgid ""
+"Hozircha natijalar mavjud\n"
+"                                    emas"
+msgstr "Пока нет результатов"
+
+#: templates/admin_dashboard.html:288
+#, fuzzy
+msgid "Topshirilgan Testlar"
+msgstr "Сданные тесты"
+
+#: templates/admin_login.html:3
+msgid "Admin Kirish"
+msgstr "Вход для администратора"
+
+#: templates/admin_login.html:86
+msgid "Admin Panel"
+msgstr "Панель администратора"
+
+#: templates/admin_login.html:87
+msgid "Tizimga kirish"
+msgstr "Вход в систему"
+
+#: templates/admin_login.html:95
+msgid "Login"
+msgstr "Логин"
+
+#: templates/admin_login.html:103
+msgid "Parol"
+msgstr "Пароль"
+
+#: templates/admin_login.html:109 templates/index.html:47
+msgid "Kirish"
+msgstr "Войти"
+
+#: templates/admin_login.html:112
+msgid "Orqaga"
+msgstr "Назад"
+
+#: templates/admin_question_form.html:3 templates/admin_question_form.html:15
+msgid "Savolni tahrirlash"
+msgstr "Редактирование вопроса"
+
+#: templates/admin_question_form.html:3 templates/admin_questions.html:15
+msgid "Yangi savol"
+msgstr "Новый вопрос"
+
+#: templates/admin_question_form.html:15
+msgid "Yangi savol qo'shish"
+msgstr "Добавить новый вопрос"
+
+#: templates/admin_question_form.html:42 templates/admin_questions.html:46
+#: templates/admin_results.html:37 templates/admin_results.html:39
+#: templates/admin_results.html:41 templates/admin_results.html:43
+#: templates/admin_results.html:45 templates/admin_subjects.html:45
+#: templates/student_start.html:31 templates/student_start.html:32
+#: templates/student_start.html:33 templates/student_start.html:34
+#: templates/student_start.html:35 templates/student_start.html:36
+#: templates/student_start.html:37
+msgid "sinf"
+msgstr "класс"
+
+#: templates/admin_question_form.html:49 templates/admin_questions.html:53
+#: templates/admin_questions.html:90 templates/admin_results.html:51
+#: templates/admin_results.html:89 templates/student_start.html:50
+msgid "Chorak"
+msgstr "Четверть"
+
+#: templates/admin_question_form.html:55 templates/admin_questions.html:59
+#: templates/admin_results.html:54 templates/admin_results.html:56
+#: templates/admin_results.html:58 templates/admin_results.html:60
+msgid "chorak"
+msgstr "четверть"
+
+#: templates/admin_question_form.html:64
+msgid "Savol matni"
+msgstr "Текст вопроса"
+
+#: templates/admin_question_form.html:67
+msgid "Savolni kiriting..."
+msgstr "Введите вопрос..."
+
+#: templates/admin_question_form.html:73
+msgid "Variant A"
+msgstr "Вариант A"
+
+#: templates/admin_question_form.html:76
+msgid "A varianti..."
+msgstr "Вариант A..."
+
+#: templates/admin_question_form.html:81
+msgid "Variant B"
+msgstr "Вариант B"
+
+#: templates/admin_question_form.html:84
+msgid "B varianti..."
+msgstr "Вариант B..."
+
+#: templates/admin_question_form.html:89
+msgid "Variant C"
+msgstr "Вариант C"
+
+#: templates/admin_question_form.html:92
+msgid "C varianti..."
+msgstr "Вариант C..."
+
+#: templates/admin_question_form.html:97
+msgid "Variant D"
+msgstr "Вариант D"
+
+#: templates/admin_question_form.html:100
+msgid "D varianti..."
+msgstr "Вариант D..."
+
+#: templates/admin_question_form.html:107 templates/student_result.html:273
+msgid "To'g'ri javob"
+msgstr "Правильный ответ"
+
+#: templates/admin_question_form.html:124
+msgid "O'zgarishlarni saqlash"
+msgstr "Сохранить изменения"
+
+#: templates/admin_question_form.html:124
+msgid "Savolni qo'shish"
+msgstr "Добавить вопрос"
+
+#: templates/admin_question_form.html:128 templates/admin_results.html:225
+#: templates/admin_subject_form.html:50
+msgid "Bekor qilish"
+msgstr "Отмена"
+
+#: templates/admin_questions.html:9
+msgid "Savollar boshqaruvi"
+msgstr "Управление вопросами"
+
+#: templates/admin_questions.html:11
+msgid "Test savollarini yaratish va boshqarish bo'limi"
+msgstr "Раздел создания и управления тестовыми вопросами"
+
+#: templates/admin_questions.html:70
+msgid "Ko'rsatilmoqda"
+msgstr "Показано"
+
+#: templates/admin_questions.html:70 templates/admin_questions.html:74
+msgid "ta savol"
+msgstr "вопросов"
+
+#: templates/admin_questions.html:71
+msgid "sahifa"
+msgstr "страница"
+
+#: templates/admin_questions.html:72
+msgid "tadan"
+msgstr "из"
+
+#: templates/admin_questions.html:74 templates/admin_questions.html:218
+#: templates/admin_results.html:72
+msgid "Jami"
+msgstr "Всего"
+
+#: templates/admin_questions.html:76
+msgid "filtrlangan"
+msgstr "отфильтровано"
+
+#: templates/admin_questions.html:87 templates/student_result.html:257
+#: templates/student_test.html:9
+msgid "Savol"
+msgstr "Вопрос"
+
+#: templates/admin_questions.html:91
+msgid "To'g'ri"
+msgstr "Правильно"
+
+#: templates/admin_questions.html:92 templates/admin_results.html:94
+#: templates/admin_subjects.html:27
+msgid "Amallar"
+msgstr "Действия"
+
+#: templates/admin_questions.html:126
+msgid "Tahrirlash"
+msgstr "Редактировать"
+
+#: templates/admin_questions.html:131
+msgid "Savolni o'chirishni tasdiqlaysizmi?"
+msgstr "Вы уверены, что хотите удалить вопрос?"
+
+#: templates/admin_questions.html:132 templates/admin_results.html:227
+msgid "O'chirish"
+msgstr "Удалить"
+
+#: templates/admin_questions.html:151 templates/student_test.html:57
+msgid "Oldingi"
+msgstr "Назад"
+
+#: templates/admin_questions.html:176 templates/student_test.html:65
+msgid "Keyingi"
+msgstr "Вперед"
+
+#: templates/admin_questions.html:185
+msgid "Savollar topilmadi"
+msgstr "Вопросы не найдены"
+
+#: templates/admin_questions.html:186
+msgid "Tanlangan filtrlar bo'yicha savollar mavjud emas."
+msgstr "По выбранным фильтрам вопросов нет."
+
+#: templates/admin_questions.html:188
+msgid "Birinchi savolni qo'shish"
+msgstr "Добавить первый вопрос"
+
+#: templates/admin_questions.html:201
+msgid "Savollar statistikasi"
+msgstr "Статистика вопросов"
+
+#: templates/admin_questions.html:214 templates/admin_questions.html:215
+#: templates/admin_questions.html:216 templates/admin_questions.html:217
+msgid "ch"
+msgstr "ч"
+
+#: templates/admin_questions.html:248
+msgid "Eslatma"
+msgstr "Примечание"
+
+#: templates/admin_questions.html:249
+msgid "Yashil"
+msgstr "Зеленый"
+
+#: templates/admin_questions.html:249
+msgid "savol (yetarli)"
+msgstr "вопросов (достаточно)"
+
+#: templates/admin_questions.html:250
+msgid "Sariq"
+msgstr "Желтый"
+
+#: templates/admin_questions.html:250
+msgid "savol"
+msgstr "вопросов"
+
+#: templates/admin_questions.html:251
+msgid "Qizil"
+msgstr "Красный"
+
+#: templates/admin_questions.html:251
+msgid "dan kam savol"
+msgstr "менее 20 вопросов"
+
+#: templates/admin_results.html:9 templates/student_result.html:3
+msgid "Test natijalari"
+msgstr "Результаты тестов"
+
+#: templates/admin_results.html:10
+msgid "O'quvchilarning test natijalari va statistikasi"
+msgstr "Результаты и статистика тестов учеников"
+
+#: templates/admin_results.html:72
+msgid "ta natija"
+msgstr "результатов"
+
+#: templates/admin_results.html:76 templates/admin_results.html:210
+msgid "Kun bo'yicha o'chirish"
+msgstr "Удалить по дате"
+
+#: templates/admin_results.html:92
+msgid "Baho"
+msgstr "Оценка"
+
+#: templates/admin_results.html:143
+msgid "Bu natijani o'chirishni tasdiqlaysizmi?"
+msgstr "Вы подтверждаете удаление этого результата?"
+
+#: templates/admin_results.html:157
+msgid "Statistika"
+msgstr "Статистика"
+
+#: templates/admin_results.html:163
+msgid "Jami testlar"
+msgstr "Всего тестов"
+
+#: templates/admin_results.html:170
+msgid "A'lo baholar"
+msgstr "Отличные оценки"
+
+#: templates/admin_results.html:177
+msgid "O'rtacha natija"
+msgstr "Средний результат"
+
+#: templates/admin_results.html:184
+msgid "O'rtacha ball"
+msgstr "Средний балл"
+
+#: templates/admin_results.html:194
+msgid "Natijalar topilmadi"
+msgstr "Результаты не найдены"
+
+#: templates/admin_results.html:216
+msgid "Sanani tanlang"
+msgstr "Выберите дату"
+
+#: templates/admin_results.html:221
+msgid ""
+"Diqqat! Tanlangan kundagi barcha natijalar o'chiriladi va qayta "
+"tiklanmaydi."
+msgstr "Внимание! Все результаты за выбранную дату будут удалены безвозвратно."
+
+#: templates/admin_subject_form.html:12
+msgid "Fanni tahrirlash"
+msgstr "Редактирование предмета"
+
+#: templates/admin_subject_form.html:12
+msgid ""
+"Yangi fan\n"
+"                    qo'shish"
+msgstr "Добавить новый предмет"
+
+#: templates/admin_subject_form.html:15
+msgid "ma'lumotlarini o'zgartirish"
+msgstr "изменение данных"
+
+#: templates/admin_subject_form.html:15
+msgid ""
+"Tizimga\n"
+"                    yangi fan kiritish"
+msgstr "Добавление нового предмета в систему"
+
+#: templates/admin_subject_form.html:23 templates/admin_subjects.html:23
+msgid "Fan nomi"
+msgstr "Название предмета"
+
+#: templates/admin_subject_form.html:29
+msgid "Masalan: Informatika"
+msgstr "Например: Информатика"
+
+#: templates/admin_subject_form.html:34
+msgid ""
+"Sinflar\n"
+"                            (vergul bilan)"
+msgstr "Классы (через запятую)"
+
+#: templates/admin_subject_form.html:40
+msgid "Masalan: 5,6,7,8"
+msgstr "Например: 5,6,7,8"
+
+#: templates/admin_subject_form.html:42
+msgid ""
+"Sinflarni vergul bilan\n"
+"                            ajratib yozing (bo'sh joylarsiz)"
+msgstr "Пишите классы через запятую (без пробелов)"
+
+#: templates/admin_subject_form.html:48
+msgid "Saqlash"
+msgstr "Сохранить"
+
+#: templates/admin_subjects.html:6
+msgid "Fanlar ro'yxati"
+msgstr "Список предметов"
+
+#: templates/admin_subjects.html:7
+msgid "Tizimdagi mavjud fanlar va ularning sinflari"
+msgstr "Доступные предметы в системе и их классы"
+
+#: templates/admin_subjects.html:11
+msgid "Yangi fan qo'shish"
+msgstr "Добавить новый предмет"
+
+#: templates/admin_subjects.html:24
+msgid "Sinflar"
+msgstr "Классы"
+
+#: templates/admin_subjects.html:25
+msgid "Savollar soni"
+msgstr "Количество вопросов"
+
+#: templates/admin_subjects.html:50 templates/admin_subjects.html:54
+msgid "ta"
+msgstr " "
+
+#: templates/admin_subjects.html:64
+msgid ""
+"Haqiqatan ham bu fanni o'chirmoqchimisiz? Unga bog'liq barcha ma'lumotlar"
+" tekshiriladi."
+msgstr ""
+"Вы действительно хотите удалить этот предмет? Все связанные данные будут "
+"проверены."
+
+#: templates/admin_subjects.html:74
+msgid "Hozircha fanlar mavjud emas"
+msgstr "Пока нет предметов"
+
+#: templates/admin_subjects.html:75
+msgid ""
+"Birinchi\n"
+"                                fanni qo'shish"
+msgstr "Добавить первый предмет"
+
+#: templates/base.html:394 templates/student_result.html:286
+msgid "Bosh sahifa"
+msgstr "Главная"
+
+#: templates/base.html:400
+msgid "Dashboard"
+msgstr "Панель"
+
+#: templates/base.html:410
+msgid "Savollar"
+msgstr "Вопросы"
+
+#: templates/base.html:452
+msgid "Chiqish"
+msgstr "Выход"
+
+#: templates/index.html:9
+msgid "Test topshirish"
+msgstr "Сдача тестов"
+
+#: templates/index.html:9
+msgid "Platformasi"
+msgstr "Платформа"
+
+#: templates/index.html:12
+msgid "Informatika va zamonaviy texnologiyalar bo'yicha"
+msgstr "Интерактивные тесты по информатике и современным технологиям"
+
+#: templates/index.html:12
+msgid "interaktiv test sinovlari"
+msgstr ""
+
+#: templates/index.html:26
+msgid "Test topshirish va bilimlarni sinash uchun maxsus bo'lim."
+msgstr "Специальный раздел для сдачи тестов и проверки знаний."
+
+#: templates/index.html:27
+msgid "20 ta savol, avtomatik natija."
+msgstr "20 вопросов, автоматический результат."
+
+#: templates/index.html:30
+msgid "Boshlash"
+msgstr "Начать"
+
+#: templates/index.html:42
+msgid "O'qituvchi"
+msgstr "Учитель"
+
+#: templates/index.html:44
+msgid ""
+"Tizimni boshqarish, savollar kiritish va natijalarni nazorat qilish "
+"bo'limi."
+msgstr "Раздел управления системой, ввода вопросов и контроля результатов."
+
+#: templates/index.html:56
+msgid "Aqlli Tizim"
+msgstr "Умная система"
+
+#: templates/index.html:56
+msgid "Har bir urinishda savollar bazasidan tasodifiy 20 ta savol tanlab olinadi."
+msgstr "В каждой попытке случайным образом выбираются 20 вопросов из базы вопросов."
+
+#: templates/index.html:57
+msgid "Aniq Hisob"
+msgstr "Точный расчет"
+
+#: templates/index.html:57
+msgid "Test yakunida ballar va foizlar avtomatik hisoblanib, darhol ko'rsatiladi."
+msgstr "В конце теста баллы и проценты рассчитываются автоматически и отображаются немедленно."
+
+#: templates/index.html:58
+msgid "Qulay Dizayn"
+msgstr "Удобный дизайн"
+
+#: templates/index.html:58
+msgid ""
+"Istalgan qurilma: telefon, planshet yoki kompyuter orqali bemalol\n"
+"    foydalaning."
+msgstr "Свободно используйте на любом устройстве: телефоне, планшете или компьютере."
+
+#: templates/student_result.html:214
+msgid "Test yakunlandi!"
+msgstr "Тест завершен!"
+
+#: templates/student_result.html:215
+msgid "Sizning natijalaringiz"
+msgstr "Ваши результаты"
+
+#: templates/student_result.html:219
+msgid "To'plangan ball"
+msgstr "Набранные баллы"
+
+#: templates/student_result.html:223
+msgid "Maksimal ball"
+msgstr "Максимальный балл"
+
+#: templates/student_result.html:245
+msgid "Batafsil natijalar"
+msgstr "Подробные результаты"
+
+#: templates/student_result.html:263
+msgid "Sizning javobingiz"
+msgstr "Ваш ответ"
+
+#: templates/student_result.html:267
+msgid "Javob berilmagan"
+msgstr "Ответ не дан"
+
+#: templates/student_result.html:283
+msgid "Yana test topshirish"
+msgstr "Сдать тест еще раз"
+
+#: templates/student_start.html:7
+msgid "Bilimingizni sinang"
+msgstr "Проверьте свои знания"
+
+#: templates/student_start.html:8
+msgid "Test ishlash uchun ma'lumotlaringizni kiriting"
+msgstr "Введите данные для прохождения теста"
+
+#: templates/student_start.html:16
+msgid "Ism"
+msgstr "Имя"
+
+#: templates/student_start.html:18
+msgid "Ismingiz"
+msgstr "Ваше имя"
+
+#: templates/student_start.html:21
+msgid "Familiya"
+msgstr "Фамилия"
+
+#: templates/student_start.html:24
+msgid "Familiyangiz"
+msgstr "Ваша фамилия"
+
+#: templates/student_start.html:30
+msgid "Tanlang..."
+msgstr "Выберите..."
+
+#: templates/student_start.html:42
+msgid "Sinf raqami"
+msgstr "Номер класса"
+
+#: templates/student_start.html:46
+#, fuzzy
+msgid "Masalan: 1"
+msgstr "Например: 1"
+
+#: templates/student_start.html:65
+#, fuzzy
+msgid "Oldin sinfni tanlang"
+msgstr "Сначала выберите класс"
+
+#: templates/student_start.html:72
+#, fuzzy
+msgid "Bu sinf uchun fanlar topilmadi"
+msgstr "Предметы для этого класса не найдены"
+
+#: templates/student_start.html:78
+#, fuzzy
+msgid "Testni Boshlash"
+msgstr "Начать тест"
+
+#: templates/student_start.html:88
+#, fuzzy
+msgid "O'qituvchi uchun kirish"
+msgstr "Вход для учителя"
+
+#: templates/student_start.html:140
+#, fuzzy
+msgid "Fanni tanlang"
+msgstr "Выберите предмет"
+
+#: templates/student_test.html:13
+msgid "Vaqt"
+msgstr "Время"
+
+#: templates/student_test.html:69
+msgid "Testni yakunlashga ishonchingiz komilmi?"
+msgstr "Вы уверены, что хотите завершить тест?"
+
+#: templates/student_test.html:70
+msgid "Yakunlash"
+msgstr "Завершить"
+

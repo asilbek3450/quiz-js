@@ -1,9 +1,12 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, g
+from flask_babel import Babel, _, gettext
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 import random
 import json
+from deep_translator import GoogleTranslator
+
 
 
 
@@ -13,6 +16,21 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test_platform.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+babel = Babel(app)
+
+def get_locale():
+    # If the user has a saved language in session, use it
+    if 'lang' in session:
+        return session['lang']
+    # Otherwise, try to match the best language from the browser
+    return request.accept_languages.best_match(['uz', 'ru', 'en'])
+
+babel.init_app(app, locale_selector=get_locale)
+
+@app.context_processor
+def inject_conf_var():
+    return dict(get_locale=get_locale)
+
 
 # ============= MODELS =============
 
@@ -25,6 +43,8 @@ class Admin(db.Model):
 class Subject(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
+    name_ru = db.Column(db.String(50))
+    name_en = db.Column(db.String(50))
     grades = db.Column(db.String(20), nullable=False)  # "5,6" yoki "7,8,9"
 
 class Question(db.Model):
@@ -33,10 +53,25 @@ class Question(db.Model):
     grade = db.Column(db.Integer, nullable=False)
     quarter = db.Column(db.Integer, nullable=False)
     question_text = db.Column(db.Text, nullable=False)
+    question_text_ru = db.Column(db.Text)
+    question_text_en = db.Column(db.Text)
+    
     option_a = db.Column(db.String(200), nullable=False)
+    option_a_ru = db.Column(db.String(200))
+    option_a_en = db.Column(db.String(200))
+    
     option_b = db.Column(db.String(200), nullable=False)
+    option_b_ru = db.Column(db.String(200))
+    option_b_en = db.Column(db.String(200))
+    
     option_c = db.Column(db.String(200), nullable=False)
+    option_c_ru = db.Column(db.String(200))
+    option_c_en = db.Column(db.String(200))
+    
     option_d = db.Column(db.String(200), nullable=False)
+    option_d_ru = db.Column(db.String(200))
+    option_d_en = db.Column(db.String(200))
+    
     correct_answer = db.Column(db.String(1), nullable=False)  # A, B, C, or D
     
     subject = db.relationship('Subject', backref='questions')
@@ -62,13 +97,19 @@ class TestResult(db.Model):
 def calculate_grade(score, total=20):
     percentage = (score / total) * 100
     if percentage >= 85:
-        return "A'lo (5)"
+        return _("A'lo (5)")
     elif percentage >= 70:
-        return "Yaxshi (4)"
+        return _("Yaxshi (4)")
     elif percentage >= 65:
-        return "Qoniqarli (3)"
+        return _("Qoniqarli (3)")
     else:
-        return "Qoniqarsiz (2)"
+        return _("Qoniqarsiz (2)")
+
+def auto_translate(text, target):
+    try:
+        return GoogleTranslator(source='auto', target=target).translate(text)
+    except:
+        return text
 
 def init_db():
     with app.app_context():
@@ -147,6 +188,13 @@ def init_db():
 def index():
     return render_template('index.html')
 
+@app.route('/set_language/<lang>')
+def set_language(lang):
+    if lang in ['uz', 'ru', 'en']:
+        session['lang'] = lang
+    return redirect(request.referrer or url_for('index'))
+
+
 @app.route('/student/start', methods=['GET', 'POST'])
 def student_start():
     if request.method == 'POST':
@@ -168,7 +216,7 @@ def student_start():
         ).all()
         
         if len(questions) < 20:
-            flash(f'Kechirasiz, bu fan va chorak uchun yetarli savollar yo\'q ({len(questions)} ta mavjud)', 'danger')
+            flash(_('Kechirasiz, bu fan va chorak uchun yetarli savollar yo\'q ({} ta mavjud)').format(len(questions)), 'danger')
             return redirect(url_for('student_start'))
         
         # 20 ta tasodifiy savol tanlash
@@ -180,6 +228,16 @@ def student_start():
         return redirect(url_for('student_test'))
     
     subjects = Subject.query.all()
+    # Translate subject names for display
+    lang = get_locale()
+    for s in subjects:
+        if lang == 'ru' and s.name_ru:
+            s.display_name = s.name_ru
+        elif lang == 'en' and s.name_en:
+            s.display_name = s.name_en
+        else:
+            s.display_name = s.name
+            
     return render_template('student_start.html', subjects=subjects)
 
 @app.route('/student/test')
@@ -196,8 +254,35 @@ def student_test():
     question = Question.query.get(question_ids[current])
     answers = session.get('answers', {})
     
+    # Determine language-specific fields
+    lang = get_locale()
+    
+    if lang == 'ru':
+        question_text = question.question_text_ru or question.question_text
+        option_a = question.option_a_ru or question.option_a
+        option_b = question.option_b_ru or question.option_b
+        option_c = question.option_c_ru or question.option_c
+        option_d = question.option_d_ru or question.option_d
+    elif lang == 'en':
+        question_text = question.question_text_en or question.question_text
+        option_a = question.option_a_en or question.option_a
+        option_b = question.option_b_en or question.option_b
+        option_c = question.option_c_en or question.option_c
+        option_d = question.option_d_en or question.option_d
+    else:
+        question_text = question.question_text
+        option_a = question.option_a
+        option_b = question.option_b
+        option_c = question.option_c
+        option_d = question.option_d
+
     return render_template('student_test.html', 
-                         question=question, 
+                         question=question,
+                         question_text=question_text,
+                         option_a=option_a,
+                         option_b=option_b,
+                         option_c=option_c,
+                         option_d=option_d,
                          current=current + 1, 
                          total=len(question_ids),
                          answers=answers)
@@ -244,6 +329,7 @@ def student_result():
     
     score = 0
     results = []
+    lang = get_locale()
     
     for qid in question_ids:
         question = Question.query.get(qid)
@@ -252,8 +338,15 @@ def student_result():
         if is_correct:
             score += 1
         
+        if lang == 'ru':
+             q_text_display = question.question_text_ru or question.question_text
+        elif lang == 'en':
+             q_text_display = question.question_text_en or question.question_text
+        else:
+             q_text_display = question.question_text
+        
         results.append({
-            'question': question.question_text,
+            'question': q_text_display,
             'user_answer': user_answer,
             'correct_answer': question.correct_answer,
             'is_correct': is_correct
@@ -329,10 +422,10 @@ def admin_login():
         if admin and check_password_hash(admin.password_hash, password):
             session['admin_id'] = admin.id
             session['admin_name'] = admin.full_name
-            flash(f'Xush kelibsiz {admin.full_name}!', 'success')
+            flash(_('Xush kelibsiz {}!').format(admin.full_name), 'success')
             return redirect(url_for('admin_dashboard'))
         else:
-            flash('Login yoki parol noto\'g\'ri', 'danger')
+            flash(_('Login yoki parol noto\'g\'ri'), 'danger')
     
     return render_template('admin_login.html')
 
@@ -340,7 +433,7 @@ def admin_login():
 def admin_logout():
     session.pop('admin_id', None)
     session.pop('admin_name', None)
-    flash('Tizimdan chiqdingiz', 'info')
+    flash(_('Tizimdan chiqdingiz'), 'info')
     return redirect(url_for('index'))
 
 @app.route('/admin/dashboard')
@@ -408,20 +501,36 @@ def admin_question_add():
         return redirect(url_for('admin_login'))
     
     if request.method == 'POST':
+        q_text = request.form['question_text']
+        opt_a = request.form['option_a']
+        opt_b = request.form['option_b']
+        opt_c = request.form['option_c']
+        opt_d = request.form['option_d']
+        
         question = Question(
             subject_id=int(request.form['subject_id']),
             grade=int(request.form['grade']),
             quarter=int(request.form['quarter']),
-            question_text=request.form['question_text'],
-            option_a=request.form['option_a'],
-            option_b=request.form['option_b'],
-            option_c=request.form['option_c'],
-            option_d=request.form['option_d'],
+            question_text=q_text,
+            question_text_ru=auto_translate(q_text, 'ru'),
+            question_text_en=auto_translate(q_text, 'en'),
+            option_a=opt_a,
+            option_a_ru=auto_translate(opt_a, 'ru'),
+            option_a_en=auto_translate(opt_a, 'en'),
+            option_b=opt_b,
+            option_b_ru=auto_translate(opt_b, 'ru'),
+            option_b_en=auto_translate(opt_b, 'en'),
+            option_c=opt_c,
+            option_c_ru=auto_translate(opt_c, 'ru'),
+            option_c_en=auto_translate(opt_c, 'en'),
+            option_d=opt_d,
+            option_d_ru=auto_translate(opt_d, 'ru'),
+            option_d_en=auto_translate(opt_d, 'en'),
             correct_answer=request.form['correct_answer'].upper()
         )
         db.session.add(question)
         db.session.commit()
-        flash('Savol muvaffaqiyatli qo\'shildi', 'success')
+        flash(_('Savol muvaffaqiyatli qo\'shildi va tarjima qilindi'), 'success')
         return redirect(url_for('admin_questions'))
     
     subjects = Subject.query.all()
@@ -438,15 +547,33 @@ def admin_question_edit(id):
         question.subject_id = int(request.form['subject_id'])
         question.grade = int(request.form['grade'])
         question.quarter = int(request.form['quarter'])
-        question.question_text = request.form['question_text']
+        
+        # Only re-translate if text changed (optimization could be added, but for now simple update)
+        q_text = request.form['question_text']
+        question.question_text = q_text
+        question.question_text_ru = auto_translate(q_text, 'ru')
+        question.question_text_en = auto_translate(q_text, 'en')
+        
         question.option_a = request.form['option_a']
+        question.option_a_ru = auto_translate(question.option_a, 'ru')
+        question.option_a_en = auto_translate(question.option_a, 'en')
+        
         question.option_b = request.form['option_b']
+        question.option_b_ru = auto_translate(question.option_b, 'ru')
+        question.option_b_en = auto_translate(question.option_b, 'en')
+        
         question.option_c = request.form['option_c']
+        question.option_c_ru = auto_translate(question.option_c, 'ru')
+        question.option_c_en = auto_translate(question.option_c, 'en')
+        
         question.option_d = request.form['option_d']
+        question.option_d_ru = auto_translate(question.option_d, 'ru')
+        question.option_d_en = auto_translate(question.option_d, 'en')
+        
         question.correct_answer = request.form['correct_answer'].upper()
         
         db.session.commit()
-        flash('Savol muvaffaqiyatli o\'zgartirildi', 'success')
+        flash(_('Savol muvaffaqiyatli o\'zgartirildi'), 'success')
         return redirect(url_for('admin_questions'))
     
     subjects = Subject.query.all()
@@ -460,7 +587,7 @@ def admin_question_delete(id):
     question = Question.query.get_or_404(id)
     db.session.delete(question)
     db.session.commit()
-    flash('Savol o\'chirildi', 'success')
+    flash(_('Savol o\'chirildi'), 'success')
     return redirect(url_for('admin_questions'))
 
 @app.route('/admin/result/delete/<int:id>', methods=['POST'])
@@ -471,7 +598,7 @@ def admin_result_delete(id):
     result = TestResult.query.get_or_404(id)
     db.session.delete(result)
     db.session.commit()
-    flash('Natija muvaffaqiyatli o\'chirildi', 'success')
+    flash(_('Natija muvaffaqiyatli o\'chirildi'), 'success')
     return redirect(url_for('admin_results'))
 
 @app.route('/admin/results/delete-by-date', methods=['POST'])
@@ -496,9 +623,9 @@ def admin_results_delete_by_date():
         ).delete()
         
         db.session.commit()
-        flash(f'{deleted_count} ta natija o\'chirildi', 'success')
+        flash(_('{} ta natija o\'chirildi').format(deleted_count), 'success')
     except Exception as e:
-        flash(f'Xatolik yuz berdi: {str(e)}', 'danger')
+        flash(_('Xatolik yuz berdi: {}').format(str(e)), 'danger')
         
     return redirect(url_for('admin_results'))
 
@@ -543,10 +670,15 @@ def admin_subject_add():
         name = request.form['name']
         grades = request.form['grades'] # e.g., "5,6"
         
-        subject = Subject(name=name, grades=grades)
+        subject = Subject(
+            name=name, 
+            grades=grades,
+            name_ru=auto_translate(name, 'ru'),
+            name_en=auto_translate(name, 'en')
+        )
         db.session.add(subject)
         db.session.commit()
-        flash('Fan muvaffaqiyatli qo\'shildi', 'success')
+        flash(_('Fan muvaffaqiyatli qo\'shildi va tarjima qilindi'), 'success')
         return redirect(url_for('admin_subjects'))
     
     return render_template('admin_subject_form.html', subject=None)
@@ -560,10 +692,13 @@ def admin_subject_edit(id):
     
     if request.method == 'POST':
         subject.name = request.form['name']
+        subject.name_ru = auto_translate(subject.name, 'ru')
+        subject.name_en = auto_translate(subject.name, 'en')
+        
         subject.grades = request.form['grades']
         
         db.session.commit()
-        flash('Fan muvaffaqiyatli o\'zgartirildi', 'success')
+        flash(_('Fan muvaffaqiyatli o\'zgartirildi'), 'success')
         return redirect(url_for('admin_subjects'))
     
     return render_template('admin_subject_form.html', subject=subject)
@@ -577,15 +712,15 @@ def admin_subject_delete(id):
     
     # Check if subject has questions or results
     if subject.questions or subject.results:
-        flash('Bu fanga tegishli savollar yoki natijalar mavjud. Oldin ularni o\'chiring.', 'danger')
+        flash(_('Bu fanga tegishli savollar yoki natijalar mavjud. Oldin ularni o\'chiring.'), 'danger')
         return redirect(url_for('admin_subjects'))
         
     db.session.delete(subject)
     db.session.commit()
-    flash('Fan o\'chirildi', 'success')
+    flash(_('Fan o\'chirildi'), 'success')
     return redirect(url_for('admin_subjects'))
 
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True, port=5001)
+    app.run(debug=True)
