@@ -29,19 +29,20 @@
 
                 <div class="options-list">
                     <div class="row g-3">
-                        {% for key, value in [('A', option_a), ('B', option_b), ('C',
-                        option_c), ('D', option_d)] %}
+                        {% set visual_labels = ['A', 'B', 'C', 'D'] %}
+                        {% for option in options %}
+                        {% set visual_label = visual_labels[loop.index0] %}
                         <div class="col-12">
-                            <input type="radio" class="btn-check" name="answer" id="opt{{ key }}" value="{{ key }}" {%
-                                if answers.get(question.id|string)==key %}checked{% endif %}
-                                onchange="submitAnswer('{{ question.id }}', '{{ key }}')">
+                            <input type="radio" class="btn-check" name="answer" id="opt{{ option.key }}"
+                                value="{{ option.key }}" {% if answers.get(question.id|string)==option.key %}checked{%
+                                endif %} onchange="submitAnswer('{{ question.id }}', '{{ option.key }}')">
                             <label
                                 class="btn btn-outline-light text-dark text-start w-100 p-3 border-2 option-label d-flex align-items-center"
-                                for="opt{{ key }}">
+                                for="opt{{ option.key }}">
                                 <span
                                     class="option-key rounded-circle d-flex align-items-center justify-content-center me-3 border fw-bold">{{
-                                    key }}</span>
-                                <span class="option-text fs-5">{{ value }}</span>
+                                    visual_label }}</span>
+                                <span class="option-text fs-5">{{ option.value }}</span>
                             </label>
                         </div>
                         {% endfor %}

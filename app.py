@@ -276,13 +276,19 @@ def student_test():
         option_c = question.option_c
         option_d = question.option_d
 
+    # Randomize options
+    options = [
+        {'key': 'A', 'value': option_a},
+        {'key': 'B', 'value': option_b},
+        {'key': 'C', 'value': option_c},
+        {'key': 'D', 'value': option_d}
+    ]
+    random.shuffle(options)
+
     return render_template('student_test.html', 
                          question=question,
                          question_text=question_text,
-                         option_a=option_a,
-                         option_b=option_b,
-                         option_c=option_c,
-                         option_d=option_d,
+                         options=options,
                          current=current + 1, 
                          total=len(question_ids),
                          answers=answers)
