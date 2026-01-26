@@ -22,8 +22,8 @@ def get_locale():
     # If the user has a saved language in session, use it
     if 'lang' in session:
         return session['lang']
-    # Otherwise, try to match the best language from the browser
-    return request.accept_languages.best_match(['uz', 'ru', 'en'])
+    # Otherwise, set to uz
+    return 'uz'
 
 babel.init_app(app, locale_selector=get_locale)
 
