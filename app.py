@@ -500,6 +500,12 @@ def admin_questions():
     if quarter:
         query = query.filter_by(quarter=quarter)
     
+    # Qidiruv
+    search = request.args.get('search')
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(Question.question_text.ilike(search_term))
+    
     # Pagination
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     questions = pagination.items
@@ -742,4 +748,4 @@ def admin_subject_delete(id):
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True, host="192.168.88.177")
+    app.run(debug=True)

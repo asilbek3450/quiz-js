@@ -62,6 +62,27 @@
                         </select>
                     </div>
                 </div>
+                <div class="row g-3 mt-2">
+                    <div class="col-12">
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-primary border-end-0">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" name="search" class="form-control border-start-0 ps-0"
+                                placeholder="{{ _('Savol matnidan qidirish...') }}"
+                                value="{{ request.args.get('search', '') }}">
+                            <button class="btn btn-primary" type="submit">
+                                {{ _('Qidirish') }}
+                            </button>
+                            {% if request.args.get('search') %}
+                            <a href="{{ url_for('admin_questions', subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter')) }}"
+                                class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
             </form>
 
             <!-- Statistika -->
@@ -72,7 +93,8 @@
                 pagination.per_page }} {{ _('tadan') }})
                 <br>
                 <strong>{{ _('Jami') }}:</strong> {{ pagination.total }} {{ _('ta savol') }}
-                {% if request.args.get('subject_id') or request.args.get('grade') or request.args.get('quarter') %}
+                {% if request.args.get('subject_id') or request.args.get('grade') or request.args.get('quarter') or
+                request.args.get('search') %}
                 ({{ _('filtrlangan') }})
                 {% endif %}
             </div>
@@ -147,7 +169,7 @@
                     <!-- Oldingi sahifa -->
                     <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
                         <a class="page-link"
-                            href="{% if pagination.has_prev %}{{ url_for('admin_questions', page=pagination.prev_num, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter')) }}{% else %}#{% endif %}">
+                            href="{% if pagination.has_prev %}{{ url_for('admin_questions', page=pagination.prev_num, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), search=request.args.get('search')) }}{% else %}#{% endif %}">
                             <i class="fas fa-chevron-left"></i> {{ _('Oldingi') }}
                         </a>
                     </li>
@@ -158,7 +180,7 @@
                     {% if page_num %}
                     <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
                         <a class="page-link"
-                            href="{{ url_for('admin_questions', page=page_num, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter')) }}">
+                            href="{{ url_for('admin_questions', page=page_num, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), search=request.args.get('search')) }}">
                             {{ page_num }}
                         </a>
                     </li>
@@ -172,7 +194,7 @@
                     <!-- Keyingi sahifa -->
                     <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
                         <a class="page-link"
-                            href="{% if pagination.has_next %}{{ url_for('admin_questions', page=pagination.next_num, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter')) }}{% else %}#{% endif %}">
+                            href="{% if pagination.has_next %}{{ url_for('admin_questions', page=pagination.next_num, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), search=request.args.get('search')) }}{% else %}#{% endif %}">
                             {{ _('Keyingi') }} <i class="fas fa-chevron-right"></i>
                         </a>
                     </li>
