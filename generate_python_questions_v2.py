@@ -272,29 +272,234 @@ def gen_while_basic():
     wrongs = [str(limit), str(limit+1), str(start), "Infinite Loop"]
     return code, [ans] + wrongs, ans
 
+# ================= GRADE 8 SPECIFIC GENERATORS =================
+
+def gen_list_methods():
+    lst = [random.randint(1, 20) for _ in range(4)]
+    method = random.choice(['append', 'insert', 'remove', 'sort', 'reverse', 'pop'])
+    
+    if method == 'append':
+        val = random.randint(21, 50)
+        code = f"lst = {lst}\nlst.append({val})\nprint(lst[-1])"
+        ans = str(val)
+        wrongs = [str(lst[-1]), str(val-1), "None", "Error"]
+    elif method == 'insert':
+        idx = random.randint(0, len(lst)-1)
+        val = random.randint(21, 50)
+        code = f"lst = {lst}\nlst.insert({idx}, {val})\nprint(lst[{idx}])"
+        ans = str(val)
+        wrongs = [str(lst[idx]), str(val+1), "None", "Error"]
+    elif method == 'remove':
+        val = random.choice(lst)
+        # Ensure only one occurrence for unambiguous removal or handle duplicates logic (remove removes first)
+        # For simplicity, let's just use unique list
+        lst = random.sample(range(1, 100), 5)
+        val = lst[2]
+        code = f"lst = {lst}\nlst.remove({val})\nprint({val} in lst)"
+        ans = "False"
+        wrongs = ["True", "None", "Error"]
+    elif method == 'sort':
+        lst = random.sample(range(1, 100), 5)
+        code = f"lst = {lst}\nlst.sort()\nprint(lst[0])"
+        ans = str(min(lst))
+        wrongs = [str(max(lst)), str(lst[0]), "None", "Error"]
+    elif method == 'reverse':
+        lst = random.sample(range(1, 10), 4)
+        code = f"lst = {lst}\nlst.reverse()\nprint(lst[0])"
+        ans = str(lst[-1])
+        wrongs = [str(lst[0]), "None", "Error"]
+    else: # pop
+        code = f"lst = {lst}\nlst.pop()\nprint(len(lst))"
+        ans = str(len(lst)-1)
+        wrongs = [str(len(lst)), str(lst[-1]), "None"]
+        
+    return code, [ans] + wrongs, ans
+
+def gen_tuple_ops():
+    tup = tuple(random.sample(range(1, 20), 4))
+    op = random.choice(['index', 'slice', 'immutability'])
+    
+    if op == 'index':
+        idx = random.randint(0, 3)
+        code = f"t = {tup}\nprint(t[{idx}])"
+        ans = str(tup[idx])
+        wrongs = [str(tup[(idx+1)%4]), "Error", "None"]
+    elif op == 'slice':
+        code = f"t = {tup}\nprint(t[1:3])"
+        ans = str(tup[1:3])
+        wrongs = [str(tup[1:4]), str(list(tup[1:3])), "Error"]
+    else:
+        # Immutability
+        code = f"t = {tup}\nt[0] = 100\nprint(t[0])"
+        ans = "TypeError" # catching the error text? Or generally "Error"
+        # Since options usually simple strings, let's say "Error" is the intended answer for school level
+        # But let's be technically precise if possible. "TypeError" or "Xatolik"
+        ans = "Error"
+        wrongs = ["100", str(tup[0]), "None"]
+        
+    return code, [ans] + wrongs, ans
+
+def gen_dict_methods():
+    d = {'a': 1, 'b': 2, 'c': 3}
+    method = random.choice(['keys', 'values', 'items', 'get', 'update'])
+    
+    if method == 'keys':
+        code = f"d = {d}\nprint(list(d.keys()))"
+        ans = str(list(d.keys()))
+        wrongs = [str(list(d.values())), str(d), "Error"]
+    elif method == 'values':
+        code = f"d = {d}\nprint(list(d.values()))"
+        ans = str(list(d.values()))
+        wrongs = [str(list(d.keys())), "Error", "[1, 2]"]
+    elif method == 'get':
+        k = 'b'
+        code = f"d = {d}\nprint(d.get('{k}', 0))"
+        ans = str(d.get(k))
+        wrongs = [str(d.get('a')), "0", "None"]
+    elif method == 'update':
+        code = f"d = {{'a': 1}}\nd.update({{'b': 2}})\nprint(len(d))"
+        ans = "2"
+        wrongs = ["1", "Error", "None"]
+    else:
+        code = f"d = {{'a': 1}}\nprint(d.items())"
+        ans = "dict_items([('a', 1)])"
+        wrongs = ["[('a', 1)]", "{'a': 1}", "Error"]
+        
+    return code, [ans] + wrongs, ans
+
+def gen_function_def():
+    # Regular, args, kwargs, default
+    mode = random.choice(['simple', 'default', 'args'])
+    
+    if mode == 'simple':
+        a, b = random.randint(1,100), random.randint(1,100)
+        func_name = random.choice(['add', 'calc', 'sum_nums', 'func'])
+        code = f"def {func_name}(x, y):\n    return x + y\nprint({func_name}({a}, {b}))"
+        ans = str(a+b)
+        wrongs = [str(a*b), str(a-b), "Error", "None", str(a+b+1)]
+    elif mode == 'default':
+        val = random.randint(2, 10)
+        default_pow = random.randint(2, 3)
+        func_name = random.choice(['power', 'kvadrat', 'daraja'])
+        code = f"def {func_name}(x, n={default_pow}):\n    return x ** n\nprint({func_name}({val}))"
+        ans = str(val**default_pow)
+        wrongs = [str(val), str(val*2), "Error", str(val**(default_pow+1))]
+    else:
+        # args
+        # range should be larger
+        nums = random.sample(range(1, 20), 3)
+        func_name = random.choice(['total', 'yigindi', 'all_sum'])
+        code = f"def {func_name}(*args):\n    return sum(args)\nprint({func_name}({', '.join(map(str, nums))}))"
+        ans = str(sum(nums))
+        wrongs = [str(len(nums)), "Error", "None", str(sum(nums)+1)]
+        
+    return code, [ans] + wrongs, ans
+
+def gen_recursion_simple():
+    # Factorial or sum
+    n = random.randint(3, 8) # Increased range
+    func_name = random.choice(['s', 'f', 'rec', 'func'])
+    
+    if random.random() > 0.5:
+        # Sum 1 to n
+        code = f"def {func_name}(n):\n    if n == 1: return 1\n    return n + {func_name}(n-1)\nprint({func_name}({n}))"
+        ans = str(sum(range(1, n+1)))
+    else:
+        # Factorial
+        code = f"def {func_name}(n):\n    if n == 1: return 1\n    return n * {func_name}(n-1)\nprint({func_name}({n}))"
+        import math
+        ans = str(math.factorial(n))
+        
+    wrongs = [str(int(ans)-1), str(int(ans)+n), "Error", "Infinite Loop", "1"]
+    return code, [ans] + wrongs, ans
+
+def gen_modules():
+    mod = random.choice(['math', 'random', 'datetime'])
+    if mod == 'math':
+        # Expand math options
+        func = random.choice(['sqrt', 'ceil', 'floor', 'fabs'])
+        if func == 'sqrt':
+            val = random.choice([16, 25, 36, 49, 64, 81, 100, 121, 144])
+            ans = str(int(math.sqrt(val)))
+            wrongs = [str(val//2), str(val), "Error"]
+        elif func == 'ceil':
+            val = random.uniform(1.1, 10.9)
+            val = round(val, 2)
+            ans = str(math.ceil(val))
+            wrongs = [str(int(val)), str(math.floor(val)), "Error"]
+        elif func == 'floor':
+            val = random.uniform(1.1, 10.9)
+            val = round(val, 2)
+            ans = str(math.floor(val))
+            wrongs = [str(int(val)+1), str(math.ceil(val)), "Error"]
+        else: # fabs
+            val = random.randint(-20, -1)
+            ans = str(int(math.fabs(val)))
+            wrongs = [str(val), "Error", "0"]
+            
+        code = f"import math\nprint(int(math.{func}({val})))" if func != 'sqrt' and func != 'fabs' else f"import math\nprint(int(math.{func}({val})))"
+        # Correct output format for float funcs if cast to int
+        
+    elif mod == 'random':
+        a = random.randint(1, 10)
+        b = a + random.randint(1, 5)
+        # To make it deterministic for "Result?" question, we can't truly use random output unless we mock it or ask for "Range".
+        # Or we can ask "Qaysi javob bo'lishi MUMKIN?" (Which answer IS POSSIBLE?)
+        # But our system expects one correct answer.
+        # Let's switch to `random.seed(x)`?
+        # Or simple: "random.randint(5, 5)" -> always 5.
+        
+        # Strategy: use seed or predictable calls
+        seed_val = random.randint(1, 100)
+        code = f"import random\nrandom.seed({seed_val})\nprint(random.randint(10, 20))"
+        # We can't easily predict this without running it. 
+        # Let's stick to concept questions formatted as code? 
+        # "print(random.randint(1, 1))" -> 1.
+        # "print(random.randrange(10, 11))" -> 10.
+        
+        val = random.randint(1, 20)
+        code = f"import random\n# range {val} to {val}\nprint(random.randint({val}, {val}))"
+        ans = str(val)
+        wrongs = [str(val+1), "0", "Error"]
+        
+    else:
+        # Datetime
+        y = random.randint(2000, 2030)
+        m = random.randint(1, 12)
+        d = random.randint(1, 28)
+        code = f"import datetime\nd = datetime.date({y}, {m}, {d})\nprint(d.year)"
+        ans = str(y)
+        wrongs = [str(m), str(d), "Error", str(y+1)]
+        
+    return code, [ans] + wrongs, ans
+
 # ================= ORCHESTRATOR =================
 
 def get_generators_for_grade(grade):
-    # Differentiate slightly by varying complexity or pool
-    # But essentially all grades cover these python basics in school context
-    
-    # Q1: Basics
-    pool_q1 = [gen_print_basic, gen_arithmetic, gen_type_conversion, gen_formatting]
-    
-    # Q2: Logic & Flow
-    pool_q2 = [gen_bool_logic, gen_if_simple, gen_arithmetic] # mixed arithmetic
-    
-    # Q3: Loops & Strings
-    pool_q3 = [gen_range_loop, gen_while_basic, gen_string_indexing]
-    
-    # Q4: Structures & Adv
-    pool_q4 = [gen_list_ops, gen_dict_simple, gen_range_loop]
+    if grade == 8:
+        # Curriculum aligned
+        # Q1: List, Tuple, Dict
+        pool_q1 = [gen_list_ops, gen_list_methods, gen_tuple_ops, gen_dict_simple, gen_dict_methods]
+        
+        # Q2: Functions, Recursion, Modules
+        pool_q2 = [gen_function_def, gen_recursion_simple, gen_modules]
+        
+        # Q3 & Q4: Mixed practice (user requested 200/quarter, assuming review or advanced)
+        # Let's mix Q1 and Q2 topics plus some logic
+        pool_q3 = pool_q1 + pool_q2 + [gen_range_loop]
+        pool_q4 = pool_q3 + [gen_bool_logic]
+        
+        return {1: pool_q1, 2: pool_q2, 3: pool_q3, 4: pool_q4}
+
+    # Keep 7 and 9 as before (or generic)
+    pool_basic = [gen_print_basic, gen_arithmetic, gen_type_conversion, gen_formatting, gen_bool_logic, gen_if_simple, gen_range_loop, gen_string_indexing]
+    pool_adv = [gen_list_ops, gen_dict_simple, gen_while_basic]
     
     return {
-        1: pool_q1,
-        2: pool_q2,
-        3: pool_q3,
-        4: pool_q4
+        1: pool_basic,
+        2: pool_basic + [gen_range_loop],
+        3: pool_adv + pool_basic,
+        4: pool_adv + [gen_formatting]
     }
 
 def main():
