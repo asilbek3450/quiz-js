@@ -105,11 +105,24 @@ def calculate_grade(score, total=20):
     else:
         return _("Qoniqarsiz (2)")
 
+import markdown
+
 def auto_translate(text, target):
     try:
         return GoogleTranslator(source='auto', target=target).translate(text)
     except:
         return text
+
+@app.template_filter('markdown')
+def markdown_filter(text):
+    if not text:
+        return ""
+    # Convert newlines to breaks for non-code parts if needed, 
+    # but markdown handles newlines in paragraphs as spaces.
+    # We want to preserve specific formatting if it's code.
+    # If the text is NOT a markdown block, but just lines of code...
+    # For now, standard markdown.
+    return markdown.markdown(text, extensions=['fenced_code'])
 
 def init_db():
     with app.app_context():
