@@ -7,7 +7,7 @@
         <p class="text-muted">{{ _('Tizimdagi mavjud fanlar va ularning sinflari') }}</p>
     </div>
     <div class="col-md-4 text-md-end">
-        <a href="{{ url_for('admin_subject_add') }}" class="btn btn-primary">
+        <a href="{{ url_for('admin.subject_add') }}" class="btn btn-primary">
             <i class="fas fa-plus me-2"></i> {{ _('Yangi fan qo\'shish') }}
         </a>
     </div>
@@ -20,7 +20,8 @@
                 <thead>
                     <tr>
                         <th class="ps-4">ID</th>
-                        <th>{{ _('Fan nomi') }}</th>
+                        <th>{{ _('Nomi') }}</th>
+                        <th>{{ _('Holati') }}</th>
                         <th>{{ _('Sinflar') }}</th>
                         <th>{{ _('Savollar soni') }}</th>
                         <th>{{ _('Natijalar') }}</th>
@@ -41,6 +42,14 @@
                             </div>
                         </td>
                         <td>
+                            {% if subject.is_protected %}
+                            <span class="badge bg-success"><i class="fas fa-shield-alt"></i> {{ _('Himoyalangan')
+                                }}</span>
+                            {% else %}
+                            <span class="badge bg-light text-dark">{{ _('Oddiy') }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
                             {% for grade in subject.grades.split(',') %}
                             <span class="badge bg-soft-primary text-primary rounded-pill me-1">{{ grade }}-{{ _('sinf')
                                 }}</span>
@@ -55,11 +64,11 @@
                                 }}</span>
                         </td>
                         <td class="text-end pe-4">
-                            <a href="{{ url_for('admin_subject_edit', id=subject.id) }}"
+                            <a href="{{ url_for('admin.subject_edit', id=subject.id) }}"
                                 class="btn btn-sm btn-outline-primary me-2">
                                 <i class="fas fa-edit"></i>
                             </a>
-                            <a href="{{ url_for('admin_subject_delete', id=subject.id) }}"
+                            <a href="{{ url_for('admin.subject_delete', id=subject.id) }}"
                                 class="btn btn-sm btn-outline-danger"
                                 onclick="return confirm('{{ _('Haqiqatan ham bu fanni o\'chirmoqchimisiz? Unga bog\'liq barcha ma\'lumotlar tekshiriladi.') }}')">
                                 <i class="fas fa-trash"></i>
@@ -72,7 +81,7 @@
                             <img src="https://cdn-icons-png.flaticon.com/512/7486/7486777.png" alt="Empty"
                                 style="width: 64px; opacity: 0.5; margin-bottom: 15px;">
                             <p class="text-muted fw-medium">{{ _('Hozircha fanlar mavjud emas') }}</p>
-                            <a href="{{ url_for('admin_subject_add') }}" class="btn btn-sm btn-primary">{{ _('Birinchi
+                            <a href="{{ url_for('admin.subject_add') }}" class="btn btn-sm btn-primary">{{ _('Birinchi
                                 fanni qo\'shish') }}</a>
                         </td>
                     </tr>

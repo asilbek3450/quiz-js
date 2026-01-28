@@ -11,7 +11,10 @@
             <p class="text-muted">{{ _('Test savollarini yaratish va boshqarish bo\'limi') }}</p>
         </div>
         <div class="col-md-4 text-md-end">
-            <a href="{{ url_for('admin_question_add') }}" class="btn btn-primary">
+            <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#importModal">
+                <i class="fas fa-file-excel me-2"></i> {{ _('Excel yuklash') }}
+            </button>
+            <a href="{{ url_for('admin.question_add') }}" class="btn btn-primary">
                 <i class="fas fa-plus me-2"></i> {{ _('Yangi savol') }}
             </a>
         </div>
@@ -75,7 +78,7 @@
                                 {{ _('Qidirish') }}
                             </button>
                             {% if request.args.get('search') %}
-                            <a href="{{ url_for('admin_questions', subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter')) }}"
+                            <a href="{{ url_for('admin.questions', subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter')) }}"
                                 class="btn btn-outline-secondary">
                                 <i class="fas fa-times"></i>
                             </a>
@@ -144,11 +147,11 @@
                             </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
-                                    <a href="{{ url_for('admin_question_edit', id=question.id) }}"
+                                    <a href="{{ url_for('admin.question_edit', id=question.id) }}"
                                         class="btn btn-outline-primary" title="{{ _('Tahrirlash') }}">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <a href="{{ url_for('admin_question_delete', id=question.id) }}"
+                                    <a href="{{ url_for('admin.question_delete', id=question.id) }}"
                                         class="btn btn-outline-danger"
                                         onclick="return confirm('{{ _('Savolni o\'chirishni tasdiqlaysizmi?') }}')"
                                         title="{{ _('O\'chirish') }}">
@@ -169,7 +172,7 @@
                     <!-- Oldingi sahifa -->
                     <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
                         <a class="page-link"
-                            href="{% if pagination.has_prev %}{{ url_for('admin_questions', page=pagination.prev_num, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), search=request.args.get('search')) }}{% else %}#{% endif %}">
+                            href="{% if pagination.has_prev %}{{ url_for('admin.questions', page=pagination.prev_num, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), search=request.args.get('search')) }}{% else %}#{% endif %}">
                             <i class="fas fa-chevron-left"></i> {{ _('Oldingi') }}
                         </a>
                     </li>
@@ -180,7 +183,7 @@
                     {% if page_num %}
                     <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
                         <a class="page-link"
-                            href="{{ url_for('admin_questions', page=page_num, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), search=request.args.get('search')) }}">
+                            href="{{ url_for('admin.questions', page=page_num, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), search=request.args.get('search')) }}">
                             {{ page_num }}
                         </a>
                     </li>
@@ -194,7 +197,7 @@
                     <!-- Keyingi sahifa -->
                     <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
                         <a class="page-link"
-                            href="{% if pagination.has_next %}{{ url_for('admin_questions', page=pagination.next_num, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), search=request.args.get('search')) }}{% else %}#{% endif %}">
+                            href="{% if pagination.has_next %}{{ url_for('admin.questions', page=pagination.next_num, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), search=request.args.get('search')) }}{% else %}#{% endif %}">
                             {{ _('Keyingi') }} <i class="fas fa-chevron-right"></i>
                         </a>
                     </li>
@@ -206,7 +209,7 @@
                 <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
                 <h5>{{ _('Savollar topilmadi') }}</h5>
                 <p class="mb-0">{{ _('Tanlangan filtrlar bo\'yicha savollar mavjud emas.') }}</p>
-                <a href="{{ url_for('admin_question_add') }}" class="btn btn-primary mt-3">
+                <a href="{{ url_for('admin.question_add') }}" class="btn btn-primary mt-3">
                     <i class="fas fa-plus me-2"></i> {{ _('Birinchi savolni qo\'shish') }}
                 </a>
             </div>
@@ -274,6 +277,69 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="fas fa-file-excel text-success me-2"></i> {{ _('Savollarni
+                    yuklash') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin.import_questions') }}" method="POST" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> {{ _('Fayl quyidagi ustunlardan iborat bo\'lishi
+                        shart:') }}<br>
+                        <strong>Question, A, B, C, D, Correct</strong>
+                        <div class="mt-2">
+                            <a href="{{ url_for('admin.download_template') }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-download me-1"></i> {{ _('Namuna yuklab olish') }}
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ _('Fan') }}</label>
+                        <select name="subject_id" class="form-select" required>
+                            {% for subject in subjects %}
+                            <option value="{{ subject.id }}">{{ subject.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">{{ _('Sinf') }}</label>
+                            <select name="grade" class="form-select" required>
+                                {% for g in range(5, 12) %}
+                                <option value="{{ g }}">{{ g }}-sinf</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">{{ _('Chorak') }}</label>
+                            <select name="quarter" class="form-select" required>
+                                {% for q in range(1, 5) %}
+                                <option value="{{ q }}">{{ q }}-chorak</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ _('Excel fayl') }} (.xlsx)</label>
+                        <input type="file" name="file" class="form-control" accept=".xlsx, .xls" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ _('Bekor qilish') }}</button>
+                    <button type="submit" class="btn btn-success">{{ _('Yuklash') }}</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

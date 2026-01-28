@@ -1,0 +1,62 @@
+from extensions import db
+from datetime import datetime
+import json
+
+class Admin(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password_hash = db.Column(db.String(200), nullable=False)
+    full_name = db.Column(db.String(100), nullable=False)
+
+class Subject(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)
+    name_ru = db.Column(db.String(50))
+    name_en = db.Column(db.String(50))
+    grades = db.Column(db.String(20), nullable=False)  # "5,6" yoki "7,8,9"
+    is_protected = db.Column(db.Boolean, default=False) # Anti-cheat protection
+
+class Question(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
+    grade = db.Column(db.Integer, nullable=False)
+    quarter = db.Column(db.Integer, nullable=False)
+    question_text = db.Column(db.Text, nullable=False)
+    question_text_ru = db.Column(db.Text)
+    question_text_en = db.Column(db.Text)
+    
+    option_a = db.Column(db.String(200), nullable=False)
+    option_a_ru = db.Column(db.String(200))
+    option_a_en = db.Column(db.String(200))
+    
+    option_b = db.Column(db.String(200), nullable=False)
+    option_b_ru = db.Column(db.String(200))
+    option_b_en = db.Column(db.String(200))
+    
+    option_c = db.Column(db.String(200), nullable=False)
+    option_c_ru = db.Column(db.String(200))
+    option_c_en = db.Column(db.String(200))
+    
+    option_d = db.Column(db.String(200), nullable=False)
+    option_d_ru = db.Column(db.String(200))
+    option_d_en = db.Column(db.String(200))
+    
+    correct_answer = db.Column(db.String(1), nullable=False)  # A, B, C, or D
+    
+    subject = db.relationship('Subject', backref='questions')
+
+class TestResult(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    full_name = db.Column(db.String(100), nullable=False)
+    grade = db.Column(db.Integer, nullable=False)
+    class_number = db.Column(db.String(10), nullable=False)
+    quarter = db.Column(db.Integer, nullable=False)
+    subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
+    score = db.Column(db.Integer, nullable=False)
+    total_questions = db.Column(db.Integer, default=20)
+    percentage = db.Column(db.Float, nullable=False)
+    grade_text = db.Column(db.String(20), nullable=False)
+    test_date = db.Column(db.DateTime, default=datetime.utcnow)
+    answers_json = db.Column(db.Text)  # JSON format
+    
+    subject = db.relationship('Subject', backref='results')

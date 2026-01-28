@@ -16,7 +16,7 @@
 
 <div class="row g-4 mb-5 animate-fade-in-up" style="animation-delay: 0.2s;">
     <div class="col-md-6">
-        <div class="card h-100 role-card hover-lift" onclick="window.location.href='{{ url_for('student_start') }}';">
+        <div class="card h-100 role-card hover-lift" onclick="window.location.href='{{ url_for('student.start') }}';">
             <div class="card-body p-5 text-center">
                 <div class="icon-circle bg-soft-primary text-primary mb-4 mx-auto">
                     <i class="fas fa-user-graduate"></i>
@@ -26,7 +26,7 @@
                     {{ _('Test topshirish va bilimlarni sinash uchun maxsus bo\'lim.') }}
                     {{ _('20 ta savol, avtomatik natija.') }}
                 </p>
-                <a href="{{ url_for('student_start') }}" class="btn btn-primary btn-lg px-5 pill-btn">
+                <a href="{{ url_for('student.start') }}" class="btn btn-primary btn-lg px-5 pill-btn">
                     <i class="fas fa-play me-2"></i> {{ _('Boshlash') }}
                 </a>
             </div>
@@ -34,7 +34,7 @@
     </div>
 
     <div class="col-md-6">
-        <div class="card h-100 role-card hover-lift" onclick="window.location.href='{{ url_for('admin_login') }}';">
+        <div class="card h-100 role-card hover-lift" onclick="window.location.href='{{ url_for('admin.login') }}';">
             <div class="card-body p-5 text-center">
                 <div class="icon-circle bg-soft-success text-success mb-4 mx-auto">
                     <i class="fas fa-user-shield"></i>
@@ -43,7 +43,7 @@
                 <p class="text-muted mb-4">
                     {{ _('Tizimni boshqarish, savollar kiritish va natijalarni nazorat qilish bo\'limi.') }}
                 </p>
-                <a href="{{ url_for('admin_login') }}" class="btn btn-success btn-lg px-5 pill-btn">
+                <a href="{{ url_for('admin.login') }}" class="btn btn-success btn-lg px-5 pill-btn">
                     <i class="fas fa-sign-in-alt me-2"></i> {{ _('Kirish') }}
                 </a>
             </div>

@@ -17,7 +17,7 @@
                 <i class="fas fa-filter"></i> Filtrlash
             </h5>
             <form method="GET" class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label">{{ _('Fan') }}</label>
                     <select class="form-select" name="subject_id" onchange="this.form.submit()">
                         <option value="">Barchasi</option>
@@ -30,7 +30,7 @@
                     </select>
                 </div>
 
-                <div class="col-md-4">
+                <div class="col-md-2">
                     <label class="form-label">{{ _('Sinf') }}</label>
                     <select class="form-select" name="grade" onchange="this.form.submit()">
                         <option value="">{{ _('Barchasi') }}</option>
@@ -47,7 +47,7 @@
                     </select>
                 </div>
 
-                <div class="col-md-4">
+                <div class="col-md-2">
                     <label class="form-label">{{ _('Chorak') }}</label>
                     <select class="form-select" name="quarter" onchange="this.form.submit()">
                         <option value="">{{ _('Barchasi') }}</option>
@@ -61,6 +61,24 @@
                             }}</option>
                     </select>
                 </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">{{ _('Sana') }}</label>
+                    <input type="date" name="filter_date" class="form-control"
+                        value="{{ request.args.get('filter_date', '') }}" onchange="this.form.submit()">
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">{{ _('Saralash') }}</label>
+                    <select class="form-select" name="sort_by" onchange="this.form.submit()">
+                        <option value="newest" {% if request.args.get('sort_by')=='newest' %}selected{% endif %}>{{
+                            _('Eng yangi') }}</option>
+                        <option value="score_desc" {% if request.args.get('sort_by')=='score_desc' %}selected{% endif
+                            %}>{{ _('Yuqori ball') }}</option>
+                        <option value="score_asc" {% if request.args.get('sort_by')=='score_asc' %}selected{% endif %}>
+                            {{ _('Past ball') }}</option>
+                    </select>
+                </div>
             </form>
         </div>
     </div>
@@ -71,10 +89,16 @@
                 <h5 class="card-title mb-0">
                     {{ _('Jami') }}: {{ results|length }} {{ _('ta natija') }}
                 </h5>
-                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal"
-                    data-bs-target="#deleteByDateModal">
-                    <i class="fas fa-trash-alt me-2"></i> {{ _('Kun bo\'yicha o\'chirish') }}
-                </button>
+                <div>
+                    <a href="{{ url_for('admin.export_results', subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), filter_date=request.args.get('filter_date'), sort_by=request.args.get('sort_by')) }}"
+                        class="btn btn-success me-2">
+                        <i class="fas fa-file-excel me-2"></i> {{ _('Excelga yuklash') }}
+                    </a>
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal"
+                        data-bs-target="#deleteByDateModal">
+                        <i class="fas fa-trash-alt me-2"></i> {{ _('Kun bo\'yicha o\'chirish') }}
+                    </button>
+                </div>
             </div>
 
             {% if results %}
@@ -139,7 +163,7 @@
                                 <small>{{ result.test_date.strftime('%d.%m.%Y %H:%M') }}</small>
                             </td>
                             <td>
-                                <form action="{{ url_for('admin_result_delete', id=result.id) }}" method="POST"
+                                <form action="{{ url_for('admin.result_delete', id=result.id) }}" method="POST"
                                     onsubmit="return confirm('{{ _('Bu natijani o\'chirishni tasdiqlaysizmi?') }}')">
                                     <button type="submit" class="btn btn-sm btn-outline-danger">
                                         <i class="fas fa-trash"></i>
@@ -210,7 +234,7 @@
                 <h5 class="modal-title">{{ _('Kun bo\'yicha o\'chirish') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="{{ url_for('admin_results_delete_by_date') }}" method="POST">
+            <form action="{{ url_for('admin.results_delete_by_date') }}" method="POST">
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">{{ _('Sanani tanlang') }}</label>

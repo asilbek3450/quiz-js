@@ -8,3 +8,5 @@ gunicorn
 Flask-Babel==4.0.0
 deep-translator
 markdown
+pandas
+openpyxl

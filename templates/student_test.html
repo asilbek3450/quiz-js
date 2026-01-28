@@ -54,23 +54,102 @@
         <!-- Navigation Buttons -->
         <div class="d-flex justify-content-between mt-4">
             {% if current > 1 %}
-            <a href="{{ url_for('student_navigate', direction='prev') }}" class="btn btn-light px-4 py-3">
+            <a href="{{ url_for('student.navigate', direction='prev') }}" class="btn btn-light px-4 py-3">
                 <i class="fas fa-arrow-left me-2"></i> {{ _('Oldingi') }}
             </a>
             {% else %}
             <div></div>
             {% endif %}
 
-            {% if current < total %} <a href="{{ url_for('student_navigate', direction='next') }}"
+            {% if current < total %} <a href="{{ url_for('student.navigate', direction='next') }}"
                 class="btn btn-primary px-4 py-3">
                 {{ _('Keyingi') }} <i class="fas fa-arrow-right ms-2"></i>
                 </a>
                 {% else %}
-                <a href="{{ url_for('student_navigate', direction='finish') }}" class="btn btn-success px-4 py-3"
-                    onclick="return confirm('{{ _('Testni yakunlashga ishonchingiz komilmi?') }}')">
+                <button type="button" class="btn btn-success px-4 py-3" data-bs-toggle="modal"
+                    data-bs-target="#finishModal">
                     <i class="fas fa-check-circle me-2"></i> {{ _('Yakunlash') }}
-                </a>
+                </button>
                 {% endif %}
+        </div>
+    </div>
+
+    <!-- Navigation Sidebar (Desktop) -->
+    <div class="col-lg-4 d-none d-lg-block">
+        <div class="card border-0 shadow-lg sticky-top" style="top: 2rem;">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0 fw-bold text-uppercase small text-muted"><i class="fas fa-th me-2"></i> {{ _('Savollar
+                    xaritasi') }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    {% for i in range(total) %}
+                    {% set q_id = question_ids[i] | string %}
+                    {% set is_current = (i + 1) == current %}
+                    {% set is_answered = q_id in answers %}
+
+                    <div class="col-3">
+                        <a href="{{ url_for('student.jump', index=i) }}"
+                            class="btn w-100 p-2 fw-bold 
+                               {{ 'btn-primary text-white shadow' if is_current else 
+                                  ('btn-success text-white' if is_answered else 'btn-outline-light text-dark border-2') }}"
+                            style="{{ 'border-color: #e2e8f0;' if not is_current and not is_answered }}">
+                            {{ i + 1 }}
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="mt-4 pt-3 border-top">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-primary rounded-circle p-1 me-2" style="width:12px; height:12px;"></span>
+                        <small class="text-muted">{{ _('Joriy savol') }}</small>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-success rounded-circle p-1 me-2" style="width:12px; height:12px;"></span>
+                        <small class="text-muted">{{ _('Belgilangan') }}</small>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-light border rounded-circle p-1 me-2"
+                            style="width:12px; height:12px;"></span>
+                        <small class="text-muted">{{ _('Belgilanmagan') }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile Navigation Toggle -->
+<div class="d-lg-none fixed-bottom p-3" style="z-index: 1000; pointer-events: none;">
+    <button class="btn btn-dark shadow-lg rounded-circle p-3" style="pointer-events: auto; float: right;" type="button"
+        data-bs-toggle="offcanvas" data-bs-target="#mobileMap">
+        <i class="fas fa-th fa-lg"></i>
+    </button>
+</div>
+
+<!-- Mobile Offcanvas Map -->
+<div class="offcanvas offcanvas-bottom h-75 rounded-top" tabindex="-1" id="mobileMap" aria-labelledby="mobileMapLabel">
+    <div class="offcanvas-header border-bottom">
+        <h5 class="offcanvas-title fw-bold" id="mobileMapLabel">{{ _('Savollar xaritasi') }}</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <div class="row g-2">
+            {% for i in range(total) %}
+            {% set q_id = question_ids[i] | string %}
+            {% set is_current = (i + 1) == current %}
+            {% set is_answered = q_id in answers %}
+
+            <div class="col-3 col-sm-2">
+                <a href="{{ url_for('student.jump', index=i) }}" class="btn w-100 p-3 fw-bold 
+                    {{ 'btn-primary text-white shadow' if is_current else 
+                       ('btn-success text-white' if is_answered else 'btn-outline-light text-dark border-2') }}"
+                    style="{{ 'border-color: #e2e8f0;' if not is_current and not is_answered }}">
+                    {{ i + 1 }}
+                </a>
+            </div>
+            {% endfor %}
         </div>
     </div>
 </div>
@@ -124,6 +203,7 @@
         border-color: var(--primary) !important;
     }
 
+    /* ... CSS ... */
     .animate-scale-in {
         animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
@@ -141,64 +221,224 @@
     }
 </style>
 
+<!-- Finish Confirmation Modal -->
+<div class="modal fade" id="finishModal" tabindex="-1" aria-labelledby="finishModalLabel" aria-hidden="true"
+    data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+            <div class="modal-header bg-success text-white border-0 py-3">
+                <h5 class="modal-title fw-bold" id="finishModalLabel"><i class="fas fa-check-circle me-2"></i> {{
+                    _('Testni yakunlash') }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div class="mb-3 text-success">
+                    <i class="fas fa-clipboard-check fa-4x animate-scale-in"></i>
+                </div>
+                <h4 class="fw-bold mb-3">{{ _('Rostdan ham testni yakunlamoqchimisiz?') }}</h4>
+                <p class="text-muted mb-0">{{ _('Yakunlash tugmasini bosgandan so\'ng natijalaringiz hisoblanadi.') }}
+                </p>
+                <p class="text-danger small mt-2"><i class="fas fa-exclamation-circle me-1"></i> {{ _('Diqqat! Barcha
+                    savollarni belgilamasangiz test yakunlanmaydi.') }}</p>
+            </div>
+            <div class="modal-footer border-0 bg-light p-3 justify-content-center">
+                <button type="button" class="btn btn-light px-4 py-2" data-bs-dismiss="modal">{{ _('Yo\'q, qaytish')
+                    }}</button>
+                <a href="{{ url_for('student.navigate', direction='finish') }}"
+                    class="btn btn-success px-5 py-2 fw-bold shadow-sm">
+                    {{ _('Ha, yakunlash') }} <i class="fas fa-arrow-right ms-2"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
 {% block extra_js %}
-<script>
-    // ANTI-COPY & ANTI-CONTEXT MENU SCRIPT
-    document.addEventListener('contextmenu', event => event.preventDefault());
+<!-- Protection Overlay -->
+<!-- Protection Overlay -->
+<div id="violation-overlay"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #e74c3c; z-index: 9999; color: white; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+    <div class="display-3 mb-4"><i class="fas fa-exclamation-triangle"></i></div>
+    <h1 class="display-3 fw-bold">{{ _('QOIDABUZARLIK!') }}</h1>
+    <h3 class="mb-4">{{ _('Siz test oynasidan chiqdingiz!') }}</h3>
+    <div class="mb-4">
+        <p class="h5 mb-3">{{ _('Testni davom ettirish uchun nazoratchi parolini kiriting:') }}</p>
+        <div class="input-group justify-content-center" style="max-width: 300px; margin: 0 auto;">
+            <input type="password" id="unlock-password" class="form-control" placeholder="{{ _('Parol') }}">
+            <button class="btn btn-dark" onclick="checkUnlock()">{{ _('Ochish') }}</button>
+        </div>
+        <div id="unlock-error" class="text-white mt-2 small" style="display:none;">{{ _('Noto\'g\'ri parol!') }}</div>
+    </div>
+</div>
 
-    document.onkeydown = function (e) {
-        if (e.keyCode == 123) { // F12
-            return false;
-        }
-        if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) { // Ctrl+Shift+I
-            return false;
-        }
-        if (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) { // Ctrl+Shift+C
-            return false;
-        }
-        if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) { // Ctrl+Shift+J
-            return false;
-        }
-        if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) { // Ctrl+U
-            return false;
-        }
-        if (e.ctrlKey && e.keyCode == 'C'.charCodeAt(0)) { // Ctrl+C
-            return false;
-        }
-    }
+<!-- Start Overlay for Audio Permission & Grace Period -->
+<!-- Start Overlay for Audio Permission & Grace Period - ONLY ON FIRST Q -->
+{% if current <= 1 and is_protected %} <div id="start-overlay"
+    style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 9998; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; backdrop-filter: blur(5px);">
+    <div class="card p-5 border-0 shadow-xl" style="max-width: 500px;">
+        <div class="mb-4 text-primary">
+            <i class="fas fa-shield-alt fa-4x"></i>
+        </div>
+        <h2 class="fw-bold mb-3">{{ _('Testni boshlash') }}</h2>
+        <p class="text-muted mb-4">{{ _('Diqqat! Test "Himoyalangan rejimda" o\'tkaziladi. Test vaqtida oynadan chiqmang
+            yoki boshqa ilovalarga o\'tmang, aks holda bu qoidabuzarlik deb hisoblanadi.') }}</p>
+        <button class="btn btn-primary btn-lg shadow-lg px-5 py-3" onclick="startTest()">
+            <i class="fas fa-play me-2"></i> {{ _('Testni boshlash') }}
+        </button>
+    </div>
+    </div>
+    {% endif %}
 
-    function submitAnswer(questionId, answer) {
-        fetch('/student/answer', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                question_id: questionId,
-                answer: answer
-            })
+    <script>
+        // Configuration
+        const IS_PROTECTED = {{ 'true' if is_protected else 'false' }};
+        // Enable protection immediately if it's protected and NOT the first question (handled by JS logic)
+        // Or if first question, wait for start.
+        const CURRENT_Q = {{ current }};
+
+        // If Q > 1 and protected, enable immediately. If Q==1, wait for button.
+        let protectionEnabled = (IS_PROTECTED && CURRENT_Q > 1);
+
+        // Audio Context
+        let audioCtx = null;
+
+        function startTest() {
+            // Hide overlay immediately
+            const overlay = document.getElementById('start-overlay');
+            if (overlay) overlay.style.display = 'none';
+
+            // Try to unlock audio
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            } catch (e) {
+                console.log("Audio init warning:", e);
+            }
+
+            // Arm protection with delay
+            if (IS_PROTECTED) {
+                console.log("Arming protection in 2s...");
+                setTimeout(() => {
+                    protectionEnabled = true;
+                    console.log("Protection armed.");
+                }, 2000);
+            }
+        }
+
+        // ----------- ANTI-CHEAT LOGIC -----------
+
+        function playWarningSound() {
+            try {
+                if (!audioCtx) return;
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                oscillator.type = 'sawtooth';
+                oscillator.frequency.value = 1000;
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                oscillator.start();
+                gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1);
+                oscillator.stop(audioCtx.currentTime + 1);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function checkUnlock() {
+            const pwd = document.getElementById('unlock-password').value;
+            const err = document.getElementById('unlock-error');
+
+            if (pwd === 'jahonschool') {
+                document.getElementById('violation-overlay').style.display = 'none';
+                document.getElementById('unlock-password').value = '';
+                if (err) err.style.display = 'none';
+            } else {
+                if (err) err.style.display = 'block';
+            }
+        }
+
+        function triggerViolation() {
+            if (!protectionEnabled) return;
+
+            // Show violation overlay
+            const overlay = document.getElementById('violation-overlay');
+            if (overlay) overlay.style.display = 'flex';
+
+            playWarningSound();
+
+            // No auto-unlock logic anymore
+            // Wait for password
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && protectionEnabled) triggerViolation();
         });
-    }
 
-    // Global Timer
-    const startTimePayload = {{ session.get('start_time', 0) }};
-    const startTimeC = startTimePayload ? startTimePayload * 1000 : Date.now(); // Convert to milliseconds
+        window.addEventListener('blur', () => {
+            if (protectionEnabled) triggerViolation();
+        });
 
-    function updateTimer() {
-        const now = Date.now();
-        const diff = Math.floor((now - startTimeC) / 1000);
+        // Anti-Screenshot & Keys
+        document.addEventListener('keyup', (e) => {
+            if (protectionEnabled) {
+                if (e.key === 'PrintScreen' || e.keyCode === 44) {
+                    navigator.clipboard.writeText("No screenshots!");
+                    triggerViolation();
+                }
+                if (e.metaKey && e.shiftKey && (e.key === '3' || e.key === '4' || e.key === '5')) {
+                    triggerViolation();
+                }
+            }
+        });
 
-        if (diff >= 0) {
-            const mins = Math.floor(diff / 60);
-            const secs = diff % 60;
-            document.getElementById('timer').textContent =
-                `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        document.addEventListener('contextmenu', event => {
+            if (protectionEnabled) event.preventDefault();
+        });
+
+        document.onkeydown = function (e) {
+            if (!protectionEnabled) return true;
+            // F12, Ctrl+Shift+I/J/C, Ctrl+U
+            if (e.keyCode == 123) return false;
+            if (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) return false;
+            if (e.ctrlKey && e.keyCode == 85) return false;
         }
-    }
 
-    // Update immediately and then every second
-    updateTimer();
-    setInterval(updateTimer, 1000);
-</script>
-{% endblock %}
-{% endblock %}
+        // Standard Logic
+        function submitAnswer(questionId, answer) {
+            fetch('/student/answer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question_id: questionId, answer: answer })
+            });
+        }
+
+        // Timer
+        const startTimePayload = {{ session.get('start_time', 0) }};
+        const startTimeC = startTimePayload ? startTimePayload * 1000 : Date.now();
+
+        function updateTimer() {
+            const now = Date.now();
+            const diff = Math.floor((now - startTimeC) / 1000);
+            if (diff >= 0) {
+                const mins = Math.floor(diff / 60);
+                const secs = diff % 60;
+                const timerEl = document.getElementById('timer');
+                if (timerEl) timerEl.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
+        }
+
+        updateTimer();
+        setInterval(updateTimer, 1000);
+    </script>
+    {% endblock %}
