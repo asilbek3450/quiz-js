@@ -72,6 +72,10 @@
         font-weight: bold;
         color: #475569;
     }
+
+    .bg-soft-danger {
+        background: rgba(239, 68, 68, 0.1);
+    }
 </style>
 {% endblock %}
 
@@ -143,27 +147,27 @@
             </div>
         </div>
 
-        <!-- Oxirgi Faollik -->
+        <!-- O'zlashtirish (Pass Rate) -->
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card stat-card bg-gradient-info h-100 shadow-sm">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs fw-bold text-uppercase mb-1 opacity-75">{{ _('Oxirgi Faollik') }}</div>
-                            <div class="h3 mb-0 fw-bold">{{ recent_results|length }}</div>
-                            <div class="mt-2 text-xs opacity-75">{{ _('So\'nggi testlar') }}</div>
+                            <div class="text-xs fw-bold text-uppercase mb-1 opacity-75">{{ _('O\'zlashtirish') }}</div>
+                            <div class="h3 mb-0 fw-bold">{{ "%.0f"|format(pass_rate) }}%</div>
+                            <div class="mt-2 text-xs opacity-75">{{ _('70%% dan yuqori natijalar') }}</div>
                         </div>
                         <div class="col-auto">
-                            <i class="fas fa-history fa-2x"></i>
+                            <i class="fas fa-graduation-cap fa-2x"></i>
                         </div>
                     </div>
-                    <i class="fas fa-clock icon-bg"></i>
+                    <i class="fas fa-award icon-bg"></i>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Charts Row -->
+    <!-- Charts & Difficult Questions Row -->
     <div class="row mb-4">
         <div class="col-lg-8 mb-4">
             <div class="card shadow-sm h-100">
@@ -180,12 +184,29 @@
         <div class="col-lg-4 mb-4">
             <div class="card shadow-sm h-100">
                 <div class="card-header py-3 bg-white d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 fw-bold text-primary">{{ _('Savollar Taqsimoti') }}</h6>
+                    <h6 class="m-0 fw-bold text-primary">{{ _('Eng Qiyin Savollar (Top 5)') }}</h6>
                 </div>
-                <div class="card-body">
-                    <div class="chart-container">
-                        <canvas id="doughnutChart"></canvas>
-                    </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for dq in difficult_questions %}
+                        <li class="list-group-item py-3">
+                            <div class="small fw-bold text-dark mb-1">{{ dq.text }}</div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge bg-soft-danger text-danger border-0 small">{{ dq.subject }}</span>
+                                <span class="text-danger small fw-bold"><i
+                                        class="fas fa-exclamation-triangle me-1"></i>{{ "%.0f"|format(dq.fail_rate) }}%
+                                    xato</span>
+                            </div>
+                            <div class="progress mt-2" style="height: 4px;">
+                                <div class="progress-bar bg-danger" style="width: {{ dq.fail_rate }}%"></div>
+                            </div>
+                        </li>
+                        {% else %}
+                        <li class="list-group-item text-center py-4 text-muted small">
+                            {{ _('Ma\'lumotlar yetarli emas') }}
+                        </li>
+                        {% endfor %}
+                    </ul>
                 </div>
             </div>
         </div>
@@ -271,66 +292,47 @@
 {% block extra_js %}
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        // Data for charts - Passed directly from backend
-        // Use 'safe' filter to ensure JSON is not escaped if needed, although 'tojson' handles it.
-        const subjects = {{ subject_names| tojson
+        const subjects = {{ subject_names | tojson
     }};
-    const questionCounts = {{ question_counts| tojson }};
-    const resultCounts = {{ result_counts| tojson }};
+    const resultCounts = {{ result_counts | tojson }};
 
-    // Bar Chart (Test Results)
     const ctxBar = document.getElementById('barChart').getContext('2d');
     new Chart(ctxBar, {
         type: 'bar',
         data: {
             labels: subjects,
             datasets: [{
-                label: '{{ _('Topshirilgan Testlar') }}',
+                label: '{{ _("Topshirilgan Testlar") }}',
                 data: resultCounts,
-                backgroundColor: '#4e73df',
+                backgroundColor: 'rgba(78, 115, 223, 0.8)',
                 hoverBackgroundColor: '#2e59d9',
                 borderColor: '#4e73df',
-                borderRadius: 5
+                borderWidth: 1,
+                borderRadius: 8
             }]
         },
         options: {
             maintainAspectRatio: false,
             responsive: true,
             plugins: {
-                legend: { display: false }
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    padding: 12,
+                    cornerRadius: 8
+                }
             },
             scales: {
                 y: {
                     beginAtZero: true,
-                    ticks: { stepSize: 1 },
-                    grid: { borderDash: [2] }
+                    ticks: { stepSize: 1, color: '#858796' },
+                    grid: { borderDash: [2], drawBorder: false, color: '#e3e6f0' }
                 },
                 x: {
-                    grid: { display: false }
+                    ticks: { color: '#858796' },
+                    grid: { display: false, drawBorder: false }
                 }
             }
-        }
-    });
-
-    // Doughnut Chart (Questions Distribution)
-    const ctxDoughnut = document.getElementById('doughnutChart').getContext('2d');
-    new Chart(ctxDoughnut, {
-        type: 'doughnut',
-        data: {
-            labels: subjects,
-            datasets: [{
-                data: questionCounts,
-                backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796'],
-                hoverBorderColor: "rgba(234, 236, 244, 1)",
-            }]
-        },
-        options: {
-            maintainAspectRatio: false,
-            responsive: true,
-            plugins: {
-                legend: { position: 'bottom' }
-            },
-            cutout: '70%',
         }
     });
     });

@@ -11,7 +11,7 @@
             </div>
             <div class="text-end">
                 <span class="text-muted small text-uppercase fw-bold">{{ _('Vaqt') }}</span>
-                <div class="h4 mb-0 fw-bold text-primary" id="timer">00:00</div>
+                <div class="h4 mb-0 fw-bold text-primary" id="timer">30:00</div>
             </div>
         </div>
 
@@ -423,22 +423,87 @@
             });
         }
 
-        // Timer
+        // Timer configuration (30 minutes)
+        const TEST_DURATION = 30 * 60; // 1800 seconds
         const startTimePayload = {{ session.get('start_time', 0) }};
         const startTimeC = startTimePayload ? startTimePayload * 1000 : Date.now();
 
         function updateTimer() {
             const now = Date.now();
-            const diff = Math.floor((now - startTimeC) / 1000);
-            if (diff >= 0) {
-                const mins = Math.floor(diff / 60);
-                const secs = diff % 60;
+            const diffInSeconds = Math.floor((now - startTimeC) / 1000);
+            const remaining = TEST_DURATION - diffInSeconds;
+
+            if (remaining <= 0) {
                 const timerEl = document.getElementById('timer');
-                if (timerEl) timerEl.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                if (timerEl) timerEl.textContent = "00:00";
+                // Auto-submit when time is up
+                window.location.href = "{{ url_for('student.navigate', direction='finish', force=1) }}";
+                return;
+            }
+
+            const mins = Math.floor(remaining / 60);
+            const secs = remaining % 60;
+            const timerEl = document.getElementById('timer');
+            if (timerEl) {
+                timerEl.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                if (remaining < 60) {
+                    timerEl.classList.remove('text-primary');
+                    timerEl.classList.add('text-danger');
+                }
             }
         }
 
         updateTimer();
         setInterval(updateTimer, 1000);
+
+        // Anti-Cheat: Hide content on blur to prevent screenshots
+        window.addEventListener('blur', () => {
+            if (protectionEnabled) {
+                document.body.style.filter = "blur(20px)";
+                triggerViolation();
+            }
+        });
+
+        window.addEventListener('focus', () => {
+            document.body.style.filter = "none";
+        });
+
+        function playWarningSound() {
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                // Create a louder, more alarming sound
+                const oscillator1 = audioCtx.createOscillator();
+                const oscillator2 = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                oscillator1.type = 'sawtooth';
+                oscillator1.frequency.setValueAtTime(800, audioCtx.currentTime);
+                oscillator1.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.5);
+
+                oscillator2.type = 'square';
+                oscillator2.frequency.setValueAtTime(400, audioCtx.currentTime);
+                oscillator2.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.5);
+
+                oscillator1.connect(gainNode);
+                oscillator2.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                oscillator1.start();
+                oscillator2.start();
+
+                gainNode.gain.setValueAtTime(0.6, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 1.5);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 2);
+
+                oscillator1.stop(audioCtx.currentTime + 2);
+                oscillator2.stop(audioCtx.currentTime + 2);
+            } catch (e) {
+                console.error("Audio error:", e);
+            }
+        }
     </script>
     {% endblock %}

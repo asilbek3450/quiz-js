@@ -22,13 +22,27 @@ def calculate_grade(score, total=20):
 @student_bp.route('/start', methods=['GET', 'POST'])
 def start():
     if request.method == 'POST':
-        session['student_name'] = request.form['name']
-        session['student_surname'] = request.form['surname']
-        session['grade'] = int(request.form['grade'])
+        name = request.form['name']
+        surname = request.form['surname']
+        grade = int(request.form['grade'])
+        subject_id = int(request.form['subject_id'])
+        
+        # Resume logic: Check if session already exists for this student and subject
+        if session.get('student_name') == name and \
+           session.get('student_surname') == surname and \
+           session.get('subject_id') == subject_id and \
+           'question_ids' in session:
+            session.permanent = True
+            return redirect(url_for('student.test'))
+
+        session['student_name'] = name
+        session['student_surname'] = surname
+        session['grade'] = grade
         session['class_number'] = request.form['class_number']
         session['quarter'] = int(request.form['quarter'])
-        session['subject_id'] = int(request.form['subject_id'])
+        session['subject_id'] = subject_id
         session['start_time'] = datetime.now().timestamp()
+        session.permanent = True
         
         subject = Subject.query.get(session['subject_id'])
         # Store protection status in session for frontend use
@@ -65,6 +79,22 @@ def start():
     # Note: get_locale() returns Locale object or string? Flask-Babel docs say string usually.
     # Be careful, str(get_locale())
     lang = str(get_locale())
+    active_test_info = None
+    
+    if 'question_ids' in session:
+        active_subject = Subject.query.get(session.get('subject_id'))
+        subject_name = active_subject.name if active_subject else ""
+        if lang == 'ru' and active_subject and active_subject.name_ru:
+            subject_name = active_subject.name_ru
+        elif lang == 'en' and active_subject and active_subject.name_en:
+            subject_name = active_subject.name_en
+            
+        active_test_info = {
+            'name': session.get('student_name'),
+            'surname': session.get('student_surname'),
+            'subject': subject_name
+        }
+
     for s in subjects:
         if lang == 'ru' and s.name_ru:
             s.display_name = s.name_ru
@@ -73,7 +103,7 @@ def start():
         else:
             s.display_name = s.name
             
-    return render_template('student_start.html', subjects=subjects)
+    return render_template('student_start.html', subjects=subjects, active_test_info=active_test_info)
 
 @student_bp.route('/test')
 def test():
@@ -181,9 +211,10 @@ def navigate(direction):
     elif direction == 'finish':
         answers = session.get('answers', {})
         question_ids = session['question_ids']
+        force = request.args.get('force') == '1'
         
-        # Check for completeness
-        if len(answers) < len(question_ids):
+        # Check for completeness unless forced
+        if not force and len(answers) < len(question_ids):
             for idx, qid in enumerate(question_ids):
                 if str(qid) not in answers:
                     session['current_question'] = idx

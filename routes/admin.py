@@ -5,6 +5,8 @@ from extensions import db
 from models import Admin, Subject, Question, TestResult
 from deep_translator import GoogleTranslator
 from datetime import datetime
+import json
+from sqlalchemy import func
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -52,13 +54,70 @@ def logout():
 @admin_bp.route('/dashboard')
 def dashboard():
     total_questions = Question.query.count()
-    total_results = TestResult.query.count()
+    results = TestResult.query.all()
+    total_results = len(results)
     subjects = Subject.query.all()
     recent_results = TestResult.query.order_by(TestResult.test_date.desc()).limit(10).all()
     
     subject_names = [s.name for s in subjects]
     question_counts = [len(s.questions) for s in subjects]
     result_counts = [len(s.results) for s in subjects]
+
+    # Calculate Pass Rate (Score >= 70%)
+    passing_results = [r for r in results if r.percentage >= 70]
+    pass_rate = (len(passing_results) / total_results * 100) if total_results > 0 else 0
+
+    # Analytics: Top 5 Difficult Questions
+    question_stats = {} # {question_id: {'wrong': 0, 'total': 0}}
+    
+    for r in results:
+        try:
+            answers = json.loads(r.answers_json)
+            for q_id, user_ans in answers.items():
+                q_id_int = int(q_id)
+                if q_id_int not in question_stats:
+                    question_stats[q_id_int] = {'wrong': 0, 'total': 0}
+                
+                question_stats[q_id_int]['total'] += 1
+                # We need correct answer to check if it was wrong
+                # This could be slow if we query for each question. 
+                # Let's optimize by getting correct answers once.
+        except:
+            continue
+
+    difficult_questions_data = []
+    if question_stats:
+        # Get all relevant questions in one go
+        all_q_ids = list(question_stats.keys())
+        questions_db = {q.id: q for q in Question.query.filter(Question.id.in_(all_q_ids)).all()}
+        
+        # Re-calc 'wrong' counts correctly
+        for r in results:
+            try:
+                answers = json.loads(r.answers_json)
+                for q_id, user_ans in answers.items():
+                    q_id_int = int(q_id)
+                    q_obj = questions_db.get(q_id_int)
+                    if q_obj and user_ans != q_obj.correct_answer:
+                        question_stats[q_id_int]['wrong'] += 1
+            except:
+                continue
+
+        # Sort by failure rate (wrong / total)
+        for q_id, stats in question_stats.items():
+            if stats['total'] > 5: # Only include questions with enough data
+                stats['fail_rate'] = (stats['wrong'] / stats['total']) * 100
+                q_obj = questions_db.get(q_id)
+                if q_obj:
+                    difficult_questions_data.append({
+                        'text': q_obj.question_text[:100] + '...',
+                        'fail_rate': stats['fail_rate'],
+                        'wrong_count': stats['wrong'],
+                        'total_count': stats['total'],
+                        'subject': q_obj.subject.name
+                    })
+        
+        difficult_questions_data = sorted(difficult_questions_data, key=lambda x: x['fail_rate'], reverse=True)[:5]
     
     return render_template('admin_dashboard.html',
                          total_questions=total_questions,
@@ -67,7 +126,9 @@ def dashboard():
                          recent_results=recent_results,
                          subject_names=subject_names,
                          question_counts=question_counts,
-                         result_counts=result_counts)
+                         result_counts=result_counts,
+                         pass_rate=pass_rate,
+                         difficult_questions=difficult_questions_data)
 
 @admin_bp.route('/questions')
 def questions():

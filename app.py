@@ -1,4 +1,5 @@
 from flask import Flask, session
+from datetime import timedelta
 from extensions import db, babel
 from routes.main import main_bp
 from routes.admin import admin_bp
@@ -11,6 +12,7 @@ def create_app():
     app.config['SECRET_KEY'] = 'your-secret-key-here-change-in-production'
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test_platform.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=60)
 
     db.init_app(app)
     
