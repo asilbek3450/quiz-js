@@ -186,8 +186,7 @@
                     {% if p %}
                     <li class="page-item {{ 'active' if p == pagination.page }}">
                         <a class="page-link"
-                            href="{{ url_for('admin.results', page=p, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), filter_date=request.args.get('filter_date'), sort_by=request.args.get('sort_by')) }}">{{
-                            p }}</a>
+                            href="{{ url_for('admin.results', page=p, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), filter_date=request.args.get('filter_date'), sort_by=request.args.get('sort_by')) }}">{{ p }}</a>
                     </li>
                     {% else %}
                     <li class="page-item disabled"><span class="page-link">...</span></li>
