@@ -266,7 +266,8 @@
     <div class="mb-4">
         <p class="h5 mb-3">{{ _('Testni davom ettirish uchun nazoratchi parolini kiriting:') }}</p>
         <div class="input-group justify-content-center" style="max-width: 300px; margin: 0 auto;">
-            <input type="password" id="unlock-password" class="form-control" placeholder="{{ _('Parol') }}">
+            <input type="password" id="unlock-password" class="form-control" placeholder="{{ _('Parol') }}"
+                autocomplete="new-password" name="supervisor_unlock_code">
             <button class="btn btn-dark" onclick="checkUnlock()">{{ _('Ochish') }}</button>
         </div>
         <div id="unlock-error" class="text-white mt-2 small" style="display:none;">{{ _('Noto\'g\'ri parol!') }}</div>
