@@ -483,12 +483,34 @@ def results():
     else: # newest
         query = query.order_by(TestResult.test_date.desc())
     
-    results = query.all()
+    # Calculate stats before pagination (on the full filtered query)
+    total_count = query.count()
+    
+    # Clone query for stats to avoid messing up the main query
+    # Note: efficient way is to use with_entities on the base query if possible, 
+    # but here query is already built with filters.
+    
+    excellent_count = query.filter(TestResult.percentage >= 90).count()
+    
+    avg_percentage = query.with_entities(func.avg(TestResult.percentage)).scalar() or 0
+    avg_score = query.with_entities(func.avg(TestResult.score)).scalar() or 0
+    
+    # Pagination
+    page = request.args.get('page', 1, type=int)
+    per_page = 50
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    results = pagination.items
+    
     subjects = Subject.query.all()
     
     return render_template('admin_results.html', 
-                         results=results, 
-                         subjects=subjects)
+                         results=results,
+                         pagination=pagination,
+                         subjects=subjects,
+                         total_count=total_count,
+                         excellent_count=excellent_count,
+                         avg_percentage=round(avg_percentage, 1),
+                         avg_score=round(avg_score, 1))
 
 @admin_bp.route('/result/delete/<int:id>', methods=['POST'])
 def result_delete(id):

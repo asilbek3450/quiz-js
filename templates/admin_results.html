@@ -51,14 +51,10 @@
                     <label class="form-label">{{ _('Chorak') }}</label>
                     <select class="form-select" name="quarter" onchange="this.form.submit()">
                         <option value="">{{ _('Barchasi') }}</option>
-                        <option value="1" {% if request.args.get('quarter')=='1' %}selected{% endif %}>1-{{ _('chorak')
-                            }}</option>
-                        <option value="2" {% if request.args.get('quarter')=='2' %}selected{% endif %}>2-{{ _('chorak')
-                            }}</option>
-                        <option value="3" {% if request.args.get('quarter')=='3' %}selected{% endif %}>3-{{ _('chorak')
-                            }}</option>
-                        <option value="4" {% if request.args.get('quarter')=='4' %}selected{% endif %}>4-{{ _('chorak')
-                            }}</option>
+                        <option value="1" {% if request.args.get('quarter')=='1' %}selected{% endif %}>1-{{ _('chorak') }}</option>
+                        <option value="2" {% if request.args.get('quarter')=='2' %}selected{% endif %}>2-{{ _('chorak') }}</option>
+                        <option value="3" {% if request.args.get('quarter')=='3' %}selected{% endif %}>3-{{ _('chorak') }}</option>
+                        <option value="4" {% if request.args.get('quarter')=='4' %}selected{% endif %}>4-{{ _('chorak') }}</option>
                     </select>
                 </div>
 
@@ -87,7 +83,7 @@
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h5 class="card-title mb-0">
-                    {{ _('Jami') }}: {{ results|length }} {{ _('ta natija') }}
+                    {{ _('Jami') }}: {{ total_count }} {{ _('ta natija') }}
                 </h5>
                 <div>
                     <a href="{{ url_for('admin.export_results', subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), filter_date=request.args.get('filter_date'), sort_by=request.args.get('sort_by')) }}"
@@ -164,7 +160,7 @@
                             </td>
                             <td>
                                 <form action="{{ url_for('admin.result_delete', id=result.id) }}" method="POST"
-                                    onsubmit="return confirm('{{ _('Bu natijani o\'chirishni tasdiqlaysizmi?') }}')">
+                                    onsubmit="return confirm(&quot;{{ _('Bu natijani o\'chirishni tasdiqlaysizmi?') }}&quot;)">
                                     <button type="submit" class="btn btn-sm btn-outline-danger">
                                         <i class="fas fa-trash"></i>
                                     </button>
@@ -176,6 +172,38 @@
                 </table>
             </div>
 
+            {% if pagination.pages > 1 %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {{ 'disabled' if not pagination.has_prev }}">
+                        <a class="page-link"
+                            href="{{ url_for('admin.results', page=pagination.prev_num, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), filter_date=request.args.get('filter_date'), sort_by=request.args.get('sort_by')) }}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+
+                    {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if p %}
+                    <li class="page-item {{ 'active' if p == pagination.page }}">
+                        <a class="page-link"
+                            href="{{ url_for('admin.results', page=p, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), filter_date=request.args.get('filter_date'), sort_by=request.args.get('sort_by')) }}">{{
+                            p }}</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                    {% endfor %}
+
+                    <li class="page-item {{ 'disabled' if not pagination.has_next }}">
+                        <a class="page-link"
+                            href="{{ url_for('admin.results', page=pagination.next_num, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), filter_date=request.args.get('filter_date'), sort_by=request.args.get('sort_by')) }}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+
             {% if results|length > 0 %}
             <div class="mt-4">
                 <h5>{{ _('Statistika') }}</h5>
@@ -183,28 +211,28 @@
                     <div class="col-md-3">
                         <div class="stat-card">
                             <i class="fas fa-users text-primary"></i>
-                            <h3>{{ results|length }}</h3>
+                            <h3>{{ total_count }}</h3>
                             <p>{{ _('Jami testlar') }}</p>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="stat-card">
                             <i class="fas fa-star text-success"></i>
-                            <h3>{{ (results|selectattr('percentage', 'ge', 90)|list|length) }}</h3>
+                            <h3>{{ excellent_count }}</h3>
                             <p>{{ _('A\'lo baholar') }}</p>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="stat-card">
                             <i class="fas fa-chart-line text-info"></i>
-                            <h3>{{ ((results|sum(attribute='percentage') / results|length)|round(1)) }}%</h3>
+                            <h3>{{ avg_percentage }}%</h3>
                             <p>{{ _('O\'rtacha natija') }}</p>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="stat-card">
                             <i class="fas fa-trophy text-warning"></i>
-                            <h3>{{ ((results|sum(attribute='score') / results|length)|round(1)) }}</h3>
+                            <h3>{{ avg_score }}</h3>
                             <p>{{ _('O\'rtacha ball') }}</p>
                         </div>
                     </div>
@@ -223,6 +251,31 @@
 </div>
 
 <div style="height: 60px;"></div>
+
+<!-- Smart Scroll Button -->
+<button id="smartScrollBtn"
+    class="btn btn-primary rounded-circle shadow-lg d-none align-items-center justify-content-center animate-bounce"
+    style="position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; z-index: 1000; transition: all 0.3s ease; border: 4px solid white;">
+    <i class="fas fa-arrow-down fa-lg"></i>
+</button>
+
+<style>
+    @keyframes bounce {
+
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(-5px);
+        }
+    }
+
+    .animate-bounce:hover {
+        animation: bounce 1s infinite;
+    }
+</style>
 {% endblock %}
 
 {% block extra_js %}
@@ -254,4 +307,42 @@
         </div>
     </div>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const btn = document.getElementById('smartScrollBtn');
+        const icon = btn.querySelector('i');
+
+        function updateBtn() {
+            if (document.body.scrollHeight <= window.innerHeight) {
+                btn.classList.add('d-none');
+                btn.classList.remove('d-flex');
+                return;
+            } else {
+                btn.classList.remove('d-none');
+                btn.classList.add('d-flex');
+            }
+
+            // Determine direction
+            // If we are close to bottom (within 50px)
+            const isAtBottom = (window.innerHeight + window.scrollY) >= document.body.offsetHeight - 50;
+
+            if (isAtBottom) {
+                icon.classList.remove('fa-arrow-down');
+                icon.classList.add('fa-arrow-up');
+                btn.onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+                btn.title = "Yuqoriga";
+            } else {
+                icon.classList.remove('fa-arrow-up');
+                icon.classList.add('fa-arrow-down');
+                btn.onclick = () => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                btn.title = "Pastga";
+            }
+        }
+
+        window.addEventListener('scroll', updateBtn);
+        window.addEventListener('resize', updateBtn);
+        // Check initially after a small delay to ensure rendering
+        setTimeout(updateBtn, 100);
+    });
+</script>
 {% endblock %}
