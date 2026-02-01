@@ -23,8 +23,15 @@
         <!-- Question Card -->
         <div class="card border-0 shadow-lg mb-4 animate-scale-in">
             <div class="card-body p-4 p-md-5">
-                <div class="question-text mb-4 text-dark user-select-none">
-                    <div class="lh-base fw-bold">{{ question_text | markdown | safe }}</div>
+                <div class="d-flex justify-content-between align-items-start mb-4">
+                    <div class="question-text text-dark user-select-none flex-grow-1">
+                        <div class="lh-base fw-bold fs-5">{{ question_text | markdown | safe }}</div>
+                    </div>
+                    <button type="button" id="mark-btn" onclick="toggleMark('{{ question.id }}')"
+                        class="btn {{ 'btn-warning' if question.id in marked_questions else 'btn-outline-warning' }} ms-3 shadow-sm animate-scale-in"
+                        title="{{ _('Qayta ko\'rish uchun belgilash') }}">
+                        <i class="{{ 'fas' if question.id in marked_questions else 'far' }} fa-bookmark"></i>
+                    </button>
                 </div>
 
                 <div class="options-list">
@@ -87,14 +94,23 @@
                     {% set q_id = question_ids[i] | string %}
                     {% set is_current = (i + 1) == current %}
                     {% set is_answered = q_id in answers %}
+                    {% set is_marked = question_ids[i] in marked_questions %}
 
                     <div class="col-3">
                         <a href="{{ url_for('student.jump', index=i) }}"
-                            class="btn w-100 p-2 fw-bold 
+                            class="btn w-100 p-2 fw-bold position-relative
                                {{ 'btn-primary text-white shadow' if is_current else 
-                                  ('btn-success text-white' if is_answered else 'btn-outline-light text-dark border-2') }}"
-                            style="{{ 'border-color: #e2e8f0;' if not is_current and not is_answered }}">
+                                  ('btn-warning text-dark' if is_marked else
+                                  ('btn-success text-white' if is_answered else 'btn-outline-light text-dark border-2')) }}"
+                            style="{{ 'border-color: #e2e8f0;' if not is_current and not is_answered and not is_marked }}">
                             {{ i + 1 }}
+                            {% if is_marked %}
+                            <span
+                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                style="padding: 0.35em 0.5em; font-size: 0.6em; z-index: 1;">
+                                <i class="fas fa-bookmark"></i>
+                            </span>
+                            {% endif %}
                         </a>
                     </div>
                     {% endfor %}
@@ -108,6 +124,10 @@
                     <div class="d-flex align-items-center mb-2">
                         <span class="badge bg-success rounded-circle p-1 me-2" style="width:12px; height:12px;"></span>
                         <small class="text-muted">{{ _('Belgilangan') }}</small>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-warning rounded-circle p-1 me-2" style="width:12px; height:12px;"></span>
+                        <small class="text-muted">{{ _('Qayta ko\'rish uchun') }}</small>
                     </div>
                     <div class="d-flex align-items-center">
                         <span class="badge bg-light border rounded-circle p-1 me-2"
@@ -140,13 +160,22 @@
             {% set q_id = question_ids[i] | string %}
             {% set is_current = (i + 1) == current %}
             {% set is_answered = q_id in answers %}
+            {% set is_marked = question_ids[i] in marked_questions %}
 
             <div class="col-3 col-sm-2">
-                <a href="{{ url_for('student.jump', index=i) }}" class="btn w-100 p-3 fw-bold 
-                    {{ 'btn-primary text-white shadow' if is_current else 
-                       ('btn-success text-white' if is_answered else 'btn-outline-light text-dark border-2') }}"
-                    style="{{ 'border-color: #e2e8f0;' if not is_current and not is_answered }}">
+                <a href="{{ url_for('student.jump', index=i) }}"
+                    class="btn w-100 p-3 fw-bold position-relative
+                            {{ 'btn-primary text-white shadow' if is_current else 
+                               ('btn-warning text-dark' if is_marked else 
+                               ('btn-success text-white' if is_answered else 'btn-outline-light text-dark border-2')) }}"
+                    style="{{ 'border-color: #e2e8f0;' if not is_current and not is_answered and not is_marked }}">
                     {{ i + 1 }}
+                    {% if is_marked %}
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                        style="z-index: 1;">
+                        <i class="fas fa-bookmark small"></i>
+                    </span>
+                    {% endif %}
                 </a>
             </div>
             {% endfor %}
@@ -203,21 +232,11 @@
         border-color: var(--primary) !important;
     }
 
-    /* ... CSS ... */
-    .animate-scale-in {
-        animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-
-    @keyframes scaleIn {
-        from {
-            opacity: 0;
-            transform: scale(0.95);
-        }
-
-        to {
-            opacity: 1;
-            transform: scale(1);
-        }
+    /* Premium Polish */
+    .card {
+        border-radius: 24px;
+        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.95);
     }
 </style>
 
@@ -237,29 +256,50 @@
                     <i class="fas fa-clipboard-check fa-4x animate-scale-in"></i>
                 </div>
                 <h4 class="fw-bold mb-3">{{ _('Rostdan ham testni yakunlamoqchimisiz?') }}</h4>
-                <p class="text-muted mb-0">{{ _('Yakunlash tugmasini bosgandan so\'ng natijalaringiz hisoblanadi.') }}
-                </p>
-                <p class="text-danger small mt-2"><i class="fas fa-exclamation-circle me-1"></i> {{ _('Diqqat! Barcha
-                    savollarni belgilamasangiz test yakunlanmaydi.') }}</p>
+                <div class="row g-3 mb-4">
+                    <div class="col-4">
+                        <div class="p-2 border rounded bg-white">
+                            <div class="h4 mb-0 text-success fw-bold">{{ answers|length }}</div>
+                            <small class="text-muted">{{ _('Yechilgan') }}</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-2 border rounded bg-white">
+                            <div class="h4 mb-0 text-warning fw-bold">{{ marked_questions|length }}</div>
+                            <small class="text-muted">{{ _('Belgilangan') }}</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-2 border rounded bg-white">
+                            <div class="h4 mb-0 text-danger fw-bold">{{ total - answers|length }}</div>
+                            <small class="text-muted">{{ _('Qolgan') }}</small>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-muted mb-0 small">{{ _('Yakunlash tugmasini bosgandan so\'ng natijalaringiz
+                    hisoblanadi.') }}</p>
+                {% if answers|length < total %} <div class="alert alert-warning border-0 small mt-3 mb-0">
+                    <i class="fas fa-exclamation-triangle me-1"></i> {{ _('Siz barcha savollarga javob bermadingiz!') }}
             </div>
-            <div class="modal-footer border-0 bg-light p-3 justify-content-center">
-                <button type="button" class="btn btn-light px-4 py-2" data-bs-dismiss="modal">{{ _('Yo\'q, qaytish')
-                    }}</button>
-                <a href="{{ url_for('student.navigate', direction='finish') }}"
-                    class="btn btn-success px-5 py-2 fw-bold shadow-sm">
-                    {{ _('Ha, yakunlash') }} <i class="fas fa-arrow-right ms-2"></i>
-                </a>
-            </div>
+            {% endif %}
+        </div>
+        <div class="modal-footer border-0 bg-light p-3 justify-content-center">
+            <button type="button" class="btn btn-light px-4 py-2" data-bs-dismiss="modal">{{ _('Yo\'q, qaytish')
+                }}</button>
+            <a href="{{ url_for('student.navigate', direction='finish') }}"
+                class="btn btn-success px-5 py-2 fw-bold shadow-sm">
+                {{ _('Ha, yakunlash') }} <i class="fas fa-arrow-right ms-2"></i>
+            </a>
         </div>
     </div>
+</div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <!-- Protection Overlay -->
-<!-- Protection Overlay -->
 <div id="violation-overlay"
-    style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #e74c3c; z-index: 9999; color: white; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+    style="display: {{ 'flex' if is_blocked else 'none' }}; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #e74c3c; z-index: 9999; color: white; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
     <div class="display-3 mb-4"><i class="fas fa-exclamation-triangle"></i></div>
     <h1 class="display-3 fw-bold">{{ _('QOIDABUZARLIK!') }}</h1>
     <h3 class="mb-4">{{ _('Siz test oynasidan chiqdingiz!') }}</h3>
@@ -299,8 +339,36 @@
         // Or if first question, wait for start.
         const CURRENT_Q = {{ current }};
 
-        // If Q > 1 and protected, enable immediately. If Q==1, wait for button.
-        let protectionEnabled = (IS_PROTECTED && CURRENT_Q > 1);
+        // If Q == 1, wait for "Start Test" button.
+        // If Q > 1, start with a 3-second grace period to allow session/page stability.
+        let protectionEnabled = false;
+
+        if (IS_PROTECTED && CURRENT_Q > 1) {
+            console.log("Q > 1 detected. Arming protection in 3s...");
+            setTimeout(() => {
+                // Only arm if we are not already displaying a violation
+                const overlay = document.getElementById('violation-overlay');
+                if (protectionEnabled === false && overlay && overlay.style.display !== 'flex') {
+                    protectionEnabled = true;
+                    console.log("Protection armed automatically.");
+                }
+            }, 3000);
+        }
+
+        // Disable protection when intentional navigation starts
+        function disableProtection() {
+            protectionEnabled = false;
+            console.log("Protection disabled for navigation.");
+        }
+
+        // Add listeners to all navigation links
+        document.querySelectorAll('a[href*="/student/navigate"], a[href*="/student/jump"]').forEach(link => {
+            link.addEventListener('click', disableProtection);
+        });
+
+        // Also handle the finish button in the modal
+        const finishBtn = document.querySelector('a[href*="direction=finish"]');
+        if (finishBtn) finishBtn.addEventListener('click', disableProtection);
 
         // Audio Context
         let audioCtx = null;
@@ -309,6 +377,13 @@
             // Hide overlay immediately
             const overlay = document.getElementById('start-overlay');
             if (overlay) overlay.style.display = 'none';
+
+            // Request Fullscreen
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(e => {
+                    console.error("FS error:", e);
+                });
+            }
 
             // Try to unlock audio
             try {
@@ -332,27 +407,49 @@
             }
         }
 
+        // Fullscreen Change Detection
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && protectionEnabled) {
+                triggerViolation('Fullscreen-Exit');
+            }
+        });
+
         // ----------- ANTI-CHEAT LOGIC -----------
 
         function playWarningSound() {
             try {
-                if (!audioCtx) return;
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
                 if (audioCtx.state === 'suspended') audioCtx.resume();
 
-                const oscillator = audioCtx.createOscillator();
+                const oscillator1 = audioCtx.createOscillator();
+                const oscillator2 = audioCtx.createOscillator();
                 const gainNode = audioCtx.createGain();
 
-                oscillator.type = 'sawtooth';
-                oscillator.frequency.value = 1000;
-                oscillator.connect(gainNode);
+                oscillator1.type = 'sawtooth';
+                oscillator1.frequency.setValueAtTime(800, audioCtx.currentTime);
+                oscillator1.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.5);
+
+                oscillator2.type = 'square';
+                oscillator2.frequency.setValueAtTime(400, audioCtx.currentTime);
+                oscillator2.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.5);
+
+                oscillator1.connect(gainNode);
+                oscillator2.connect(gainNode);
                 gainNode.connect(audioCtx.destination);
 
-                oscillator.start();
-                gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1);
-                oscillator.stop(audioCtx.currentTime + 1);
+                oscillator1.start();
+                oscillator2.start();
+
+                gainNode.gain.setValueAtTime(0.6, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 1.5);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 2);
+
+                oscillator1.stop(audioCtx.currentTime + 2);
+                oscillator2.stop(audioCtx.currentTime + 2);
             } catch (e) {
-                console.error(e);
+                console.error("Audio error:", e);
             }
         }
 
@@ -360,34 +457,61 @@
             const pwd = document.getElementById('unlock-password').value;
             const err = document.getElementById('unlock-error');
 
-            if (pwd === 'jahonschool') {
-                document.getElementById('violation-overlay').style.display = 'none';
-                document.getElementById('unlock-password').value = '';
-                if (err) err.style.display = 'none';
-            } else {
-                if (err) err.style.display = 'block';
-            }
+            fetch('/student/verify_unlock', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: pwd })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('violation-overlay').style.display = 'none';
+                        document.getElementById('unlock-password').value = '';
+                        if (err) err.style.display = 'none';
+                        // Optional: reload or just keep going
+                    } else {
+                        if (err) err.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
         }
 
-        function triggerViolation() {
+        function triggerViolation(type = 'Blur/Visibility') {
             if (!protectionEnabled) return;
 
-            // Show violation overlay
+            // Show violation overlay immediately on client
             const overlay = document.getElementById('violation-overlay');
             if (overlay) overlay.style.display = 'flex';
 
             playWarningSound();
 
-            // No auto-unlock logic anymore
-            // Wait for password
+            // Report to server with type
+            fetch('/student/report_violation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: type })
+            });
         }
 
         document.addEventListener('visibilitychange', () => {
-            if (document.hidden && protectionEnabled) triggerViolation();
+            if (document.hidden && protectionEnabled) {
+                console.log("Violation: visibilitychange");
+                triggerViolation('Visibility-Changed');
+            }
         });
 
         window.addEventListener('blur', () => {
-            if (protectionEnabled) triggerViolation();
+            if (protectionEnabled) {
+                console.log("Violation: blur");
+                document.body.style.filter = "blur(20px)";
+                triggerViolation('Window-Blur');
+            }
+        });
+
+        window.addEventListener('focus', () => {
+            document.body.style.filter = "none";
         });
 
         // Anti-Screenshot & Keys
@@ -424,6 +548,34 @@
             });
         }
 
+        function toggleMark(questionId) {
+            const btn = document.getElementById('mark-btn');
+            const isMarked = btn.classList.contains('btn-warning');
+            const newMarked = !isMarked;
+
+            fetch('/student/mark_question', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question_id: parseInt(questionId), marked: newMarked })
+            }).then(() => {
+                // Update UI visually
+                if (newMarked) {
+                    btn.classList.remove('btn-outline-warning');
+                    btn.classList.add('btn-warning');
+                    btn.querySelector('i').classList.remove('far');
+                    btn.querySelector('i').classList.add('fas');
+                } else {
+                    btn.classList.remove('btn-warning');
+                    btn.classList.add('btn-outline-warning');
+                    btn.querySelector('i').classList.remove('fas');
+                    btn.querySelector('i').classList.add('far');
+                }
+                // Optional: sync map without reload? 
+                // For now, reload to see map changes or just leave it for next/prev.
+                // Re-rendering map client side is complex, let's keep it simple.
+            });
+        }
+
         // Timer configuration (30 minutes)
         const TEST_DURATION = 30 * 60; // 1800 seconds
         const startTimePayload = {{ session.get('start_time', 0) }};
@@ -457,54 +609,7 @@
         updateTimer();
         setInterval(updateTimer, 1000);
 
-        // Anti-Cheat: Hide content on blur to prevent screenshots
-        window.addEventListener('blur', () => {
-            if (protectionEnabled) {
-                document.body.style.filter = "blur(20px)";
-                triggerViolation();
-            }
-        });
 
-        window.addEventListener('focus', () => {
-            document.body.style.filter = "none";
-        });
 
-        function playWarningSound() {
-            try {
-                if (!audioCtx) {
-                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-
-                // Create a louder, more alarming sound
-                const oscillator1 = audioCtx.createOscillator();
-                const oscillator2 = audioCtx.createOscillator();
-                const gainNode = audioCtx.createGain();
-
-                oscillator1.type = 'sawtooth';
-                oscillator1.frequency.setValueAtTime(800, audioCtx.currentTime);
-                oscillator1.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.5);
-
-                oscillator2.type = 'square';
-                oscillator2.frequency.setValueAtTime(400, audioCtx.currentTime);
-                oscillator2.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.5);
-
-                oscillator1.connect(gainNode);
-                oscillator2.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-
-                oscillator1.start();
-                oscillator2.start();
-
-                gainNode.gain.setValueAtTime(0.6, audioCtx.currentTime);
-                gainNode.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 1.5);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 2);
-
-                oscillator1.stop(audioCtx.currentTime + 2);
-                oscillator2.stop(audioCtx.currentTime + 2);
-            } catch (e) {
-                console.error("Audio error:", e);
-            }
-        }
     </script>
     {% endblock %}

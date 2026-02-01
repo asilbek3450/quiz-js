@@ -63,6 +63,9 @@ def start():
         session['current_question'] = 0
         session['answers'] = {}
         session['option_map'] = {}  # Store random order of options per question
+        session['marked_questions'] = [] # For "Mark for Review"
+        session['violation_count'] = 0
+        session['violation_details'] = []
         
         return redirect(url_for('student.test'))
     
@@ -170,6 +173,8 @@ def test():
     options = shuffled_options
 
     is_protected = session.get('is_protected', False)
+    is_blocked = session.get('is_blocked', False)
+    marked_questions = session.get('marked_questions', [])
 
     return render_template('student_test.html', 
                          question=question,
@@ -179,7 +184,47 @@ def test():
                          total=len(question_ids),
                          question_ids=question_ids,
                          answers=answers,
-                         is_protected=is_protected)
+                         is_protected=is_protected,
+                         is_blocked=is_blocked,
+                         marked_questions=marked_questions)
+
+@student_bp.route('/report_violation', methods=['POST'])
+def report_violation():
+    if 'question_ids' not in session:
+        return jsonify({'error': 'Session expired'}), 400
+    
+    data = request.json or {}
+    violation_type = data.get('type', 'Unknown')
+    
+    session['is_blocked'] = True
+    session['violation_count'] = session.get('violation_count', 0) + 1
+    
+    details = session.get('violation_details', [])
+    details.append({
+        'type': violation_type,
+        'timestamp': datetime.now().isoformat(),
+        'question_index': session.get('current_question', 0) + 1
+    })
+    session['violation_details'] = details
+    
+    session.permanent = True
+    return jsonify({'success': True})
+
+@student_bp.route('/verify_unlock', methods=['POST'])
+def verify_unlock():
+    if 'question_ids' not in session:
+        return jsonify({'error': 'Session expired'}), 400
+    
+    data = request.json
+    password = data.get('password')
+    
+    # Use the same password as in the template: 'jahonschool'
+    if password == 'jahonschool':
+        session['is_blocked'] = False
+        session.permanent = True
+        return jsonify({'success': True})
+    else:
+        return jsonify({'success': False, 'message': 'Invalid password'}), 401
 
 @student_bp.route('/answer', methods=['POST'])
 def answer():
@@ -194,6 +239,24 @@ def answer():
     answers[question_id] = answer
     session['answers'] = answers
     
+    return jsonify({'success': True})
+
+@student_bp.route('/mark_question', methods=['POST'])
+def mark_question():
+    if 'question_ids' not in session:
+        return jsonify({'error': 'Session expired'}), 400
+    
+    data = request.json
+    question_id = int(data['question_id'])
+    marked = data.get('marked', False)
+    
+    marked_list = session.get('marked_questions', [])
+    if marked and question_id not in marked_list:
+        marked_list.append(question_id)
+    elif not marked and question_id in marked_list:
+        marked_list.remove(question_id)
+        
+    session['marked_questions'] = marked_list
     return jsonify({'success': True})
 
 @student_bp.route('/navigate/<direction>')

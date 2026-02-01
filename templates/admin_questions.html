@@ -44,7 +44,7 @@
                         </label>
                         <select name="grade" class="form-select" onchange="this.form.submit()">
                             <option value="">{{ _('Barchasi') }}</option>
-                            {% for g in range(5, 10) %}
+                            {% for g in range(5, 12) %}
                             <option value="{{ g }}" {% if request.args.get('grade')|int==g %}selected{% endif %}>
                                 {{ g }}-{{ _('sinf') }}
                             </option>
