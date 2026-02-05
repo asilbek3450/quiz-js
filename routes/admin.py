@@ -18,7 +18,7 @@ def auto_translate(text, target):
 
 @admin_bp.before_request
 def require_login():
-    allowed_routes = ['admin.login', 'admin.result_delete'] 
+    allowed_routes = ['admin.login', 'admin.result_delete']
     # Note: result_delete is POST, might be called from outside? No, internal.
     # admin routes usually require login except login itself.
     if request.endpoint != 'admin.login' and 'admin_id' not in session:
@@ -32,7 +32,7 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        
+
         admin = Admin.query.filter_by(username=username).first()
         if admin and check_password_hash(admin.password_hash, password):
             session['admin_id'] = admin.id
@@ -41,7 +41,7 @@ def login():
             return redirect(url_for('admin.dashboard'))
         else:
             flash(_('Login yoki parol noto\'g\'ri'), 'danger')
-    
+
     return render_template('admin_login.html')
 
 @admin_bp.route('/logout')
@@ -58,7 +58,7 @@ def dashboard():
     total_results = len(results)
     subjects = Subject.query.all()
     recent_results = TestResult.query.order_by(TestResult.test_date.desc()).limit(10).all()
-    
+
     subject_names = [s.name for s in subjects]
     question_counts = [len(s.questions) for s in subjects]
     result_counts = [len(s.results) for s in subjects]
@@ -69,7 +69,7 @@ def dashboard():
 
     # Analytics: Top 5 Difficult Questions
     question_stats = {} # {question_id: {'wrong': 0, 'total': 0}}
-    
+
     for r in results:
         try:
             answers = json.loads(r.answers_json)
@@ -77,10 +77,10 @@ def dashboard():
                 q_id_int = int(q_id)
                 if q_id_int not in question_stats:
                     question_stats[q_id_int] = {'wrong': 0, 'total': 0}
-                
+
                 question_stats[q_id_int]['total'] += 1
                 # We need correct answer to check if it was wrong
-                # This could be slow if we query for each question. 
+                # This could be slow if we query for each question.
                 # Let's optimize by getting correct answers once.
         except:
             continue
@@ -90,7 +90,7 @@ def dashboard():
         # Get all relevant questions in one go
         all_q_ids = list(question_stats.keys())
         questions_db = {q.id: q for q in Question.query.filter(Question.id.in_(all_q_ids)).all()}
-        
+
         # Re-calc 'wrong' counts correctly
         for r in results:
             try:
@@ -116,9 +116,9 @@ def dashboard():
                         'total_count': stats['total'],
                         'subject': q_obj.subject.name
                     })
-        
+
         difficult_questions_data = sorted(difficult_questions_data, key=lambda x: x['fail_rate'], reverse=True)[:5]
-    
+
     return render_template('admin_dashboard.html',
                          total_questions=total_questions,
                          total_results=total_results,
@@ -137,7 +137,7 @@ def questions():
     quarter = request.args.get('quarter', type=int)
     page = request.args.get('page', 1, type=int)
     per_page = 25
-    
+
     query = Question.query
     if subject_id:
         query = query.filter_by(subject_id=subject_id)
@@ -145,19 +145,19 @@ def questions():
         query = query.filter_by(grade=grade)
     if quarter:
         query = query.filter_by(quarter=quarter)
-    
+
     search = request.args.get('search')
     if search:
         search_term = f"%{search}%"
         query = query.filter(Question.question_text.ilike(search_term))
-    
+
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     questions = pagination.items
-    
+
     all_questions = Question.query.all()
     subjects = Subject.query.all()
-    
-    return render_template('admin_questions.html', 
+
+    return render_template('admin_questions.html',
                          questions=questions,
                          all_questions=all_questions,
                          pagination=pagination,
@@ -171,7 +171,7 @@ def question_add():
         opt_b = request.form['option_b']
         opt_c = request.form['option_c']
         opt_d = request.form['option_d']
-        
+
         question = Question(
             subject_id=int(request.form['subject_id']),
             grade=int(request.form['grade']),
@@ -197,46 +197,46 @@ def question_add():
         db.session.commit()
         flash(_('Savol muvaffaqiyatli qo\'shildi va tarjima qilindi'), 'success')
         return redirect(url_for('admin.questions'))
-    
+
     subjects = Subject.query.all()
     return render_template('admin_question_form.html', subjects=subjects, question=None)
 
 @admin_bp.route('/question/edit/<int:id>', methods=['GET', 'POST'])
 def question_edit(id):
     question = Question.query.get_or_404(id)
-    
+
     if request.method == 'POST':
         question.subject_id = int(request.form['subject_id'])
         question.grade = int(request.form['grade'])
         question.quarter = int(request.form['quarter'])
-        
+
         q_text = request.form['question_text']
         question.question_text = q_text
         question.question_text_ru = auto_translate(q_text, 'ru')
         question.question_text_en = auto_translate(q_text, 'en')
-        
+
         question.option_a = request.form['option_a']
         question.option_a_ru = auto_translate(question.option_a, 'ru')
         question.option_a_en = auto_translate(question.option_a, 'en')
-        
+
         question.option_b = request.form['option_b']
         question.option_b_ru = auto_translate(question.option_b, 'ru')
         question.option_b_en = auto_translate(question.option_b, 'en')
-        
+
         question.option_c = request.form['option_c']
         question.option_c_ru = auto_translate(question.option_c, 'ru')
         question.option_c_en = auto_translate(question.option_c, 'en')
-        
+
         question.option_d = request.form['option_d']
         question.option_d_ru = auto_translate(question.option_d, 'ru')
         question.option_d_en = auto_translate(question.option_d, 'en')
-        
+
         question.correct_answer = request.form['correct_answer'].upper()
-        
+
         db.session.commit()
         flash(_('Savol muvaffaqiyatli o\'zgartirildi'), 'success')
         return redirect(url_for('admin.questions'))
-    
+
     subjects = Subject.query.all()
     return render_template('admin_question_form.html', subjects=subjects, question=question)
 
@@ -254,31 +254,31 @@ def import_questions():
         if 'file' not in request.files:
             flash(_('Fayl tanlanmagan'), 'danger')
             return redirect(url_for('admin.questions'))
-        
+
         file = request.files['file']
         if file.filename == '':
             flash(_('Fayl tanlanmagan'), 'danger')
             return redirect(url_for('admin.questions'))
-            
+
         if not file.filename.endswith(('.xlsx', '.xls')):
             flash(_('Faqat Excel (.xlsx, .xls) fayllari qabul qilinadi'), 'danger')
             return redirect(url_for('admin.questions'))
 
         import pandas as pd
         df = pd.read_excel(file)
-        
+
         # Strip whitespace from column names
         df.columns = df.columns.str.strip()
-        
+
         required_cols = ['Question', 'A', 'B', 'C', 'D', 'Correct']
         if not all(col in df.columns for col in required_cols):
             flash(_('Fayl ustunlari noto\'g\'ri! Talab qilinadi: Question, A, B, C, D, Correct'), 'danger')
             return redirect(url_for('admin.questions'))
-            
+
         subject_id = int(request.form['subject_id'])
         grade = int(request.form['grade'])
         quarter = int(request.form['quarter'])
-        
+
         count = 0
         for index, row in df.iterrows():
             q_text = str(row['Question'])
@@ -287,10 +287,10 @@ def import_questions():
             opt_c = str(row['C'])
             opt_d = str(row['D'])
             correct = str(row['Correct']).upper().strip()
-            
+
             if len(correct) != 1 or correct not in ['A', 'B', 'C', 'D']:
                 continue # Skip invalid rows
-                
+
             question = Question(
                 subject_id=subject_id,
                 grade=grade,
@@ -314,13 +314,13 @@ def import_questions():
             )
             db.session.add(question)
             count += 1
-            
+
         db.session.commit()
         flash(_('{} ta savol muvaffaqiyatli yuklandi').format(count), 'success')
-        
+
     except Exception as e:
         flash(_('Xatolik yuz berdi: {}').format(str(e)), 'danger')
-        
+
     return redirect(url_for('admin.questions'))
 
     return redirect(url_for('admin.questions'))
@@ -332,7 +332,7 @@ def download_template():
     import pandas as pd
     from io import BytesIO
     from flask import send_file
-    
+
     # Create sample data
     data = [
         {
@@ -360,21 +360,21 @@ def download_template():
             'Correct': 'A'
         }
     ]
-    
+
     df = pd.DataFrame(data)
-    
+
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, index=False, sheet_name='Template')
-        
+
         # Auto-adjust column width (approximate)
         worksheet = writer.sheets['Template']
         for idx, col in enumerate(df.columns):
             max_len = max(df[col].astype(str).map(len).max(), len(col)) + 2
             worksheet.column_dimensions[chr(65 + idx)].width = max_len
-            
+
     output.seek(0)
-    
+
     return send_file(
         output,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -387,13 +387,13 @@ def export_results():
     import pandas as pd
     from io import BytesIO
     from flask import send_file
-    
+
     subject_id = request.args.get('subject_id', type=int)
     grade = request.args.get('grade', type=int)
     quarter = request.args.get('quarter', type=int)
     filter_date = request.args.get('filter_date')
     sort_by = request.args.get('sort_by', 'newest')
-    
+
     query = TestResult.query
     if subject_id:
         query = query.filter_by(subject_id=subject_id)
@@ -401,7 +401,7 @@ def export_results():
         query = query.filter_by(grade=grade)
     if quarter:
         query = query.filter_by(quarter=quarter)
-        
+
     if filter_date:
         try:
             target_date = datetime.strptime(filter_date, '%Y-%m-%d').date()
@@ -410,16 +410,16 @@ def export_results():
             query = query.filter(TestResult.test_date >= start_dt, TestResult.test_date <= end_dt)
         except:
             pass
-            
+
     if sort_by == 'score_desc':
         query = query.order_by(TestResult.score.desc())
     elif sort_by == 'score_asc':
         query = query.order_by(TestResult.score.asc())
     else: # newest
         query = query.order_by(TestResult.test_date.desc())
-        
+
     results = query.all()
-    
+
     data = []
     for r in results:
         data.append({
@@ -433,15 +433,15 @@ def export_results():
             _('Baho'): r.grade_text,
             _('Sana'): r.test_date.strftime('%Y-%m-%d %H:%M')
         })
-        
+
     df = pd.DataFrame(data)
-    
+
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, index=False, sheet_name='Natijalar')
-        
+
     output.seek(0)
-    
+
     filename = f"results_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
     return send_file(
         output,
@@ -455,10 +455,10 @@ def results():
     subject_id = request.args.get('subject_id', type=int)
     grade = request.args.get('grade', type=int)
     quarter = request.args.get('quarter', type=int)
-    
+
     filter_date = request.args.get('filter_date')
     sort_by = request.args.get('sort_by', 'newest')
-    
+
     query = TestResult.query
     if subject_id:
         query = query.filter_by(subject_id=subject_id)
@@ -466,7 +466,7 @@ def results():
         query = query.filter_by(grade=grade)
     if quarter:
         query = query.filter_by(quarter=quarter)
-        
+
     if filter_date:
         try:
             target_date = datetime.strptime(filter_date, '%Y-%m-%d').date()
@@ -475,35 +475,35 @@ def results():
             query = query.filter(TestResult.test_date >= start_dt, TestResult.test_date <= end_dt)
         except:
             pass
-            
+
     if sort_by == 'score_desc':
         query = query.order_by(TestResult.score.desc())
     elif sort_by == 'score_asc':
         query = query.order_by(TestResult.score.asc())
     else: # newest
         query = query.order_by(TestResult.test_date.desc())
-    
+
     # Calculate stats before pagination (on the full filtered query)
     total_count = query.count()
-    
+
     # Clone query for stats to avoid messing up the main query
-    # Note: efficient way is to use with_entities on the base query if possible, 
+    # Note: efficient way is to use with_entities on the base query if possible,
     # but here query is already built with filters.
-    
+
     excellent_count = query.filter(TestResult.percentage >= 90).count()
-    
+
     avg_percentage = query.with_entities(func.avg(TestResult.percentage)).scalar() or 0
     avg_score = query.with_entities(func.avg(TestResult.score)).scalar() or 0
-    
+
     # Pagination
     page = request.args.get('page', 1, type=int)
-    per_page = 50
+    per_page = 100
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     results = pagination.items
-    
+
     subjects = Subject.query.all()
-    
-    return render_template('admin_results.html', 
+
+    return render_template('admin_results.html',
                          results=results,
                          pagination=pagination,
                          subjects=subjects,
@@ -527,17 +527,17 @@ def results_delete_by_date():
         target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
         start_dt = datetime.combine(target_date, datetime.min.time())
         end_dt = datetime.combine(target_date, datetime.max.time())
-        
+
         deleted_count = TestResult.query.filter(
             TestResult.test_date >= start_dt,
             TestResult.test_date <= end_dt
         ).delete()
-        
+
         db.session.commit()
         flash(_('{} ta natija o\'chirildi').format(deleted_count), 'success')
     except Exception as e:
         flash(_('Xatolik yuz berdi: {}').format(str(e)), 'danger')
-        
+
     return redirect(url_for('admin.results'))
 
 @admin_bp.route('/subjects')
@@ -550,10 +550,10 @@ def subject_add():
     if request.method == 'POST':
         name = request.form['name']
         grades = request.form['grades']
-        is_protected = 'is_protected' in request.form 
-        
+        is_protected = 'is_protected' in request.form
+
         subject = Subject(
-            name=name, 
+            name=name,
             grades=grades,
             name_ru=auto_translate(name, 'ru'),
             name_en=auto_translate(name, 'en'),
@@ -563,27 +563,27 @@ def subject_add():
         db.session.commit()
         flash(_('Fan muvaffaqiyatli qo\'shildi va tarjima qilindi'), 'success')
         return redirect(url_for('admin.subjects'))
-    
+
     return render_template('admin_subject_form.html', subject=None)
 
 @admin_bp.route('/subject/edit/<int:id>', methods=['GET', 'POST'])
 def subject_edit(id):
     subject = Subject.query.get_or_404(id)
-    
+
     if request.method == 'POST':
         subject.name = request.form['name']
-        # Re-translating only if user wants? Or auto always? 
+        # Re-translating only if user wants? Or auto always?
         # App.py did it always
         subject.name_ru = auto_translate(subject.name, 'ru')
         subject.name_en = auto_translate(subject.name, 'en')
-        
+
         subject.grades = request.form['grades']
         subject.is_protected = 'is_protected' in request.form
-        
+
         db.session.commit()
         flash(_('Fan muvaffaqiyatli o\'zgartirildi'), 'success')
         return redirect(url_for('admin.subjects'))
-    
+
     return render_template('admin_subject_form.html', subject=subject)
 
 @admin_bp.route('/subject/delete/<int:id>')
@@ -592,7 +592,7 @@ def subject_delete(id):
     if subject.questions or subject.results:
         flash(_('Bu fanga tegishli savollar yoki natijalar mavjud. Oldin ularni o\'chiring.'), 'danger')
         return redirect(url_for('admin.subjects'))
-        
+
     db.session.delete(subject)
     db.session.commit()
     flash(_('Fan o\'chirildi'), 'success')
