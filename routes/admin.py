@@ -166,37 +166,55 @@ def questions():
 @admin_bp.route('/question/add', methods=['GET', 'POST'])
 def question_add():
     if request.method == 'POST':
-        q_text = request.form['question_text']
-        opt_a = request.form['option_a']
-        opt_b = request.form['option_b']
-        opt_c = request.form['option_c']
-        opt_d = request.form['option_d']
+        try:
+            subject_id = int(request.form.get('subject_id', 0))
+            grade = int(request.form.get('grade', 0))
+            quarter = int(request.form.get('quarter', 0))
+            q_text = request.form.get('question_text', '').strip()
+            opt_a = request.form.get('option_a', '').strip()
+            opt_b = request.form.get('option_b', '').strip()
+            opt_c = request.form.get('option_c', '').strip()
+            opt_d = request.form.get('option_d', '').strip()
+            correct = request.form.get('correct_answer', '').upper().strip()
 
-        question = Question(
-            subject_id=int(request.form['subject_id']),
-            grade=int(request.form['grade']),
-            quarter=int(request.form['quarter']),
-            question_text=q_text,
-            question_text_ru=auto_translate(q_text, 'ru'),
-            question_text_en=auto_translate(q_text, 'en'),
-            option_a=opt_a,
-            option_a_ru=auto_translate(opt_a, 'ru'),
-            option_a_en=auto_translate(opt_a, 'en'),
-            option_b=opt_b,
-            option_b_ru=auto_translate(opt_b, 'ru'),
-            option_b_en=auto_translate(opt_b, 'en'),
-            option_c=opt_c,
-            option_c_ru=auto_translate(opt_c, 'ru'),
-            option_c_en=auto_translate(opt_c, 'en'),
-            option_d=opt_d,
-            option_d_ru=auto_translate(opt_d, 'ru'),
-            option_d_en=auto_translate(opt_d, 'en'),
-            correct_answer=request.form['correct_answer'].upper()
-        )
-        db.session.add(question)
-        db.session.commit()
-        flash(_('Savol muvaffaqiyatli qo\'shildi va tarjima qilindi'), 'success')
-        return redirect(url_for('admin.questions'))
+            if not all([subject_id, grade, quarter, q_text, opt_a, opt_b, opt_c, opt_d, correct]):
+                flash(_('Barcha maydonlarni to\'ldiring'), 'warning')
+                return redirect(url_for('admin.question_add'))
+
+            subject = Subject.query.get(subject_id)
+            if not subject:
+                flash(_('Fan topilmadi'), 'danger')
+                return redirect(url_for('admin.question_add'))
+
+            question = Question(
+                subject_id=subject_id,
+                grade=grade,
+                quarter=quarter,
+                question_text=q_text,
+                question_text_ru=auto_translate(q_text, 'ru'),
+                question_text_en=auto_translate(q_text, 'en'),
+                option_a=opt_a,
+                option_a_ru=auto_translate(opt_a, 'ru'),
+                option_a_en=auto_translate(opt_a, 'en'),
+                option_b=opt_b,
+                option_b_ru=auto_translate(opt_b, 'ru'),
+                option_b_en=auto_translate(opt_b, 'en'),
+                option_c=opt_c,
+                option_c_ru=auto_translate(opt_c, 'ru'),
+                option_c_en=auto_translate(opt_c, 'en'),
+                option_d=opt_d,
+                option_d_ru=auto_translate(opt_d, 'ru'),
+                option_d_en=auto_translate(opt_d, 'en'),
+                correct_answer=correct
+            )
+            db.session.add(question)
+            db.session.commit()
+            flash(_('Savol muvaffaqiyatli qo\'shildi va tarjima qilindi'), 'success')
+            return redirect(url_for('admin.questions'))
+        except Exception as e:
+            db.session.rollback()
+            flash(_('Xatolik yuz berdi: {}').format(str(e)), 'danger')
+            return redirect(url_for('admin.question_add'))
 
     subjects = Subject.query.all()
     return render_template('admin_question_form.html', subjects=subjects, question=None)
@@ -260,36 +278,60 @@ def import_questions():
             flash(_('Fayl tanlanmagan'), 'danger')
             return redirect(url_for('admin.questions'))
 
-        if not file.filename.endswith(('.xlsx', '.xls')):
+        if not file.filename.lower().endswith(('.xlsx', '.xls')):
             flash(_('Faqat Excel (.xlsx, .xls) fayllari qabul qilinadi'), 'danger')
             return redirect(url_for('admin.questions'))
 
-        import pandas as pd
-        df = pd.read_excel(file)
+        subject_id = request.form.get('subject_id', type=int)
+        grade = request.form.get('grade', type=int)
+        quarter = request.form.get('quarter', type=int)
 
-        # Strip whitespace from column names
-        df.columns = df.columns.str.strip()
-
-        required_cols = ['Question', 'A', 'B', 'C', 'D', 'Correct']
-        if not all(col in df.columns for col in required_cols):
-            flash(_('Fayl ustunlari noto\'g\'ri! Talab qilinadi: Question, A, B, C, D, Correct'), 'danger')
+        if not all([subject_id, grade, quarter]):
+            flash(_('Fan, sinf va chorakni tanlang'), 'warning')
             return redirect(url_for('admin.questions'))
 
-        subject_id = int(request.form['subject_id'])
-        grade = int(request.form['grade'])
-        quarter = int(request.form['quarter'])
+        subject = Subject.query.get(subject_id)
+        if not subject:
+            flash(_('Fan topilmadi'), 'danger')
+            return redirect(url_for('admin.questions'))
+
+        import pandas as pd
+        try:
+            # Using engine='openpyxl' for modern excel files
+            df = pd.read_excel(file)
+        except Exception as e:
+            flash(_('Excel faylini o\'qishda xatolik: {}').format(str(e)), 'danger')
+            return redirect(url_for('admin.questions'))
+
+        if df.empty:
+            flash(_('Fayl bo\'sh'), 'warning')
+            return redirect(url_for('admin.questions'))
+
+        # Strip whitespace from column names and handle potential case mismatch
+        df.columns = [str(col).strip() for col in df.columns]
+
+        required_cols = ['Question', 'A', 'B', 'C', 'D', 'Correct']
+        missing_cols = [col for col in required_cols if col not in df.columns]
+        if missing_cols:
+            flash(_('Fayl ustunlari noto\'g\'ri! Quyidagilar yetishmayapti: {}').format(", ".join(missing_cols)), 'danger')
+            return redirect(url_for('admin.questions'))
+
+        # Handle NaN values early
+        df = df.fillna('')
 
         count = 0
+        skipped = 0
         for index, row in df.iterrows():
-            q_text = str(row['Question'])
-            opt_a = str(row['A'])
-            opt_b = str(row['B'])
-            opt_c = str(row['C'])
-            opt_d = str(row['D'])
+            q_text = str(row['Question']).strip()
+            opt_a = str(row['A']).strip()
+            opt_b = str(row['B']).strip()
+            opt_c = str(row['C']).strip()
+            opt_d = str(row['D']).strip()
             correct = str(row['Correct']).upper().strip()
 
-            if len(correct) != 1 or correct not in ['A', 'B', 'C', 'D']:
-                continue # Skip invalid rows
+            if not q_text or not correct or correct not in ['A', 'B', 'C', 'D']:
+                skipped += 1
+                continue
 
             question = Question(
                 subject_id=subject_id,
@@ -316,9 +358,13 @@ def import_questions():
             count += 1
 
         db.session.commit()
-        flash(_('{} ta savol muvaffaqiyatli yuklandi').format(count), 'success')
+        msg = _('{} ta savol muvaffaqiyatli yuklandi').format(count)
+        if skipped > 0:
+            msg += _('. {} ta qator noto\'g\'ri ma\'lumot sababli tashlab ketildi').format(skipped)
+        flash(msg, 'success')
 
     except Exception as e:
+        db.session.rollback()
         flash(_('Xatolik yuz berdi: {}').format(str(e)), 'danger')
 
     return redirect(url_for('admin.questions'))
@@ -548,21 +594,30 @@ def subjects():
 @admin_bp.route('/subject/add', methods=['GET', 'POST'])
 def subject_add():
     if request.method == 'POST':
-        name = request.form['name']
-        grades = request.form['grades']
-        is_protected = 'is_protected' in request.form
+        try:
+            name = request.form.get('name', '').strip()
+            grades = request.form.get('grades', '').strip()
+            is_protected = 'is_protected' in request.form
 
-        subject = Subject(
-            name=name,
-            grades=grades,
-            name_ru=auto_translate(name, 'ru'),
-            name_en=auto_translate(name, 'en'),
-            is_protected=is_protected
-        )
-        db.session.add(subject)
-        db.session.commit()
-        flash(_('Fan muvaffaqiyatli qo\'shildi va tarjima qilindi'), 'success')
-        return redirect(url_for('admin.subjects'))
+            if not name or not grades:
+                flash(_('Nom va sinflarni kiriting'), 'warning')
+                return redirect(url_for('admin.subject_add'))
+
+            subject = Subject(
+                name=name,
+                grades=grades,
+                name_ru=auto_translate(name, 'ru'),
+                name_en=auto_translate(name, 'en'),
+                is_protected=is_protected
+            )
+            db.session.add(subject)
+            db.session.commit()
+            flash(_('Fan muvaffaqiyatli qo\'shildi va tarjima qilindi'), 'success')
+            return redirect(url_for('admin.subjects'))
+        except Exception as e:
+            db.session.rollback()
+            flash(_('Xatolik yuz berdi: {}').format(str(e)), 'danger')
+            return redirect(url_for('admin.subject_add'))
 
     return render_template('admin_subject_form.html', subject=None)
 
