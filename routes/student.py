@@ -427,7 +427,7 @@ def result():
     for qid in question_ids:
         question = Question.query.get(qid)
         user_answer = answers.get(str(qid), '')
-        is_correct = user_answer == question.correct_answer
+        is_correct = str(user_answer).strip().lower() == str(question.correct_answer).strip().lower()
         if is_correct:
             score += 1
         
