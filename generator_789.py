@@ -125,7 +125,7 @@ def generate_7_q2(subject_id):
         ("Satr uzunligini aniqlovchi funksiya qaysi?", "len()", "size()", "count()", "length()"),
         ("Satrdagi belgilarni kichik harflarga o'tqazuvchi metod?", "lower()", "upper()", "title()", "capitalize()"),
         ("Satrdagi belgilarni hammasini katta harflarga o'tqazuvchi metod?", "upper()", "lower()", "title()", "swapcase()"),
-        ("Satr boshidagi va oxiridagi bo'sh joylarni kesib oluvchi metod?", "strip()", "trim()", "clear()", "remove()"),
+        ("Matnning faqat birinchi harfini kattalashtiruvchi metod?", "capitalize()", "title()", "upper()", "lower()"),
         ("Matnli '15' ni butun songa o'giruvchi funksiya?", "int()", "str()", "float()", "bool()")
     ]
     for _ in range(3): # 18
@@ -492,10 +492,12 @@ def generate_9_q1(subject_id):
             code = f"matn = '{w}'\nprint(matn.isupper())"
             opts = [ans, "False" if ans == "True" else "True", "None", "Xatolik"]
         else:
-            w = (" " * random.randint(1, 10)) + random.choice(["Salom", "Dunyo", "Test"]) + (" " * random.randint(1, 10))
-            ans = str(len(w))
-            code = f"matn = '{w}'\nprint(len(matn))"
-            opts = [ans, str(len(w.strip())), str(len(w)-2), str(len(w)+random.randint(1,5))]
+            w1 = random.choice(["salom", "dunyo", "pythonda", "maktab", "ilm"])
+            w2 = random.choice(["dasturlash", "tizimi", "zamonasi", "shaxri", "kitobi"])
+            w = f"{w1} {w2} {random.randint(1,99)}"
+            ans = w.title()
+            code = f"matn = '{w}'\nprint(matn.title())"
+            opts = [ans, w.upper(), w.capitalize(), w]
             
         opts = list(set(opts))
         while len(opts) < 4:
@@ -513,7 +515,7 @@ def generate_9_q2(subject_id):
     # Similar to Q1 for 9th grade, expanding strings and replaces
     theory = [
         ("Matn tarkibidan bo'lak almashtirish (replace) metodini topings", "replace()", "swap()", "change()", "update()"),
-        ("Satrdagi probellarni chap va o'ngdan olib tashlovchi metod", "strip()", "trim()", "clean()", "cut()"),
+        ("Barcha kichik harflarni katta harflarga o'giruvchi metod qaysi?", "upper()", "lower()", "title()", "capitalize()"),
         ("Sikl (while) bilan break qanday ishlaydi?", "Tsiklni istalgan joyida majburiy to'xtatadi", "Tsiklni qaytadan boshlaydi", "Tsiklni o'tkazib yuboradi", "Cheksizlikka tushiradi")
     ]
     for _ in range(6): # 18
@@ -523,7 +525,7 @@ def generate_9_q2(subject_id):
             questions.append(Question(subject_id=subject_id, grade=9, quarter=2, question_text=q_text, option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
             
     for _ in range(150):
-        t = random.choice(['replace', 'strip', 'split'])
+        t = random.choice(['replace', 'upper', 'split'])
         if t == 'replace':
             base = random.choice(["hello", "world", "tester", "python", "developer", "backend", "frontend"])
             wd = base + str(random.randint(10, 999))
@@ -532,25 +534,25 @@ def generate_9_q2(subject_id):
             ans = wd.replace(old_char, new_char)
             code = f"word = '{wd}'\nprint(word.replace('{old_char}', '{new_char}'))"
             opts = [ans, wd, new_char + wd, "Xatolik"]
-        elif t == 'strip':
-            b = random.choice(["salom", "python", "dastur", "maktab", "ilm"])
-            wd = (" " * random.randint(1, 8)) + b + str(random.randint(10, 99)) + (" " * random.randint(1, 8))
-            ans = wd.strip()
-            code = f"word = '{wd}'\nprint(word.strip())"
-            opts = [ans, wd, wd.replace(" ", ""), "Error"]
+        elif t == 'upper':
+            b = random.choice(["o'zbekiston", "python", "dastur", "maktab", "ilm"])
+            wd = b
+            ans = wd.upper()
+            code = f"word = '{wd}'\nprint(word.upper())"
+            opts = [ans, wd.capitalize(), wd, "Error"]
         else:
             mevalar = ["olma", "anor", "gilos", "shaftoli", "behi", "nok", "uzum", "anjir", "xurmo"]
             wd = ",".join(random.sample(mevalar, k=random.randint(2, 5)))
             ans = str(wd.split(','))
             code = f"mevalar = '{wd}'\nprint(mevalar.split(','))"
-            opts = [ans, str(wd.split('a')), str(wd.strip()), str([wd])]
+            opts = [ans, str(wd.split('a')), str(wd.upper()), str([wd])]
             
         opts = list(set(opts))
         while len(opts) < 4:
             if t == 'replace':
                 opts.append(wd.replace(old_char, random.choice('ABCDEFGIJK')))
-            elif t == 'strip':
-                opts.append(wd + (" " * random.randint(1,10)))
+            elif t == 'upper':
+                opts.append(wd[:random.randint(1,len(wd))].upper() + wd[random.randint(1,len(wd)):])
             else:
                 opts.append(str(wd.split(random.choice("abcdefghijklmnopqrstuvwxyz"))))
             opts = list(set(opts))
