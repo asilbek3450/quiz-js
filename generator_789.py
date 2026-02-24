@@ -344,26 +344,56 @@ def generate_8_q3(subject_id):
             
     # Functions
     for _ in range(150):
-        a = random.randint(5, 50)
-        b = random.randint(15, 60)
-        ans = str(a + b)
-        code = f"def yigindi(x, y):\n    return x + y\n\nprint(yigindi({a}, {b}))"
-        opts = [ans, str(a*b), str(b-a), "Xato yuz beradi"]
+        f_type = random.choice(['yigindi', 'kattasi', 'juftmi'])
+        if f_type == 'yigindi':
+            a, b = random.randint(5, 50), random.randint(15, 60)
+            ans = str(a + b)
+            code = f"def yigindi(x, y):\n    return x + y\n\nprint(yigindi({a}, {b}))"
+            opts = [ans, str(a*b), str(b-a), "Xato"]
+        elif f_type == 'kattasi':
+            a, b = random.randint(10, 99), random.randint(10, 99)
+            while a == b: b = random.randint(10, 99)
+            ans = str(max(a, b))
+            code = f"def kattasi(a, b):\n    if a > b:\n        return a\n    return b\n\nprint(kattasi({a}, {b}))"
+            opts = [ans, str(min(a,b)), str(a+b), "Hech qaysi"]
+        else:
+            n = random.randint(10, 99)
+            ans = str(n % 2 == 0)
+            code = f"def juftmi(n):\n    return n % 2 == 0\n\nprint(juftmi({n}))"
+            opts = ["True", "False", "None", "Error"]
+            
+        opts = list(set(opts))
+        while len(opts) < 4:
+            opts.append(f"{random.randint(10, 150)}")
+            opts = list(set(opts))
         random.shuffle(opts)
-        questions.append(Question(subject_id=subject_id, grade=8, quarter=3, question_text=f"Funksiyaga argument berilgandagi natijani toping:\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
+        questions.append(Question(subject_id=subject_id, grade=8, quarter=3, question_text=f"Funksiyaga murojaat qilingandagi natijani toping:\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(str(ans))]))
 
     # Comprehensions
     for _ in range(150):
-        n = random.randint(2, 6)
-        ans = str([i*i for i in range(1, n+1)])
-        code = f"sonlar = [i*i for i in range(1, {n+1})]\nprint(sonlar)"
-        opts = [ans, str([i*i for i in range(0, n)]), str([i for i in range(1, n+1)]), str([i*2 for i in range(1, n+1)])]
+        c_type = random.choice(['kavadrat', 'juft', 'len'])
+        if c_type == 'kavadrat':
+            n = random.randint(2, 5)
+            ans = str([i*i for i in range(1, n+1)])
+            code = f"sonlar = [i*i for i in range(1, {n+1})]\nprint(sonlar)"
+            opts = [ans, str([i*i for i in range(0, n)]), str([i*2 for i in range(1, n+1)]), "Xato"]
+        elif c_type == 'juft':
+            n = random.randint(6, 12)
+            ans = str([i for i in range(1, n) if i%2==0])
+            code = f"sonlar = [i for i in range(1, {n}) if i % 2 == 0]\nprint(sonlar)"
+            opts = [ans, str([i for i in range(1, n) if i%2!=0]), str([i*2 for i in range(1, n)]), "Bo'sh list"]
+        else:
+            words = random.sample(["olma", "banan", "gilos", "behi", "anor"], 3)
+            ans = str([len(w) for w in words])
+            code = f"mevalar = {words}\nuzunlik = [len(m) for m in mevalar]\nprint(uzunlik)"
+            opts = [ans, str([len(w)+1 for w in words]), "Error", "None"]
+            
         opts = list(set(opts))
         while len(opts) < 4:
             opts.append(f"[{random.randint(1,10)}]")
             opts = list(set(opts))
         random.shuffle(opts)
-        questions.append(Question(subject_id=subject_id, grade=8, quarter=3, question_text=f"List comprehension natijasini toping:\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
+        questions.append(Question(subject_id=subject_id, grade=8, quarter=3, question_text=f"List comprehension (generatsiya) natijasini toping:\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(str(ans))]))
 
     unique_q = {}
     for q in questions: unique_q[q.question_text] = q
@@ -371,31 +401,58 @@ def generate_8_q3(subject_id):
 
 def generate_8_q4(subject_id):
     questions = []
-    for _ in range(50):
-        val = random.randint(10, 50)
-        ans = str(val * 2)
-        code = f"def ikkilangan(a):\n    return a * 2\n\nprint(ikkilangan({val}))"
-        opts = [ans, str(val), str(val*3), "None"]
+    for _ in range(150):
+        t = random.choice(['k', 's', 'l'])
+        if t == 'k':
+            val = random.randint(3, 5)
+            ans = "A" * val
+            code = f"def kopaytma_str(matn, n):\n    return matn * n\n\nprint(kopaytma_str('A', {val}))"
+            opts = [ans, "A" * (val+1), "A" * (val-1), f"A{val}"]
+        elif t == 's':
+            n = random.randint(4, 8)
+            ans = str(sum(range(1, n+1)))
+            code = f"def n_gacha_yigindi(n):\n    return sum(range(1, n + 1))\n\nprint(n_gacha_yigindi({n}))"
+            opts = [ans, str(sum(range(n))), str(sum(range(1, n+2))), "Xato"]
+        else:
+            n = random.randint(10, 50)
+            ans = str(n * 2)
+            code = f"def ikkilangan(a):\n    return a * 2\n\nprint(ikkilangan({n}))"
+            opts = [ans, str(n), str(n*3), "None"]
+            
         opts = list(set(opts))
         while len(opts) < 4:
-            opts.append(str(random.randint(60, 100)))
+            opts.append(str(random.randint(10, 100)))
             opts = list(set(opts))
         random.shuffle(opts)
         questions.append(Question(subject_id=subject_id, grade=8, quarter=4, question_text=f"Funksiya bo'yicha yakuniy takrorlash:\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
         
-    for _ in range(50):
-        lst = [random.randint(1, 10), random.randint(11, 20), random.randint(21, 30)]
-        ans = str(sum(lst))
-        code = f"def summa(*args):\n    return sum(args)\n\nprint(summa({lst[0]}, {lst[1]}, {lst[2]}))"
-        opts = [ans, str(lst[0]*lst[1]), str(sum(lst)*2), "Xatolik"]
+    for _ in range(150):
+        t = random.choice(['sum', 'min', 'kwargs'])
+        if t == 'sum':
+            lst = [random.randint(1, 10), random.randint(11, 20), random.randint(21, 30)]
+            ans = str(sum(lst))
+            code = f"def summa(*args):\n    return sum(args)\n\nprint(summa({lst[0]}, {lst[1]}, {lst[2]}))"
+            opts = [ans, str(lst[0]*lst[1]), str(sum(lst)*2), "Xatolik"]
+        elif t == 'min':
+            lst = [random.randint(5, 10), random.randint(11, 20), random.randint(1, 4)]
+            ans = str(min(lst))
+            code = f"def eng_kichigi(*args):\n    return min(args)\n\nprint(eng_kichigi({lst[0]}, {lst[1]}, {lst[2]}))"
+            opts = [ans, str(max(lst)), str(sum(lst)), "Error"]
+        else:
+            ans = "2"
+            code = f"def foydalanuvchi(**kwargs):\n    return len(kwargs)\n\nprint(foydalanuvchi(ism='Ali', yosh=15))"
+            opts = [ans, "1", "3", "0"]
+            
         opts = list(set(opts))
         while len(opts) < 4:
-            opts.append(str(random.randint(40, 100)))
+            opts.append(str(random.randint(20, 100)))
             opts = list(set(opts))
         random.shuffle(opts)
-        questions.append(Question(subject_id=subject_id, grade=8, quarter=4, question_text=f"Quyidagi args metodikasi natijasi qanday:\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
+        questions.append(Question(subject_id=subject_id, grade=8, quarter=4, question_text=f"Quyidagi args/kwargs metodikasi natijasi qanday:\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
 
-    return questions[:100]
+    unique_q = {}
+    for q in questions: unique_q[q.question_text] = q
+    return list(unique_q.values())[:100]
 
 # -------- 9-SINF --------
 def generate_9_q1(subject_id):
@@ -414,14 +471,35 @@ def generate_9_q1(subject_id):
         questions.append(Question(subject_id=subject_id, grade=9, quarter=1, question_text=q_text, option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
             
     for _ in range(150):
-        word = random.choice(["O'zbekiston Respublikasi", "Toshkent shahri", "Python Programming", "Dasturlash Asoslari", "Maktab tizimi", "Informatika", "Algoritm yechish"])
-        char = random.choice(word)
-        ans = str(word.count(char))
-        code = f"matn = '{word}'\nprint(matn.count('{char}'))"
-        opts = [ans, str(int(ans)+1), str(int(ans)+2), "0"]
+        t = random.choice(['count', 'find', 'isupper', 'len'])
+        word = random.choice(["O'zbekiston", "Toshkent shahri", "Python Programming", "Algoritm", "Maktab tizimi"])
+        
+        if t == 'count':
+            char = random.choice(word)
+            ans = str(word.count(char))
+            code = f"matn = '{word}'\nprint(matn.count('{char}'))"
+            opts = [ans, str(int(ans)+1), str(int(ans)+2), "0"]
+        elif t == 'find':
+            char = word[random.randint(1, len(word)-1)]
+            ans = str(word.find(char))
+            code = f"matn = '{word}'\nprint(matn.find('{char}'))"
+            opts = [ans, str(word.rfind(char)+1), "-1", "Error"]
+        elif t == 'isupper':
+            raw = "".join(random.choices("abcdefghijklmnopqrstuvwxyz", k=random.randint(4, 8)))
+            is_up = random.choice([True, False])
+            w = raw.upper() if is_up else raw
+            ans = str(w.isupper())
+            code = f"matn = '{w}'\nprint(matn.isupper())"
+            opts = [ans, "False" if ans == "True" else "True", "None", "Xatolik"]
+        else:
+            w = (" " * random.randint(1, 10)) + random.choice(["Salom", "Dunyo", "Test"]) + (" " * random.randint(1, 10))
+            ans = str(len(w))
+            code = f"matn = '{w}'\nprint(len(matn))"
+            opts = [ans, str(len(w.strip())), str(len(w)-2), str(len(w)+random.randint(1,5))]
+            
         opts = list(set(opts))
         while len(opts) < 4:
-            opts.append(str(random.randint(3,10)))
+            opts.append(str(random.randint(0, 30)))
             opts = list(set(opts))
         random.shuffle(opts)
         questions.append(Question(subject_id=subject_id, grade=9, quarter=1, question_text=f"Dastur nimani chop etadi (String method)?\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
@@ -444,21 +522,44 @@ def generate_9_q2(subject_id):
             random.shuffle(opts)
             questions.append(Question(subject_id=subject_id, grade=9, quarter=2, question_text=q_text, option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
             
-    for _ in range(82):
-        wd = random.choice(["hello", "world", "tester", "python", "developer"])
-        old_char = wd[random.randint(0, len(wd)-1)]
-        new_char = 'X'
-        ans = wd.replace(old_char, new_char)
-        code = f"word = '{wd}'\nprint(word.replace('{old_char}', '{new_char}'))"
-        opts = [ans, wd, new_char + wd, "Xatolik"]
+    for _ in range(150):
+        t = random.choice(['replace', 'strip', 'split'])
+        if t == 'replace':
+            base = random.choice(["hello", "world", "tester", "python", "developer", "backend", "frontend"])
+            wd = base + str(random.randint(10, 999))
+            old_char = wd[random.randint(0, len(wd)-1)]
+            new_char = random.choice('XYZW')
+            ans = wd.replace(old_char, new_char)
+            code = f"word = '{wd}'\nprint(word.replace('{old_char}', '{new_char}'))"
+            opts = [ans, wd, new_char + wd, "Xatolik"]
+        elif t == 'strip':
+            b = random.choice(["salom", "python", "dastur", "maktab", "ilm"])
+            wd = (" " * random.randint(1, 8)) + b + str(random.randint(10, 99)) + (" " * random.randint(1, 8))
+            ans = wd.strip()
+            code = f"word = '{wd}'\nprint(word.strip())"
+            opts = [ans, wd, wd.replace(" ", ""), "Error"]
+        else:
+            mevalar = ["olma", "anor", "gilos", "shaftoli", "behi", "nok", "uzum", "anjir", "xurmo"]
+            wd = ",".join(random.sample(mevalar, k=random.randint(2, 5)))
+            ans = str(wd.split(','))
+            code = f"mevalar = '{wd}'\nprint(mevalar.split(','))"
+            opts = [ans, str(wd.split('a')), str(wd.strip()), str([wd])]
+            
         opts = list(set(opts))
         while len(opts) < 4:
-            opts.append(wd.replace(old_char, 'Y'))
+            if t == 'replace':
+                opts.append(wd.replace(old_char, random.choice('ABC')))
+            elif t == 'strip':
+                opts.append(wd + "  ")
+            else:
+                opts.append(str(wd.split('o')))
             opts = list(set(opts))
         random.shuffle(opts)
-        questions.append(Question(subject_id=subject_id, grade=9, quarter=2, question_text=f"Kod natijasini (replace() metodi) toping:\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
+        questions.append(Question(subject_id=subject_id, grade=9, quarter=2, question_text=f"Kod natijasini toping:\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
         
-    return questions[:100]
+    unique_q = {}
+    for q in questions: unique_q[q.question_text] = q
+    return list(unique_q.values())[:100]
 
 def generate_9_q3(subject_id):
     questions = []
