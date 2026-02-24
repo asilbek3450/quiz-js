@@ -1,3 +1,4 @@
+# pyright: reportAttributeAccessIssue=false, reportOptionalMemberAccess=false, reportOptionalSubscript=false, reportCallIssue=false
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_babel import gettext as _, get_locale
 from extensions import db
@@ -7,6 +8,71 @@ import random
 import json
 
 student_bp = Blueprint('student', __name__, url_prefix='/student')
+
+def _safe_sample(seq, k: int):
+    if k <= 0:
+        return []
+    if not seq:
+        return []
+    return random.sample(seq, min(len(seq), k))
+
+
+def _build_balanced_practice_set(subject_id: int, grade: int, quarter: int):
+    # Practice-only questions for this quarter
+    base = (
+        Question.query.filter_by(subject_id=subject_id, grade=grade, quarter=quarter)
+        .filter(~Question.control_works.any())
+        .all()
+    )
+
+    if len(base) < 15:
+        # We still might be able to build 20 with review, but likely not
+        return None, len(base)
+
+    # Review pool from previous quarters (practice-only)
+    review_pool = []
+    if quarter > 1:
+        review_pool = (
+            Question.query.filter(
+                Question.subject_id == subject_id,
+                Question.grade == grade,
+                Question.quarter < quarter,
+            )
+            .filter(~Question.control_works.any())
+            .all()
+        )
+
+    review_qs = _safe_sample(review_pool, 5)
+    used_ids = {q.id for q in review_qs}
+
+    base_medium = [q for q in base if (q.difficulty or 2) == 2 and q.id not in used_ids]
+    base_hard = [q for q in base if (q.difficulty or 2) >= 3 and q.id not in used_ids]
+    base_other = [q for q in base if q.id not in used_ids and q not in base_medium and q not in base_hard]
+
+    selected = []
+    selected.extend(review_qs)
+    selected.extend(_safe_sample(base_medium, 10))
+    used_ids.update(q.id for q in selected)
+
+    hard_pick = _safe_sample([q for q in base_hard if q.id not in used_ids], 5)
+    selected.extend(hard_pick)
+    used_ids.update(q.id for q in selected)
+
+    # Fill any missing slots from remaining base
+    if len(selected) < 20:
+        remaining = [q for q in base_other + base_medium + base_hard if q.id not in used_ids]
+        selected.extend(_safe_sample(remaining, 20 - len(selected)))
+
+    if len(selected) < 20:
+        # If still short, try to top up from review pool
+        more_review = [q for q in review_pool if q.id not in used_ids]
+        selected.extend(_safe_sample(more_review, 20 - len(selected)))
+
+    if len(selected) < 20:
+        return None, len(base)
+
+    random.shuffle(selected)
+    return selected, len(base)
 
 def calculate_grade(score, total=20):
     percentage = (score / total) * 100
@@ -48,17 +114,14 @@ def start():
         # Store protection status in session for frontend use
         session['is_protected'] = subject.is_protected if subject else False
         
-        questions = Question.query.filter_by(
-            subject_id=session['subject_id'],
-            grade=session['grade'],
-            quarter=session['quarter']
-        ).all()
-        
-        if len(questions) < 20:
-            flash(_('Kechirasiz, bu fan va chorak uchun yetarli savollar yo\'q ({} ta mavjud)').format(len(questions)), 'danger')
+        selected_questions, base_count = _build_balanced_practice_set(
+            session['subject_id'], session['grade'], session['quarter']
+        )
+
+        if not selected_questions:
+            flash(_('Kechirasiz, bu fan va chorak uchun yetarli savollar yo\'q ({} ta mavjud)').format(base_count), 'danger')
             return redirect(url_for('student.start'))
-        
-        selected_questions = random.sample(questions, 20)
+
         session['question_ids'] = [q.id for q in selected_questions]
         session['current_question'] = 0
         session['answers'] = {}
@@ -155,22 +218,35 @@ def control_start():
             return redirect(url_for('student.control_start'))
             
         selected_questions = []
+        # Review questions for control work: previous quarters' control questions
+        review_sample = []
         if cw.quarter > 1:
-            review_count = 4
-            
-            prev_questions = Question.query.filter(
-                Question.subject_id == cw.subject_id,
-                Question.grade == cw.grade,
-                Question.quarter < cw.quarter
-            ).all()
-            
-            review_sample = random.sample(prev_questions, min(len(prev_questions), review_count))
-            current_count = 20 - len(review_sample)
-            
-            current_sample = random.sample(base_questions, min(len(base_questions), current_count))
-            selected_questions = current_sample + review_sample
-        else:
-            selected_questions = random.sample(base_questions, min(len(base_questions), 20))
+            prev_control_questions = (
+                Question.query.filter(
+                    Question.subject_id == cw.subject_id,
+                    Question.grade == cw.grade,
+                    Question.quarter < cw.quarter,
+                )
+                .filter(Question.control_works.any())
+                .all()
+            )
+            review_sample = _safe_sample(prev_control_questions, 5)
+
+        used_ids = {q.id for q in review_sample}
+        current_pool = [q for q in base_questions if q.id not in used_ids]
+        current_medium = [q for q in current_pool if (q.difficulty or 2) == 2]
+        current_hard = [q for q in current_pool if (q.difficulty or 2) >= 3]
+        current_other = [q for q in current_pool if q not in current_medium and q not in current_hard]
+
+        selected_questions.extend(review_sample)
+        selected_questions.extend(_safe_sample(current_medium, 10))
+        used_ids.update(q.id for q in selected_questions)
+        selected_questions.extend(_safe_sample([q for q in current_hard if q.id not in used_ids], 5))
+        used_ids.update(q.id for q in selected_questions)
+
+        if len(selected_questions) < 20:
+            remaining = [q for q in current_other + current_medium + current_hard if q.id not in used_ids]
+            selected_questions.extend(_safe_sample(remaining, 20 - len(selected_questions)))
             
         # Ensure the final selection is shuffled so review questions are mixed in
         random.shuffle(selected_questions)

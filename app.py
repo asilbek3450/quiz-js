@@ -67,6 +67,19 @@ def create_app():
                 conn.execute(db.text("ALTER TABLE test_result ADD COLUMN control_work_id INTEGER REFERENCES control_work(id)"))
                 conn.commit()
 
+        # Check and migrate Question table (difficulty/lesson for balanced tests)
+        question_columns = [c['name'] for c in inspector.get_columns('question')]
+        if 'difficulty' not in question_columns:
+            print("Migrating database: Adding difficulty to Question table...")
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE question ADD COLUMN difficulty INTEGER DEFAULT 2"))
+                conn.commit()
+        if 'lesson' not in question_columns:
+            print("Migrating database: Adding lesson to Question table...")
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE question ADD COLUMN lesson INTEGER"))
+                conn.commit()
+
         # Init default admin/subjects if empty
         if not Admin.query.first():
             from werkzeug.security import generate_password_hash
