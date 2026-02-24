@@ -554,7 +554,7 @@ def generate_dars3(subject_id, limit=40):
         
     return questions
 
-def generate_dars4(subject_id, limit=60):
+def generate_dars4(subject_id, limit=40):
     questions = []
     generators = [gen_list_basic, gen_list_methods, gen_tuple_basic, gen_set_basic, gen_dict_basic]
     
@@ -630,7 +630,7 @@ def main():
         dars3 = generate_dars3(subject.id, 40)
         print(f"Dars 3 generated: {len(dars3)} questions")
         
-        dars4 = generate_dars4(subject.id, 60)
+        dars4 = generate_dars4(subject.id, 40)
         print(f"Dars 4 generated: {len(dars4)} questions")
         
         dars5 = generate_dars5(subject.id, 40)

@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row min-vh-50 align-items-center justify-content-center mb-5 mt-4">
+    <div class="col-lg-6 col-md-8">
+        <div class="text-center mb-4 animate-fade-in-up">
+            <div class="icon-circle bg-soft-warning text-warning mb-3 mx-auto"
+                style="width: 80px; height: 80px; font-size: 2.5rem;">
+                <i class="fas fa-file-signature"></i>
+            </div>
+            <h2 class="fw-bold text-uppercase text-warning" style="letter-spacing: -0.5px;">{{ _('Nazorat Ishiga
+                Kirish') }}</h2>
+            <p class="text-muted">{{ _('Ism-familiyangizni kiriting va ro\'yxatdan kerakli nazorat ishini tanlang') }}
+            </p>
+        </div>
+
+        {% if active_test_info %}
+        <div class="alert alert-info border-0 rounded-4 shadow-sm mb-4 animate-fade-in-up">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-info-circle fa-2x me-3 text-info"></i>
+                <div>
+                    <h6 class="fw-bold mb-1">{{ _('Diqqat!') }}</h6>
+                    <p class="mb-0 small">Sizda tugallanmagan nazorat ishi (<strong>{{ active_test_info.subject
+                            }}</strong>) mavjud.
+                        Davom ettirish uchun shu ism familiyani kiriting va kerakli nazoratni tanlang.</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card shadow-lg border-warning border-top border-4 rounded-4 overflow-hidden animate-fade-in-up"
+            style="animation-delay: 0.1s;">
+            <div class="card-body p-4 p-md-5">
+                <form method="POST" action="{{ url_for('student.control_start') }}">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-muted small text-uppercase">{{ _('Ism') }}</label>
+                            <input type="text" class="form-control form-control-lg bg-light border-0" name="name"
+                                required placeholder="{{ _('Ismingizni kiriting') }}"
+                                value="{{ active_test_info.name if active_test_info else '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-muted small text-uppercase">{{ _('Familiya')
+                                }}</label>
+                            <input type="text" class="form-control form-control-lg bg-light border-0" name="surname"
+                                required placeholder="{{ _('Familiyangizni kiriting') }}"
+                                value="{{ active_test_info.surname if active_test_info else '' }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-muted small text-uppercase">{{ _('Sinf') }}</label>
+                            <select class="form-select form-select-lg bg-light border-0" name="grade" required>
+                                <option value="">{{ _('Sinfni tanlang') }}</option>
+                                {% for g in range(5, 12) %}
+                                <option value="{{ g }}">{{ g }}-sinf</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-muted small text-uppercase">{{ _('Chorak') }}</label>
+                            <select class="form-select form-select-lg bg-light border-0" name="quarter" required>
+                                <option value="">{{ _('Chorakni tanlang') }}</option>
+                                {% for q in range(1, 5) %}
+                                <option value="{{ q }}">{{ q }}-chorak</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-bold text-muted small text-uppercase">{{ _('Sinf qaysi guruh')
+                                }}</label>
+                            <select class="form-select form-select-lg bg-light border-0" name="class_number" required>
+                                <option value="">{{ _('Harf/Raqamni tanlang') }}</option>
+                                {% for letter in ['1', '2', '3', '4'] %}
+                                <option value="{{ letter }}">{{ letter }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning mt-4 rounded-3 border-0 small">
+                        <strong><i class="fas fa-stopwatch me-1"></i> {{ _('Vaqt cheklovi!') }}</strong>
+                        {{ _('Test boshlanganidan so\'ng vaqt hisoblanishni boshlaydi. Belgilangan vaqt tugagach test
+                        avtomatik yakunlanadi.') }}
+                    </div>
+
+                    <div class="mt-4 pt-2">
+                        {% if not control_works %}
+                        <div class="alert alert-danger py-2 small mb-3 text-center">
+                            <i class="fas fa-exclamation-triangle me-1"></i> {{ _('Hozircha ochiq nazorat ishlari
+                            yo\'q') }}
+                        </div>
+                        {% endif %}
+                        <button type="submit" class="btn btn-warning text-dark btn-lg w-100 pill-btn fw-bold shadow-sm"
+                            {% if not control_works %}disabled{% endif %}>
+                            <i class="fas fa-paper-plane me-2"></i> {{ _('Testni boshlash') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card-footer bg-light border-0 p-4 text-center">
+                <a href="{{ url_for('main.index') }}"
+                    class="text-decoration-none text-muted fw-medium hover-primary transition">
+                    <i class="fas fa-arrow-left me-2"></i>{{ _('Bosh sahifaga qaytish') }}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-soft-warning {
+        background: rgba(245, 158, 11, 0.1);
+    }
+
+    .hover-primary:hover {
+        color: var(--primary) !important;
+    }
+
+    .transition {
+        transition: all 0.3s ease;
+    }
+</style>
+{% endblock %}

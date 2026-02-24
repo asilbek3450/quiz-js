@@ -2,6 +2,24 @@ from extensions import db
 from datetime import datetime
 import json
 
+control_work_questions = db.Table('control_work_questions',
+    db.Column('control_work_id', db.Integer, db.ForeignKey('control_work.id'), primary_key=True),
+    db.Column('question_id', db.Integer, db.ForeignKey('question.id'), primary_key=True)
+)
+
+class ControlWork(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
+    grade = db.Column(db.Integer, nullable=False)
+    quarter = db.Column(db.Integer, nullable=False)
+    time_limit = db.Column(db.Integer, default=40) # in minutes
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    subject = db.relationship('Subject', backref='control_works')
+    questions = db.relationship('Question', secondary=control_work_questions, lazy='subquery',
+        backref=db.backref('control_works', lazy=True))
 class Admin(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -58,5 +76,8 @@ class TestResult(db.Model):
     grade_text = db.Column(db.String(20), nullable=False)
     test_date = db.Column(db.DateTime, default=datetime.utcnow)
     answers_json = db.Column(db.Text)  # JSON format
+    control_work_id = db.Column(db.Integer, db.ForeignKey('control_work.id'), nullable=True) # None means regular test
+    
+    control_work = db.relationship('ControlWork', backref='results')
     
     subject = db.relationship('Subject', backref='results')

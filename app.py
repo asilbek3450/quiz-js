@@ -48,14 +48,23 @@ def create_app():
         
         db.create_all()
         
-        # Primitive migration check
         from sqlalchemy import inspect
         inspector = inspect(db.engine)
+        
+        # Check and migrate Subject table
         columns = [c['name'] for c in inspector.get_columns('subject')]
         if 'is_protected' not in columns:
             print("Migrating database: Adding is_protected to Subject table...")
             with db.engine.connect() as conn:
                 conn.execute(db.text("ALTER TABLE subject ADD COLUMN is_protected BOOLEAN DEFAULT 0"))
+                conn.commit()
+
+        # Check and migrate TestResult table
+        test_result_columns = [c['name'] for c in inspector.get_columns('test_result')]
+        if 'control_work_id' not in test_result_columns:
+            print("Migrating database: Adding control_work_id to TestResult table...")
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE test_result ADD COLUMN control_work_id INTEGER REFERENCES control_work(id)"))
                 conn.commit()
 
         # Init default admin/subjects if empty

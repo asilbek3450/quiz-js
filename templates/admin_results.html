@@ -51,10 +51,28 @@
                     <label class="form-label">{{ _('Chorak') }}</label>
                     <select class="form-select" name="quarter" onchange="this.form.submit()">
                         <option value="">{{ _('Barchasi') }}</option>
-                        <option value="1" {% if request.args.get('quarter')=='1' %}selected{% endif %}>1-{{ _('chorak') }}</option>
-                        <option value="2" {% if request.args.get('quarter')=='2' %}selected{% endif %}>2-{{ _('chorak') }}</option>
-                        <option value="3" {% if request.args.get('quarter')=='3' %}selected{% endif %}>3-{{ _('chorak') }}</option>
-                        <option value="4" {% if request.args.get('quarter')=='4' %}selected{% endif %}>4-{{ _('chorak') }}</option>
+                        <option value="1" {% if request.args.get('quarter')=='1' %}selected{% endif %}>1-{{ _('chorak')
+                            }}</option>
+                        <option value="2" {% if request.args.get('quarter')=='2' %}selected{% endif %}>2-{{ _('chorak')
+                            }}</option>
+                        <option value="3" {% if request.args.get('quarter')=='3' %}selected{% endif %}>3-{{ _('chorak')
+                            }}</option>
+                        <option value="4" {% if request.args.get('quarter')=='4' %}selected{% endif %}>4-{{ _('chorak')
+                            }}</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label text-warning fw-bold"><i class="fas fa-file-signature me-1"></i> {{
+                        _('Nazorat ishi') }}</label>
+                    <select class="form-select border-warning" name="control_work_id" onchange="this.form.submit()">
+                        <option value="">{{ _('Barchasi') }}</option>
+                        {% for cw in control_works_list %}
+                        <option value="{{ cw.id }}" {% if request.args.get('control_work_id')|int==cw.id %}selected{%
+                            endif %}>
+                            {{ cw.title }}
+                        </option>
+                        {% endfor %}
                     </select>
                 </div>
 
@@ -107,6 +125,7 @@
                             <th>{{ _('Fan') }}</th>
                             <th>{{ _('Sinf') }}</th>
                             <th>{{ _('Chorak') }}</th>
+                            <th>{{ _('Nazorat ishi') }}</th>
                             <th>{{ _('Ball') }}</th>
                             <th>{{ _('Foiz') }}</th>
                             <th>{{ _('Baho') }}</th>
@@ -129,6 +148,14 @@
                             </td>
                             <td>
                                 <span class="badge bg-secondary">{{ result.quarter }}-chorak</span>
+                            </td>
+                            <td>
+                                {% if result.control_work_id %}
+                                <span class="badge bg-warning text-dark"><i class="fas fa-file-alt me-1"></i>{{ _('Ha')
+                                    }}</span>
+                                {% else %}
+                                <span class="text-muted small">-</span>
+                                {% endif %}
                             </td>
                             <td>
                                 <strong>{{ result.score }}/{{ result.total_questions }}</strong>
@@ -159,12 +186,10 @@
                                 <small>{{ result.test_date.strftime('%d.%m.%Y %H:%M') }}</small>
                             </td>
                             <td>
-                                <form action="{{ url_for('admin.result_delete', id=result.id) }}" method="POST"
-                                    onsubmit="return confirm(&quot;{{ _('Bu natijani o\'chirishni tasdiqlaysizmi?') }}&quot;)">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
+                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                    onclick="deleteResult({{ result.id }}, this)" title="{{ _('O\'chirish') }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
                             </td>
                         </tr>
                         {% endfor %}
@@ -186,7 +211,8 @@
                     {% if p %}
                     <li class="page-item {{ 'active' if p == pagination.page }}">
                         <a class="page-link"
-                            href="{{ url_for('admin.results', page=p, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), filter_date=request.args.get('filter_date'), sort_by=request.args.get('sort_by')) }}">{{ p }}</a>
+                            href="{{ url_for('admin.results', page=p, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), filter_date=request.args.get('filter_date'), sort_by=request.args.get('sort_by')) }}">{{
+                            p }}</a>
                     </li>
                     {% else %}
                     <li class="page-item disabled"><span class="page-link">...</span></li>
@@ -202,6 +228,45 @@
                 </ul>
             </nav>
             {% endif %}
+
+            <!-- AJAX Deletion Script -->
+            <script>
+                function deleteResult(id, btn) {
+                    if (confirm("{{ _('Natijani o\'chirishni tasdiqlaysizmi?') }}")) {
+                        const icon = btn.querySelector('i');
+                        const originalClass = icon.className;
+                        icon.className = 'fas fa-spinner fa-spin';
+                        btn.disabled = true;
+
+                        fetch(`{{ url_for('admin.result_delete', id=0) }}`.replace('0', id), {
+                            method: 'POST', // the route requires POST
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                // Flask depending on setup might require CSRF, but standard blueprint doesn't seem to use it
+                            }
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    const row = btn.closest('tr');
+                                    row.style.transition = 'opacity 0.4s ease';
+                                    row.style.opacity = '0';
+                                    setTimeout(() => row.remove(), 400);
+                                } else {
+                                    alert("{{ _('Xatolik yuz berdi') }}");
+                                    icon.className = originalClass;
+                                    btn.disabled = false;
+                                }
+                            })
+                            .catch(err => {
+                                console.error(err);
+                                alert("{{ _('Tarmoq xatosi yoki server javob bermadi') }}");
+                                icon.className = originalClass;
+                                btn.disabled = false;
+                            });
+                    }
+                }
+            </script>
 
             {% if results|length > 0 %}
             <div class="mt-4">

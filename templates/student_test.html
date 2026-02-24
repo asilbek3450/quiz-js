@@ -576,8 +576,13 @@
             });
         }
 
-        // Timer configuration (30 minutes)
-        const TEST_DURATION = 30 * 60; // 1800 seconds
+        // Timer configuration
+        {% if session.get('cw_time_limit') %}
+        const TEST_DURATION = {{ session.get('cw_time_limit') }} * 60;
+        {% else %}
+        const TEST_DURATION = 30 * 60; // Default 30 minutes for regular test
+        {% endif %}
+
         const startTimePayload = {{ session.get('start_time', 0) }};
         const startTimeC = startTimePayload ? startTimePayload * 1000 : Date.now();
 

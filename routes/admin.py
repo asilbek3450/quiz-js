@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from flask_babel import gettext as _
 from werkzeug.security import check_password_hash
 from extensions import db
-from models import Admin, Subject, Question, TestResult
+from models import Admin, Subject, Question, TestResult, ControlWork
 from deep_translator import GoogleTranslator
 from datetime import datetime
 import json
@@ -145,6 +145,12 @@ def questions():
         query = query.filter_by(grade=grade)
     if quarter:
         query = query.filter_by(quarter=quarter)
+        
+    is_control_work = request.args.get('is_control_work')
+    if is_control_work == '1':
+        query = query.filter(Question.control_works.any())
+    elif is_control_work == '0':
+        query = query.filter(~Question.control_works.any())
 
     search = request.args.get('search')
     if search:
@@ -258,11 +264,15 @@ def question_edit(id):
     subjects = Subject.query.all()
     return render_template('admin_question_form.html', subjects=subjects, question=question)
 
-@admin_bp.route('/question/delete/<int:id>')
+@admin_bp.route('/question/delete/<int:id>', methods=['GET'])
 def question_delete(id):
     question = Question.query.get_or_404(id)
     db.session.delete(question)
     db.session.commit()
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return {'success': True}
+        
     flash(_('Savol o\'chirildi'), 'success')
     return redirect(url_for('admin.questions'))
 
@@ -501,6 +511,7 @@ def results():
     subject_id = request.args.get('subject_id', type=int)
     grade = request.args.get('grade', type=int)
     quarter = request.args.get('quarter', type=int)
+    control_work_id = request.args.get('control_work_id', type=int)
 
     filter_date = request.args.get('filter_date')
     sort_by = request.args.get('sort_by', 'newest')
@@ -512,6 +523,8 @@ def results():
         query = query.filter_by(grade=grade)
     if quarter:
         query = query.filter_by(quarter=quarter)
+    if control_work_id:
+        query = query.filter_by(control_work_id=control_work_id)
 
     if filter_date:
         try:
@@ -548,11 +561,13 @@ def results():
     results = pagination.items
 
     subjects = Subject.query.all()
+    control_works_list = ControlWork.query.order_by(ControlWork.created_at.desc()).all()
 
     return render_template('admin_results.html',
                          results=results,
                          pagination=pagination,
                          subjects=subjects,
+                         control_works_list=control_works_list,
                          total_count=total_count,
                          excellent_count=excellent_count,
                          avg_percentage=round(avg_percentage, 1),
@@ -563,6 +578,10 @@ def result_delete(id):
     result = TestResult.query.get_or_404(id)
     db.session.delete(result)
     db.session.commit()
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return {'success': True}
+        
     flash(_('Natija muvaffaqiyatli o\'chirildi'), 'success')
     return redirect(url_for('admin.results'))
 
@@ -652,3 +671,132 @@ def subject_delete(id):
     db.session.commit()
     flash(_('Fan o\'chirildi'), 'success')
     return redirect(url_for('admin.subjects'))
+
+# --- Nazorat Ishlari (Control Works) ---
+
+@admin_bp.route('/control_works')
+def control_works():
+    cws = ControlWork.query.order_by(ControlWork.created_at.desc()).all()
+    return render_template('admin_control_works.html', control_works=cws)
+
+@admin_bp.route('/control_work/add', methods=['GET', 'POST'])
+def control_work_add():
+    if request.method == 'POST':
+        try:
+            title = request.form.get('title', '').strip()
+            subject_id = request.form.get('subject_id', type=int)
+            grade = request.form.get('grade', type=int)
+            quarter = request.form.get('quarter', type=int)
+            time_limit = request.form.get('time_limit', type=int, default=40)
+            is_active = 'is_active' in request.form
+            question_ids = request.form.getlist('question_ids')
+
+            if not all([title, subject_id, grade, quarter]):
+                flash(_('Barcha majburiy maydonlarni to\'ldiring'), 'warning')
+                return redirect(url_for('admin.control_work_add'))
+
+            new_cw = ControlWork(
+                title=title,
+                subject_id=subject_id,
+                grade=grade,
+                quarter=quarter,
+                time_limit=time_limit,
+                is_active=is_active
+            )
+            
+            # Attach selected questions
+            if question_ids:
+                questions = Question.query.filter(Question.id.in_(question_ids)).all()
+                new_cw.questions.extend(questions)
+
+            db.session.add(new_cw)
+            db.session.commit()
+            flash(_('Nazorat ishi muvaffaqiyatli qo\'shildi'), 'success')
+            return redirect(url_for('admin.control_works'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(_('Xatolik yuz berdi: {}').format(str(e)), 'danger')
+            return redirect(url_for('admin.control_work_add'))
+
+    subjects = Subject.query.all()
+    return render_template('admin_control_work_form.html', subjects=subjects, control_work=None)
+
+@admin_bp.route('/control_work/edit/<int:id>', methods=['GET', 'POST'])
+def control_work_edit(id):
+    cw = ControlWork.query.get_or_404(id)
+
+    if request.method == 'POST':
+        try:
+            cw.title = request.form.get('title', '').strip()
+            cw.subject_id = request.form.get('subject_id', type=int)
+            cw.grade = request.form.get('grade', type=int)
+            cw.quarter = request.form.get('quarter', type=int)
+            cw.time_limit = request.form.get('time_limit', type=int, default=40)
+            cw.is_active = 'is_active' in request.form
+            
+            question_ids = request.form.getlist('question_ids')
+
+            # Update assigned questions
+            cw.questions = []
+            if question_ids:
+                questions = Question.query.filter(Question.id.in_(question_ids)).all()
+                cw.questions.extend(questions)
+
+            db.session.commit()
+            flash(_('Nazorat ishi muvaffaqiyatli o\'zgartirildi'), 'success')
+            return redirect(url_for('admin.control_works'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(_('Xatolik yuz berdi: {}').format(str(e)), 'danger')
+            return redirect(url_for('admin.control_work_edit', id=id))
+
+    subjects = Subject.query.all()
+    return render_template('admin_control_work_form.html', subjects=subjects, control_work=cw)
+
+@admin_bp.route('/control_work/delete/<int:id>')
+def control_work_delete(id):
+    cw = ControlWork.query.get_or_404(id)
+    # Removing relations with results (set to NULL via db behavior, or cascade depending on schema)
+    # Actually, SQLAlchemy might not set to null automatically unless specified. Let's do it:
+    for result in cw.results:
+        result.control_work_id = None
+        
+    db.session.delete(cw)
+    db.session.commit()
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return {'success': True}
+        
+    flash(_('Nazorat ishi o\'chirildi'), 'success')
+    return redirect(url_for('admin.control_works'))
+
+@admin_bp.route('/api/get_questions')
+def api_get_questions():
+    subject_id = request.args.get('subject_id', type=int)
+    grade = request.args.get('grade', type=int)
+    quarter = request.args.get('quarter', type=int)
+    
+    if not all([subject_id, grade, quarter]):
+        return {'questions': []}
+        
+    questions = Question.query.filter_by(
+        subject_id=subject_id,
+        grade=grade,
+        quarter=quarter
+    ).all()
+    
+    data = []
+    for q in questions:
+        data.append({
+            'id': q.id,
+            'text': q.question_text,
+            'a': q.option_a,
+            'b': q.option_b,
+            'c': q.option_c,
+            'd': q.option_d,
+            'correct': q.correct_answer
+        })
+        
+    return {'questions': data}

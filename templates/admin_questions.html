@@ -19,12 +19,12 @@
             </a>
         </div>
     </div>
-    <div class="card animate-fade-in-up" style="animation-delay: 0.1s;">
-        <div class="card-body">
+    <div class="card shadow-sm border-0 animate-fade-in-up" style="border-radius: 12px; animation-delay: 0.1s;">
+        <div class="card-body p-4">
             <!-- Filtrlar -->
             <form method="GET" class="mb-4">
                 <div class="row g-3">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label fw-bold">
                             <i class="fas fa-book text-primary"></i> {{ _('Fan') }}
                         </label>
@@ -38,7 +38,7 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label fw-bold">
                             <i class="fas fa-users text-success"></i> {{ _('Sinf') }}
                         </label>
@@ -51,7 +51,7 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label fw-bold">
                             <i class="fas fa-calendar text-warning"></i> {{ _('Chorak') }}
                         </label>
@@ -62,6 +62,18 @@
                                 {{ q }}-{{ _('chorak') }}
                             </option>
                             {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-file-alt text-info"></i> {{ _('Turi') }}
+                        </label>
+                        <select name="is_control_work" class="form-select" onchange="this.form.submit()">
+                            <option value="">{{ _('Barchasi') }}</option>
+                            <option value="1" {% if request.args.get('is_control_work')=='1' %}selected{% endif %}>{{
+                                _('Nazorat ishi') }}</option>
+                            <option value="0" {% if request.args.get('is_control_work')=='0' %}selected{% endif %}>{{
+                                _('Oddiy test') }}</option>
                         </select>
                     </div>
                 </div>
@@ -78,7 +90,7 @@
                                 {{ _('Qidirish') }}
                             </button>
                             {% if request.args.get('search') %}
-                            <a href="{{ url_for('admin.questions', subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter')) }}"
+                            <a href="{{ url_for('admin.questions', subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), is_control_work=request.args.get('is_control_work')) }}"
                                 class="btn btn-outline-secondary">
                                 <i class="fas fa-times"></i>
                             </a>
@@ -89,74 +101,100 @@
             </form>
 
             <!-- Statistika -->
-            <div class="alert alert-info mb-4">
-                <i class="fas fa-info-circle me-2"></i>
-                <strong>{{ _('Ko\'rsatilmoqda') }}:</strong> {{ questions|length }} {{ _('ta savol') }} ({{
-                pagination.page }}-{{ _('sahifa') }}, {{
-                pagination.per_page }} {{ _('tadan') }})
-                <br>
-                <strong>{{ _('Jami') }}:</strong> {{ pagination.total }} {{ _('ta savol') }}
-                {% if request.args.get('subject_id') or request.args.get('grade') or request.args.get('quarter') or
-                request.args.get('search') %}
-                ({{ _('filtrlangan') }})
-                {% endif %}
+            <div class="alert alert-info mb-4 border-0 shadow-sm d-flex align-items-center">
+                <i class="fas fa-info-circle fa-2x me-3 opacity-75"></i>
+                <div>
+                    <strong>{{ _('Ko\'rsatilmoqda') }}:</strong> <span
+                        class="badge bg-white text-primary border ms-1">{{ questions|length }} ta savol</span>
+                    <span class="text-muted ms-2">({{ pagination.page }}-{{ _('sahifa') }}, {{ pagination.per_page }} {{
+                        _('tadan') }})</span>
+                    <br>
+                    <strong>{{ _('Jami') }}:</strong> <span class="badge bg-white text-info border ms-1">{{
+                        pagination.total }} ta savol</span>
+                    {% if request.args.get('subject_id') or request.args.get('grade') or request.args.get('quarter') or
+                    request.args.get('search') or request.args.get('is_control_work') %}
+                    <span class="badge bg-warning text-dark ms-2"><i class="fas fa-filter"></i> {{ _('Filtrlangan')
+                        }}</span>
+                    {% endif %}
+                </div>
             </div>
 
             <!-- Savollar jadvali -->
             {% if questions %}
             <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
                         <tr>
-                            <th style="width: 50px;">#</th>
+                            <th style="width: 50px;" class="text-center">#</th>
                             <th>{{ _('Savol') }}</th>
                             <th style="width: 120px;">{{ _('Fan') }}</th>
-                            <th style="width: 80px;">{{ _('Sinf') }}</th>
-                            <th style="width: 80px;">{{ _('Chorak') }}</th>
-                            <th style="width: 100px;">{{ _('To\'g\'ri') }}</th>
-                            <th style="width: 150px;">{{ _('Amallar') }}</th>
+                            <th style="width: 80px;" class="text-center">{{ _('Sinf') }}</th>
+                            <th style="width: 90px;" class="text-center">{{ _('Chorak') }}</th>
+                            <th style="width: 100px;" class="text-center">{{ _('To\'g\'ri') }}</th>
+                            <th style="width: 120px;" class="text-center">{{ _('Amallar') }}</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="border-top-0">
                         {% for question in questions %}
                         <tr>
-                            <td>{{ loop.index }}</td>
+                            <td class="text-center text-muted fw-bold">{{ loop.index + (pagination.page - 1) *
+                                pagination.per_page }}</td>
                             <td>
-                                <div class="text-truncate" style="max-width: 400px;"
+                                <div class="text-wrap fw-semibold mb-2" style="max-width: 500px;"
                                     title="{{ question.question_text }}">
                                     {{ question.question_text }}
                                 </div>
-                                <small class="text-muted">
-                                    <span class="badge bg-light text-dark">A: {{ question.option_a[:20] }}...</span>
-                                    <span class="badge bg-light text-dark">B: {{ question.option_b[:20] }}...</span>
-                                    <span class="badge bg-light text-dark">C: {{ question.option_c[:20] }}...</span>
-                                    <span class="badge bg-light text-dark">D: {{ question.option_d[:20] }}...</span>
-                                </small>
+                                <div class="row gx-2 gy-1" style="font-size: 0.85rem;">
+                                    <div class="col-6">
+                                        <div class="border rounded bg-light px-2 py-1 text-dark shadow-sm text-truncate"
+                                            title="{{ question.option_a }}"><strong class="text-primary">A:</strong> {{
+                                            question.option_a }}</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="border rounded bg-light px-2 py-1 text-dark shadow-sm text-truncate"
+                                            title="{{ question.option_b }}"><strong class="text-success">B:</strong> {{
+                                            question.option_b }}</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="border rounded bg-light px-2 py-1 text-dark shadow-sm text-truncate"
+                                            title="{{ question.option_c }}"><strong class="text-warning">C:</strong> {{
+                                            question.option_c }}</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="border rounded bg-light px-2 py-1 text-dark shadow-sm text-truncate"
+                                            title="{{ question.option_d }}"><strong class="text-danger">D:</strong> {{
+                                            question.option_d }}</div>
+                                    </div>
+                                </div>
                             </td>
                             <td>
-                                <span class="badge bg-primary">{{ question.subject.name }}</span>
+                                <span class="badge bg-primary rounded-pill px-3 py-2 shadow-sm">{{ question.subject.name
+                                    }}</span>
                             </td>
-                            <td>
-                                <span class="badge bg-success">{{ question.grade }}-sinf</span>
+                            <td class="text-center">
+                                <span class="badge bg-success rounded-pill px-3 py-2 shadow-sm">{{ question.grade
+                                    }}-sinf</span>
                             </td>
-                            <td>
-                                <span class="badge bg-warning">{{ question.quarter }}-ch</span>
+                            <td class="text-center">
+                                <span class="badge bg-warning text-dark rounded-pill px-3 py-2 shadow-sm">{{
+                                    question.quarter }}-ch</span>
                             </td>
-                            <td>
-                                <span class="badge bg-danger">{{ question.correct_answer }}</span>
+                            <td class="text-center">
+                                <span class="badge bg-danger rounded-pill px-3 py-2 shadow-sm fs-6">{{
+                                    question.correct_answer }}</span>
                             </td>
-                            <td>
-                                <div class="btn-group btn-group-sm">
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm shadow-sm" role="group">
                                     <a href="{{ url_for('admin.question_edit', id=question.id) }}"
-                                        class="btn btn-outline-primary" title="{{ _('Tahrirlash') }}">
-                                        <i class="fas fa-edit"></i>
+                                        class="btn btn-light border" data-bs-toggle="tooltip"
+                                        title="{{ _('Tahrirlash') }}">
+                                        <i class="fas fa-edit text-primary"></i>
                                     </a>
-                                    <a href="{{ url_for('admin.question_delete', id=question.id) }}"
-                                        class="btn btn-outline-danger"
-                                        onclick="return confirm('{{ _('Savolni o\'chirishni tasdiqlaysizmi?') }}')"
+                                    <button type="button" class="btn btn-light border text-danger"
+                                        onclick="deleteQuestion({{ question.id }}, this)" data-bs-toggle="tooltip"
                                         title="{{ _('O\'chirish') }}">
                                         <i class="fas fa-trash"></i>
-                                    </a>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -165,6 +203,46 @@
                 </table>
             </div>
 
+            <!-- AJAX Deletion Script -->
+            <script>
+                function deleteQuestion(id, btn) {
+                    if (confirm("{{ _('Savolni o\'chirishni tasdiqlaysizmi?') }}")) {
+                        // Change icon to spinner
+                        const icon = btn.querySelector('i');
+                        const originalClass = icon.className;
+                        icon.className = 'fas fa-spinner fa-spin';
+                        btn.disabled = true;
+
+                        fetch(`{{ url_for('admin.question_delete', id=0) }}`.replace('0', id), {
+                            method: 'GET',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    // Find the row and fade it out
+                                    const row = btn.closest('tr');
+                                    row.style.transition = 'opacity 0.4s ease';
+                                    row.style.opacity = '0';
+                                    setTimeout(() => row.remove(), 400);
+                                } else {
+                                    alert("{{ _('Xatolik yuz berdi') }}");
+                                    icon.className = originalClass;
+                                    btn.disabled = false;
+                                }
+                            })
+                            .catch(err => {
+                                console.error(err);
+                                alert("{{ _('Tarmoq xatosi yoki server javob bermadi') }}");
+                                icon.className = originalClass;
+                                btn.disabled = false;
+                            });
+                    }
+                }
+            </script>
+
             <!-- Pagination -->
             {% if pagination.pages > 1 %}
             <nav aria-label="Sahifalar navigatsiyasi" class="mt-4">
@@ -172,7 +250,7 @@
                     <!-- Oldingi sahifa -->
                     <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
                         <a class="page-link"
-                            href="{% if pagination.has_prev %}{{ url_for('admin.questions', page=pagination.prev_num, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), search=request.args.get('search')) }}{% else %}#{% endif %}">
+                            href="{% if pagination.has_prev %}{{ url_for('admin.questions', page=pagination.prev_num, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), is_control_work=request.args.get('is_control_work'), search=request.args.get('search')) }}{% else %}#{% endif %}">
                             <i class="fas fa-chevron-left"></i> {{ _('Oldingi') }}
                         </a>
                     </li>
@@ -183,7 +261,7 @@
                     {% if page_num %}
                     <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
                         <a class="page-link"
-                            href="{{ url_for('admin.questions', page=page_num, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), search=request.args.get('search')) }}">
+                            href="{{ url_for('admin.questions', page=page_num, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), is_control_work=request.args.get('is_control_work'), search=request.args.get('search')) }}">
                             {{ page_num }}
                         </a>
                     </li>
@@ -197,7 +275,7 @@
                     <!-- Keyingi sahifa -->
                     <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
                         <a class="page-link"
-                            href="{% if pagination.has_next %}{{ url_for('admin.questions', page=pagination.next_num, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), search=request.args.get('search')) }}{% else %}#{% endif %}">
+                            href="{% if pagination.has_next %}{{ url_for('admin.questions', page=pagination.next_num, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), is_control_work=request.args.get('is_control_work'), search=request.args.get('search')) }}{% else %}#{% endif %}">
                             {{ _('Keyingi') }} <i class="fas fa-chevron-right"></i>
                         </a>
                     </li>
@@ -205,11 +283,15 @@
             </nav>
             {% endif %}
             {% else %}
-            <div class="alert alert-warning text-center">
-                <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
-                <h5>{{ _('Savollar topilmadi') }}</h5>
-                <p class="mb-0">{{ _('Tanlangan filtrlar bo\'yicha savollar mavjud emas.') }}</p>
-                <a href="{{ url_for('admin.question_add') }}" class="btn btn-primary mt-3">
+            <div class="text-center py-5">
+                <div class="display-1 text-muted mb-3 opacity-25 animate-fade-in-up">
+                    <i class="fas fa-box-open"></i>
+                </div>
+                <h4 class="text-secondary fw-bold">{{ _('Savollar topilmadi') }}</h4>
+                <p class="text-muted mb-4">{{ _('Tanlangan filtrlar bo\'yicha savollar mavjud emas yoxud hali savol
+                    kiritilmagan.') }}</p>
+                <a href="{{ url_for('admin.question_add') }}"
+                    class="btn btn-primary btn-lg shadow-sm rounded-pill px-4">
                     <i class="fas fa-plus me-2"></i> {{ _('Birinchi savolni qo\'shish') }}
                 </a>
             </div>
@@ -218,48 +300,48 @@
     </div>
 
     <!-- Savollar statistikasi -->
-    <div class="row mt-4">
+    <div class="row mt-4 animate-fade-in-up" style="animation-delay: 0.2s;">
         <div class="col-md-12">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">
-                        <i class="fas fa-chart-bar me-2"></i> {{ _('Savollar statistikasi') }}
+            <div class="card shadow-sm border-0" style="border-radius: 12px;">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                    <h5 class="mb-0 fw-bold text-dark">
+                        <i class="fas fa-chart-pie text-primary me-2"></i> {{ _('Savollar statistikasi') }}
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="row">
+                    <div class="row g-4">
                         {% for subject in subjects %}
                         <div class="col-md-6 mb-3">
                             <h6 class="fw-bold">{{ subject.name }}</h6>
                             <div class="table-responsive">
-                                <table class="table table-sm table-bordered">
-                                    <thead>
+                                <table class="table table-sm table-bordered table-hover align-middle mb-0 text-center">
+                                    <thead class="table-light text-muted">
                                         <tr>
                                             <th>{{ _('Sinf') }}</th>
                                             <th>1-{{ _('ch') }}</th>
                                             <th>2-{{ _('ch') }}</th>
                                             <th>3-{{ _('ch') }}</th>
                                             <th>4-{{ _('ch') }}</th>
-                                            <th>{{ _('Jami') }}</th>
+                                            <th class="bg-light">{{ _('Jami') }}</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody class="border-top-0">
                                         {% set grades = subject.grades.split(',') %}
                                         {% for grade in grades %}
                                         <tr>
-                                            <td>{{ grade }}-sinf</td>
+                                            <td class="fw-bold text-muted">{{ grade }}-sinf</td>
                                             {% for quarter in range(1, 5) %}
                                             {% set count = all_questions|selectattr('subject_id', 'equalto',
                                             subject.id)|selectattr('grade', 'equalto', grade|int)|selectattr('quarter',
                                             'equalto', quarter)|list|length %}
                                             <td
-                                                class="{% if count >= 200 %}bg-success text-white{% elif count >= 20 %}bg-warning{% else %}bg-danger text-white{% endif %}">
+                                                class="fw-semibold {% if count >= 200 %}text-success bg-success bg-opacity-10{% elif count >= 20 %}text-warning bg-warning bg-opacity-10{% else %}text-danger bg-danger bg-opacity-10{% endif %}">
                                                 {{ count }}
                                             </td>
                                             {% endfor %}
                                             {% set total = all_questions|selectattr('subject_id', 'equalto',
                                             subject.id)|selectattr('grade', 'equalto', grade|int)|list|length %}
-                                            <td class="fw-bold">{{ total }}</td>
+                                            <td class="fw-bold bg-light">{{ total }}</td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>
@@ -268,12 +350,17 @@
                         </div>
                         {% endfor %}
                     </div>
-                    <div class="alert alert-info mb-0 mt-3">
-                        <i class="fas fa-info-circle me-2"></i>
-                        <strong>{{ _('Eslatma') }}:</strong>
-                        <span class="badge bg-success">{{ _('Yashil') }}</span> - 200+ {{ _('savol (yetarli)') }},
-                        <span class="badge bg-warning">{{ _('Sariq') }}</span> - 20-199 {{ _('savol') }},
-                        <span class="badge bg-danger">{{ _('Qizil') }}</span> - 20 {{ _('dan kam savol') }}
+                    <div class="alert bg-light border-0 shadow-sm mb-0 mt-4 d-flex align-items-center rounded-3">
+                        <i class="fas fa-info-circle fa-2x text-primary opacity-50 me-3"></i>
+                        <div>
+                            <strong class="text-dark">{{ _('Eslatma') }}:</strong>
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success ms-2">200+ {{
+                                _('savol (yetarli)') }}</span>
+                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning ms-2">20-199
+                                {{ _('savol') }}</span>
+                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger ms-2">
+                                < 20 {{ _('savol') }}</span>
+                        </div>
                     </div>
                 </div>
             </div>
