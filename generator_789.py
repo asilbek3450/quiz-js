@@ -576,44 +576,64 @@ def generate_9_q3(subject_id):
         random.shuffle(opts)
         questions.append(Question(subject_id=subject_id, grade=9, quarter=3, question_text=q_text, option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
 
-    # set theory logic
-    for _ in range(50):
-        lst = [random.randint(1,10) for _ in range(8)]
-        ans = str(len(set(lst)))
-        code = f"sonlar = {lst}\nprint(len(set(sonlar)))"
-        opts = [ans, str(len(lst)), str(len(lst)-1), str(len(lst)+1)]
-        opts = list(set(opts))
-        while len(opts) < 4:
-            opts.append(str(random.randint(1,15)))
-            opts = list(set(opts))
-        random.shuffle(opts)
-        questions.append(Question(subject_id=subject_id, grade=9, quarter=3, question_text=f"To'plam (set) orqali yozilgan dastur natijasi nima bo'ladi?\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
-
-    # ATM Simulation (deep if logic)
-    for _ in range(50):
-        balance = random.randint(100, 500) * 1000
-        withdrawal = random.randint(50, 600) * 1000
-        expected = str(balance - withdrawal) if withdrawal <= balance else "Mablag' yetarli emas"
-        code = f"balans = {balance}\nyechish = {withdrawal}\nif yechish <= balans:\n    balans -= yechish\n    print(balans)\nelse:\n    print(\"Mablag' yetarli emas\")"
-        opts = [expected, str(balance), str(withdrawal), "0" if expected != "0" else "1"]
-        opts = list(set(opts))
-        while len(opts) < 4:
-            opts.append(str(random.randint(10, 800) * 1000))
-            opts = list(set(opts))
-        random.shuffle(opts)
-        questions.append(Question(subject_id=subject_id, grade=9, quarter=3, question_text=f"Bankomat logikasi:\nEkranga qanday natija chiqadi?\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(expected)]))
-
-    # ATM PIN logic (loops and if combination)
-    for _ in range(45):
-        pin = random.randint(1000, 9999)
-        wrong = random.randint(1000, 9999)
-        while wrong == pin: wrong = random.randint(1000, 9999)
-        ans = "Xato parol"
-        code = f"asl_pin = {pin}\nkiritilgan = {wrong}\nfor i in range(3):\n    if kiritilgan == asl_pin:\n        print('Kirish ruxsat etildi')\n        break\n    else:\n        kiritilgan += 1\nelse:\n    print('Xato parol')"
-        opts = [ans, "Kirish ruxsat etildi", "Error", "None"]
-        random.shuffle(opts)
-        questions.append(Question(subject_id=subject_id, grade=9, quarter=3, question_text=f"For tsikli va else blokidan tashkil topgan dastur nimani bosmaga chiqaradi:\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
+    # Logical blocks (Set, If-Elif-Else, For, While)
+    for _ in range(160):
+        t = random.choice(['set', 'atm_if', 'for_loop', 'while_loop'])
         
+        if t == 'set':
+            lst = [random.randint(1,10) for _ in range(8)]
+            ans = str(len(set(lst)))
+            code = f"sonlar = {lst}\nprint(len(set(sonlar)))"
+            opts = [ans, str(len(lst)), str(len(lst)-1), str(len(lst)+1)]
+        elif t == 'atm_if':
+            balance = random.randint(100, 500) * 1000
+            withdrawal = random.randint(50, 600) * 1000
+            if withdrawal > balance:
+                ans = "Mablag' yetarli emas"
+            elif withdrawal == balance:
+                ans = "0"
+            else:
+                ans = str(balance - withdrawal)
+                
+            code = f"balans = {balance}\nyechish = {withdrawal}\nif yechish > balans:\n    print(\"Mablag' yetarli emas\")\nelif yechish == balans:\n    print(0)\nelse:\n    print(balans - yechish)"
+            opts = [ans, str(balance), str(withdrawal), "Xatolik"]
+        elif t == 'for_loop':
+            target = random.choice([2, 3, 4, 5])
+            items = random.sample(range(10, 50), 4) + [target]
+            random.shuffle(items)
+            ans = "Topildi"
+            code = f"qidiruv = {target}\nroyxat = {items}\nfor son in royxat:\n    if son == qidiruv:\n        print('Topildi')\n        break\nelse:\n    print('Topilmadi')"
+            opts = [ans, "Topilmadi", "Hech narsa chiqmaydi", "Error"]
+        else:
+            start = random.randint(10, 20)
+            decrement = random.randint(2, 4)
+            limit = random.randint(1, 5)
+            
+            # calculate while loop manually
+            curr = start
+            counter = 0
+            while curr > limit:
+                curr -= decrement
+                counter += 1
+                
+            ans = str(counter)
+            code = f"son = {start}\nsanoq = 0\nwhile son > {limit}:\n    son -= {decrement}\n    sanoq += 1\nprint(sanoq)"
+            opts = [ans, str(counter+1), str(counter-1), str(counter+2)]
+            
+        opts = list(set(opts))
+        while len(opts) < 4:
+            if t == 'atm_if':
+                opts.append(str(random.randint(10, 800) * 1000))
+            elif t == 'while_loop':
+                opts.append(str(random.randint(1, 15)))
+            elif t == 'for_loop':
+                opts.append("Break ishlamaydi")
+            else:
+                opts.append(str(random.randint(1,15)))
+            opts = list(set(opts))
+        random.shuffle(opts)
+        questions.append(Question(subject_id=subject_id, grade=9, quarter=3, question_text=f"Quyidagi mantiqiy blok dasturologik natijasi nima bo'ladi?\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
+
     unique_q = {}
     for q in questions: unique_q[q.question_text] = q
     return list(unique_q.values())[:100]
