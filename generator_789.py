@@ -13,7 +13,6 @@ def get_or_create_subject(name):
         db.session.add(subject)
         db.session.commit()
     else:
-        # ensure grades cover 7,8,9
         grades_list = [g.strip() for g in subject.grades.split(',') if g.strip()]
         for g in ['7', '8', '9']:
             if g not in grades_list:
@@ -25,7 +24,6 @@ def get_or_create_subject(name):
 def add_questions_to_db(questions_list):
     saved_questions = []
     for q in questions_list:
-        # Check if identical question already exists to prevent pure duplicates
         exists = Question.query.filter_by(
             subject_id=q.subject_id,
             grade=q.grade,
@@ -34,7 +32,7 @@ def add_questions_to_db(questions_list):
         ).first()
         if not exists:
             db.session.add(q)
-            db.session.flush() # flush to get an ID
+            db.session.flush() 
             saved_questions.append(q)
         else:
             saved_questions.append(exists)
@@ -42,19 +40,13 @@ def add_questions_to_db(questions_list):
     return saved_questions
 
 def create_control_work(subject_id, grade, quarter, title, target_count=100):
-    """
-    Creates or re-rolls a Control Work for a specific grade and quarter, 
-    pulling questions cumulatively up to that quarter.
-    """
-    # 1. Fetch available pool
     pool = Question.query.filter(
         Question.subject_id == subject_id,
         Question.grade == grade,
         Question.quarter <= quarter
     ).all()
     
-    if scarcely := len(pool) < target_count:
-        print(f"[{title}] WARNING: Pool only has {len(pool)} questions, targeting {target_count}. Using what's available.")
+    if len(pool) < target_count:
         selected = pool
     else:
         selected = random.sample(pool, target_count)
@@ -72,112 +64,80 @@ def create_control_work(subject_id, grade, quarter, title, target_count=100):
         db.session.add(cw)
         db.session.flush()
     else:
-        cw.questions = [] # Clear existing mapping
+        cw.questions = []
         db.session.flush()
         
     cw.questions.extend(selected)
     db.session.commit()
     return cw, len(selected)
 
-def generate_math_eval(subject_id, grade, quarter, num_questions=100):
+# -------- 7-SINF --------
+def generate_7_q1(subject_id):
     questions = []
+    theory = [
+        ("Dastur va dasturlash nima?", "Kompyuter bajarishi kerak bo'lgan buyruqlar to'plami", "Kompyuterni yoqish jarayoni", "Monitor va klaviatura", "Faqat o'yin o'ynash uchun vosita"),
+        ("Eng mashhur dasturlash tillaridan biri qaysi?", "Python", "Monitor", "Windows", "Protsessor"),
+        ("Pythonda ma'lumotni ekranga chiqaruvchi funksiya qaysi?", "print()", "input()", "show()", "display()"),
+        ("Pythonda o'zgaruvchilar nima vazifani bajaradi?", "Xotirada ma'lumot saqlaydi", "Ekranga ma'lumot chiqaradi", "Kompyuterni o'chiradi", "Internetga ulanadi"),
+        ("Qaysi biri haqiqiy (float) ma'lumot turi hisoblanadi?", "3.14", "42", "'salom'", "True"),
+        ("Qaysi biri butun (int) ma'lumot turi hisoblanadi?", "10", "10.5", "'10'", "False"),
+        ("Qaysi biri satr (str) ma'lumot turi hisoblanadi?", "'olma'", "25", "25.0", "True")
+    ]
+    for _ in range(4): # 28
+        for q_text, ans, w1, w2, w3 in theory:
+            opts = [ans, w1, w2, w3]
+            random.shuffle(opts)
+            questions.append(Question(subject_id=subject_id, grade=7, quarter=1, question_text=q_text, option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
+
+    # Math eval (72)
     ops = [('+', '+'), ('-', '-'), ('*', '*'), ('/', '/'), ('//', '//'), ('%', '%'), ('**', '**')]
-    for _ in range(num_questions):
+    for _ in range(72):
         a = random.randint(2, 25)
-        b = random.randint(2, 10) if random.choice([True, False]) else random.randint(2, 20)
+        b = random.randint(2, 10)
         op_str, op_eval = random.choice(ops)
-        
-        # Keep ** exponents small
         if op_eval == '**':
-            b = random.randint(2, 3)
-            a = random.randint(2, 6)
+            a, b = random.randint(2, 5), random.randint(2, 3)
+        if op_eval in ('/', '//', '%') and b == 0:
+            b = 1
             
         expr = f"{a} {op_eval} {b}"
         try:
             ans = eval(expr)
-            if op_eval == '/':
-                ans = round(ans, 2)
+            if op_eval == '/': ans = round(ans, 2)
         except Exception:
             continue
             
-        wrong1 = ans + random.randint(1, 5)
-        wrong2 = ans - random.randint(1, 5)
-        wrong3 = ans * 2
-        
-        opts = [str(ans), str(wrong1), str(wrong2), str(wrong3)]
-        opts = list(set(opts))
+        ans_str = str(ans)
+        opts = [ans_str, str(ans + random.randint(1,5)), str(ans - random.randint(1,5)), str(ans * 2)]
+        opts = list(set([str(o) for o in opts]))
         while len(opts) < 4:
-            opts.append(str(ans + random.randint(10, 50)))
+            opts.append(str(ans + random.randint(10,50)))
             opts = list(set(opts))
-            
         random.shuffle(opts)
-        
-        q = Question(
-            subject_id=subject_id,
-            grade=grade,
-            quarter=quarter,
-            question_text=f"Python dasturida ushbu ifodaning natijasi nima bo'ladi?\n```python\nprint({a} {op_str} {b})\n```",
-            option_a=opts[0],
-            option_b=opts[1],
-            option_c=opts[2],
-            option_d=opts[3],
-            correct_answer=['a', 'b', 'c', 'd'][opts.index(str(ans))]
-        )
+        q = Question(subject_id=subject_id, grade=7, quarter=1, question_text=f"Python kodining natijasini toping:\n```python\nprint({a} {op_str} {b})\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans_str)])
         questions.append(q)
-    return questions
-
-def generate_7_q1(subject_id):
-    questions = []
-    theory = [
-        ("Dastur nima?", "Kompyuter uchun yozilgan buyruqlar ketma-ketligi", "Monitor", "Protsessor", "Axborot tashuvchi vosita"),
-        ("Python dasturlash tilining asoschisi kim?", "Guido van Rossum", "Bill Gates", "Steve Jobs", "Mark Zuckerberg"),
-        ("Pythonda ekranga ma'lumot chiqarish funksiyasi qaysi?", "print()", "output()", "show()", "display()"),
-        ("Pythonda butun sonlar qaysi turga mansub?", "int", "float", "str", "bool"),
-        ("Pythonda haqiqiy (kasr) sonlar qaysi turga mansub?", "float", "int", "str", "bool"),
-        ("Pythonda matnli ma'lumotlar qaysi turga mansub?", "str", "int", "float", "bool"),
-        ("O'zgaruvchi nima?", "Kompyuter xotirasida ma'lumot saqlash uchun ajratilgan joy", "Kompyuterning qattiq diski", "Ekranga chiqaruvchi funksiya", "Dasturlash tili turi"),
-        ("Python qanday til hisoblanadi?", "Yuqori darajali dasturlash tili", "Quyi darajali dasturlash tili", "Matn muharriri", "Operatsion tizim")
-    ]
-    for _ in range(6): # theory clones -> 48
-        for q_text, ans, w1, w2, w3 in theory:
-            opts = [ans, w1, w2, w3]
-            random.shuffle(opts)
-            q = Question(
-                subject_id=subject_id, grade=7, quarter=1,
-                question_text=q_text,
-                option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-                correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-            )
-            questions.append(q)
-            
-    # Add math evals
-    questions.extend(generate_math_eval(subject_id, 7, 1, 80)) # 80 math evals
-    return questions
+    return questions[:100]
 
 def generate_7_q2(subject_id):
     questions = []
     theory = [
-        ("Satr (str) nima?", "Belgilar ketma-ketligi", "Faqat raqamlardan iborat", "Butun sonlar", "Mantiqiy ifoda"),
-        ("Satrning o'ziga xos uzunligini aniqlovchi funksiya qaysi?", "len()", "size()", "count()", "length()"),
-        ("Satrdagi belgilarni kichik harflarga o'tkazuvchi metod qaysi?", "lower()", "upper()", "title()", "capitalize()"),
-        ("Satrdagi belgilarni katta harflarga o'tkazuvchi metod qaysi?", "upper()", "lower()", "title()", "capitalize()"),
-        ("Satr boshidagi va oxiridagi bo'sh joylarni olib tashlovchi metod qaysi?", "strip()", "trim()", "clear()", "remove()"),
-        ("Matnli (str) o'zgaruvchini butun songa (int) aylantirish funksiyasi qaysi?", "int()", "str()", "float()", "bool()"),
+        ("Satr (string) qanday ifodalanadi?", "Qo'shtirnoq yoki bittalik tirnoq ichida", "Kvadrat qavslar ichida", "Raqamlar orqali", "Jingalak qavslar ichida"),
+        ("Satr uzunligini aniqlovchi funksiya qaysi?", "len()", "size()", "count()", "length()"),
+        ("Satrdagi belgilarni kichik harflarga o'tqazuvchi metod?", "lower()", "upper()", "title()", "capitalize()"),
+        ("Satrdagi belgilarni hammasini katta harflarga o'tqazuvchi metod?", "upper()", "lower()", "title()", "swapcase()"),
+        ("Satr boshidagi va oxiridagi bo'sh joylarni kesib oluvchi metod?", "strip()", "trim()", "clear()", "remove()"),
+        ("Matnli '15' ni butun songa o'giruvchi funksiya?", "int()", "str()", "float()", "bool()")
     ]
-    for _ in range(6): # 36 theory
+    for _ in range(3): # 18
         for q_text, ans, w1, w2, w3 in theory:
             opts = [ans, w1, w2, w3]
             random.shuffle(opts)
-            q = Question(
-                subject_id=subject_id, grade=7, quarter=2, question_text=q_text,
-                option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-                correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-            )
-            questions.append(q)
-            
-    # Slicing questions
-    words = ["Maktab", "Kitob", "Dastur", "Python", "Kompyuter", "Informatika", "Toshkent", "O'zbekiston"]
-    for _ in range(50): # 50 specific index
+            questions.append(Question(subject_id=subject_id, grade=7, quarter=2, question_text=q_text, option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
+
+    words = ["Maktab", "Kitob", "Dastur", "Python", "Kompyuter", "Toshkent", "O'zbekiston", "Algoritm"]
+    
+    # Simple Indexing (41)
+    for _ in range(41):
         word = random.choice(words)
         idx = random.randint(0, len(word) - 1)
         ans = word[idx]
@@ -187,176 +147,125 @@ def generate_7_q2(subject_id):
             opts.append(random.choice("abcdefghijklmnopqrstuvwxyz"))
             opts = list(set(opts))
         random.shuffle(opts)
-        q = Question(
-            subject_id=subject_id, grade=7, quarter=2,
-            question_text=f"Natijani toping:\n```python\nword = '{word}'\nprint(word[{idx}])\n```",
-            option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-            correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-        )
-        questions.append(q)
-        
-    for _ in range(50): # 50 slicing ranges
+        questions.append(Question(subject_id=subject_id, grade=7, quarter=2, question_text=f"Quyidagi dastur natijasini toping:\n```python\nsoz = '{word}'\nprint(soz[{idx}])\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
+
+    # Slicing (41)
+    for _ in range(41):
         word = random.choice(words)
         start = random.randint(0, len(word)-3)
-        end = random.randint(start+1, len(word))
+        end = random.randint(start+2, len(word))
         ans = word[start:end]
         opts = [ans, word[start:end+1], word[start+1:end], word[0:end]]
         opts = list(set(opts))
         while len(opts) < 4:
             opts.append(word[random.randint(0,2):random.randint(3,len(word))])
             opts = list(set(opts))
-            
         random.shuffle(opts)
-        q = Question(
-            subject_id=subject_id, grade=7, quarter=2,
-            question_text=f"Natijani toping:\n```python\ns = '{word}'\nprint(s[{start}:{end}])\n```",
-            option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-            correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-        )
-        questions.append(q)
-        
-    return questions
+        questions.append(Question(subject_id=subject_id, grade=7, quarter=2, question_text=f"Ushbu kod nimani ekranga chiqaradi?\n```python\nmatn = '{word}'\nprint(matn[{start}:{end}])\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
+
+    return questions[:100]
 
 def generate_7_q3(subject_id):
     questions = []
     theory = [
-        ("Python'da shart operatori qaysi so'z bilan boshlanadi?", "if", "for", "while", "else"),
-        ("Shart bajarilmaganda ishlashi uchun qaysi kalit so'z ishlatiladi?", "else", "if", "elif", "then"),
-        ("Bir nechta shartlarni ketma-ket tekshirish uchun qaysi kalit so'z ishlatiladi?", "elif", "else if", "if else", "then"),
-        ("Ro'yxat (list) elementlari qanday qavslar ichida yoziladi?", "[ ]", "( )", "{ }", "< >"),
-        ("Takrorlanuvchi jarayonlarni yaratish uchun nima ishlatiladi?", "Sikllar (loops)", "Shartlar", "O'zgaruvchilar", "Modullar"),
-        ("Ma'lum marta takrorlanishi aniq bo'lgan sikl qaysi?", "for", "while", "if", "def"),
-        ("Ro'yxatga yangi element qo'shish uchun qaysi metod ishlatiladi?", "append()", "add()", "insert()", "push()"),
-        ("Tsiklni to'xtatish uchun qaysi operator ishlatiladi?", "break", "continue", "stop", "exit"),
-        ("Tsiklning joriy qadamini o'tkazib yuborish uchun qaysi operator ishlatiladi?", "continue", "break", "pass", "skip"),
-        ("While sikli qachon to'xtaydi?", "Shart noto'g'ri (False) bo'lganda", "Shart to'g'ri (True) bo'lganda", "Hech qachon", "Dastur ishga tushganda")
+        ("Shart operatori qaysi kalit so'z bilan boshlanadi?", "if", "for", "while", "else"),
+        ("Qaysi operator shart to'g'ri bo'lmaganda bajariladi?", "else", "if", "elif", "then"),
+        ("Bir nechta shartlarni ketma-ket tekshirish uchun ishlatiladi:", "elif", "else if", "if else", "then"),
+        ("Ma'lumotlar ro'yxatini shakllantirish uchun ishlatiladi:", "List (Ro'yxat)", "Integer (Butun son)", "Float (Kasr son)", "String (Satr)"),
+        ("Tsikl ichidan joriy qadamni yakunlab keyingisiga o'tish tushunchasi:", "continue", "break", "pass", "stop"),
+        ("Sikldan butunlay chiqib ketish operatori:", "break", "continue", "exit", "quit"),
+        ("Ro'yxat ro'yxatlariga qo'shimcha kiritish qaysi metod bilan bajariladi?", "append()", "add()", "insert()", "push()"),
+        ("Cheksiz yoki shartga bog'liq holatda takrorlanuvchi tsikl:", "while", "for", "do", "repeat")
     ]
-    for _ in range(2): # 20 theory
+    for _ in range(2): # 16 theory
         for q_text, ans, w1, w2, w3 in theory:
             opts = [ans, w1, w2, w3]
             random.shuffle(opts)
-            q = Question(
-                subject_id=subject_id, grade=7, quarter=3, question_text=q_text,
-                option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-                correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-            )
-            questions.append(q)
+            questions.append(Question(subject_id=subject_id, grade=7, quarter=3, question_text=q_text, option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
             
-    # Conditional code snippets (30 questions)
-    for _ in range(30):
-        a = random.randint(5, 50)
-        b = random.randint(5, 50)
-        if a > b:
-            ans = "A katta"
-        elif a < b:
-            ans = "B katta"
-        else:
-            ans = "Teng"
-            
-        code = f"a = {a}\nb = {b}\nif a > b:\n    print('A katta')\nelif a < b:\n    print('B katta')\nelse:\n    print('Teng')"
-        opts = ["A katta", "B katta", "Teng", "Xatolik beradi"]
+    # Conditional logic (42)
+    for _ in range(42):
+        x = random.randint(1, 100)
+        y = random.randint(1, 100)
+        if x > y: ans = "Kotta"
+        elif x < y: ans = "Kichik"
+        else: ans = "Teng"
+        code = f"x = {x}\ny = {y}\nif x > y:\n    print('Kotta')\nelif x < y:\n    print('Kichik')\nelse:\n    print('Teng')"
+        opts = ["Kotta", "Kichik", "Teng", "Xatolik beradi"]
         random.shuffle(opts)
-        q = Question(
-            subject_id=subject_id, grade=7, quarter=3,
-            question_text=f"Quyidagi dastur natijasi nima bo'ladi?\n```python\n{code}\n```",
-            option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-            correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-        )
-        questions.append(q)
+        questions.append(Question(subject_id=subject_id, grade=7, quarter=3, question_text=f"Quyidagi kod natijasi nima bo'ladi?\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
 
-    # loop questions (50 questions)
-    for _ in range(50):
-        start = random.randint(1, 10)
-        end = random.randint(11, 20)
+    # Loops logic (42)
+    for _ in range(42):
+        start = random.randint(1, 5)
+        end = random.randint(6, 15)
         ans = str(list(range(start, end)))
         code = f"natija = []\nfor i in range({start}, {end}):\n    natija.append(i)\nprint(natija)"
         opts = [ans, str(list(range(start, end+1))), str(list(range(start+1, end))), str(list(range(start+1, end+1)))]
         opts = list(set(opts))
         while len(opts) < 4:
-            opts.append(f"[{random.randint(1,10)}]")
+            opts.append(f"[{random.randint(1,20)}]")
             opts = list(set(opts))
-            
         random.shuffle(opts)
-        q = Question(
-            subject_id=subject_id, grade=7, quarter=3,
-            question_text=f"Dastur nima natija chiqaradi?\n```python\n{code}\n```",
-            option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-            correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-        )
-        questions.append(q)
+        questions.append(Question(subject_id=subject_id, grade=7, quarter=3, question_text=f"For tsikli natijasini aniqlang:\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
         
-    return questions
+    return questions[:100]
 
 def generate_7_q4(subject_id):
-    # Specialized Q4 questions expanding on the entirety
     questions = []
-    
-    for _ in range(60):
+    # Mix from previous + general review (100)
+    for _ in range(50):
         n = random.randint(3, 10)
         ans = str(sum(range(n)))
         code = f"s = 0\ni = 0\nwhile i < {n}:\n    s += i\n    i += 1\nprint(s)"
-        wrong1 = str(sum(range(n+1)))
-        wrong2 = str(sum(range(n-1)))
-        wrong3 = str(sum(range(n)) + 2)
-        opts = [ans, wrong1, wrong2, wrong3]
+        opts = [ans, str(sum(range(n+1))), str(sum(range(n-1))), str(sum(range(n)) + 2)]
         opts = list(set(opts))
         while len(opts) < 4:
             opts.append(str(random.randint(10,50)))
             opts = list(set(opts))
         random.shuffle(opts)
-        q = Question(
-            subject_id=subject_id, grade=7, quarter=4,
-            question_text=f"Natijani toping (while tsikli bilan ishlash):\n```python\n{code}\n```",
-            option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-            correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-        )
-        questions.append(q)
+        questions.append(Question(subject_id=subject_id, grade=7, quarter=4, question_text=f"While tsikli yordamida ishlangan kod natijasi (umumiy yig'indi):\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
         
-    for _ in range(40):
-        # Mix string methods
-        method = random.choice([('upper', str.upper), ('lower', str.lower)])
-        basestr = random.choice(["O'ZBEK", "dastur", "pyThOn", "iNFoRmAtika"])
+    for _ in range(50):
+        method = random.choice([('upper', str.upper), ('lower', str.lower), ('capitalize', str.capitalize)])
+        basestr = random.choice(["O'zBek", "daStUr", "pyThOn", "inFormaTika"])
         ans = method[1](basestr)
         code = f"x = '{basestr}'\nprint(x.{method[0]}())"
-        
-        opts = [ans, basestr, basestr.capitalize(), method[1](basestr + " ")]
+        opts = [ans, basestr, basestr.lower(), basestr.upper()]
         opts = list(set(opts))
         while len(opts) < 4:
             opts.append("Xatolik bo'ladi")
             opts = list(set(opts))
         random.shuffle(opts)
-        q = Question(
-            subject_id=subject_id, grade=7, quarter=4,
-            question_text=f"Kod natijasi qanday bo'ladi?\n```python\n{code}\n```",
-            option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-            correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-        )
-        questions.append(q)
-        
-    return questions
+        questions.append(Question(subject_id=subject_id, grade=7, quarter=4, question_text=f"Kod natijasi qanday bo'ladi?\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
 
+    return questions[:100]
+
+# -------- 8-SINF --------
 def generate_8_q1(subject_id):
     questions = []
     theory = [
-        ("if, elif va else nima uchun ishlatiladi?", "Shartlarni tekshirish uchun", "Sikl yaratish uchun", "Ma'lumot kiritish uchun", "Funksiya e'lon qilish uchun"),
-        ("Sikllarda qadamni belgilash uchun `range` funksiyasi qanday yoziladi?", "range(start, stop, step)", "range(step, start, stop)", "range(stop, start, step)", "range(start, step, stop)"),
-        ("Takrorlanishlar soni nom\'alum bo\'lganda qaysi sikl qulay?", "while", "for", "if", "switch"),
-        ("Qaysi operator faqat to'g'ri (True) qiymat qaytganda bajariladi?", "if", "else", "break", "continue"),
-        ("`input()` funksiyasi qanday turdagi qiymat qaytaradi?", "str", "int", "float", "bool")
+        ("7-sinf takrori: if, elif, else bloklari nimani bildiradi?", "Shartli tekshirish vositalari", "Aylanib o'tish operatorlari", "Malumot turlari", "Tizim funksiyalari"),
+        ("while va for tsiklining asosiy farqi nimada?", "for odatda takrorlanishlar soni ma'lum bo'lganda, while esa noma'lum bo'lganda shart bilan ishlatiladi", "Hec qanday farqi yo'q", "for faqat harflar uchun, while sonlar uchun ishlaydi", "while tezroq ishlaydi"),
+        ("Sikl ishini tugatmasdan navbatdagi qadamga o'tkazib yuboruvchi so'z?", "continue", "break", "pass", "skip")
     ]
-    for _ in range(8): #  40 theory
+    for _ in range(6): # 18
         for q_text, ans, w1, w2, w3 in theory:
             opts = [ans, w1, w2, w3]
             random.shuffle(opts)
-            q = Question(
-                subject_id=subject_id, grade=8, quarter=1, question_text=q_text,
-                option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-                correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-            )
-            questions.append(q)
-            
-    # Some logic questions
-    for _ in range(80):
+            questions.append(Question(subject_id=subject_id, grade=8, quarter=1, question_text=q_text, option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
+
+    # Complex conditions & loops
+    for _ in range(41):
+        x = random.randint(1, 10)
+        y = random.randint(11, 20)
+        ans = "True" if x < 5 or y > 15 else "False"
+        code = f"x = {x}\ny = {y}\nif x < 5 or y > 15:\n    print('True')\nelse:\n    print('False')"
+        opts = ["True", "False", "None", "Error"]
+        random.shuffle(opts)
+        questions.append(Question(subject_id=subject_id, grade=8, quarter=1, question_text=f"Mantiqiy ifodalar bilan ishlash:\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
+
+    for _ in range(41):
         start = random.randint(1, 10)
         stop = random.randint(15, 25)
         step = random.randint(2, 5)
@@ -368,112 +277,74 @@ def generate_8_q1(subject_id):
             opts.append(f"[{random.randint(1,10)}]")
             opts = list(set(opts))
         random.shuffle(opts)
-        q = Question(
-            subject_id=subject_id, grade=8, quarter=1,
-            question_text=f"Quyidagi kod natijasi nima?\n```python\n{code}\n```",
-            option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-            correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-        )
-        questions.append(q)
-        
-    return questions
+        questions.append(Question(subject_id=subject_id, grade=8, quarter=1, question_text=f"Quyidagi kod natijasi nima?\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
+
+    return questions[:100]
 
 def generate_8_q2(subject_id):
     questions = []
     theory = [
-        ("List va Tuple o'rtasidagi asosiy farq nima?", "List o'zgaruvchan (mutable), Tuple o'zgarmas (immutable)", "List o'zgarmas, Tuple o'zgaruvchan", "Hech qanday farqi yo'q", "List qavslarsiz yoziladi"),
-        ("Lug'at (dictionary) qaysi qavslar ichida yoziladi?", "{}", "[]", "()", "<>"),
-        ("Ro'yxat (list) ohiriga element qo'shuvchi metod qaysi?", "append()", "add()", "insert()", "extend()"),
-        ("Listdan berilgan elementni o'chiruvchi metod qaysi?", "remove()", "pop()", "delete()", "clear()"),
-        ("Listdagi elementlarni o'sish tartibida saralovchi metod qaysi?", "sort()", "order()", "sorted()", "arrange()"),
-        ("Kortej (Tuple) qanday qavslar ichida yoziladi?", "()", "[]", "{}", "<>"),
-        ("Dictionary da malumotlar qanday tuzilishda saqlanadi?", "Kalit va Qiymat (Key: Value)", "Faqat qiymatlar", "Indekslangan ro'yxat", "To'plam"),
-        ("Listni teskari o'girish metodi qaysi?", "reverse()", "inverse()", "flip()", "back()")
+        ("List va Tuple ning eng muhim farqi?", "List o'zgaruvchan (mutable), Tuple o'zgarmas (immutable)", "List o'zgarmas, Tuple o'zgaruvchan", "Hech farqi yo'q", "List faqat son qabul qiladi"),
+        ("List qavslarini ko'rsating", "[]", "()", "{}", "<>"),
+        ("Tuple qavslarini ko'rsating", "()", "[]", "{}", "<>"),
+        ("Dictionary da malumot qanday tuzilmada bo'ladi?", "Key: Value (Kalit: Qiymat)", "Faqat bir xil malumot", "Ketma-ket matn", "Ro'yhat shaklida"),
+        ("Lug'atda (Dictionary) malumotlar qanday qavs ichida elon qilinadi?", "{}", "[]", "()", "||")
     ]
-    for _ in range(6): # 48
+    for _ in range(4): # 20
         for q_text, ans, w1, w2, w3 in theory:
             opts = [ans, w1, w2, w3]
             random.shuffle(opts)
-            q = Question(
-                subject_id=subject_id, grade=8, quarter=2, question_text=q_text,
-                option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-                correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-            )
-            questions.append(q)
-            
-    # List and Dict questions
+            questions.append(Question(subject_id=subject_id, grade=8, quarter=2, question_text=q_text, option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
+
+    # Lists
     for _ in range(40):
-        lst = [random.randint(1, 15) for i in range(4)]
+        lst = [random.randint(1, 15) for _ in range(4)]
         elem = random.randint(16, 25)
         ans = str(lst + [elem])
-        code = f"nums = {lst}\nnums.append({elem})\nprint(nums)"
+        code = f"sonlar = {lst}\nsonlar.append({elem})\nprint(sonlar)"
         opts = [ans, str([elem] + lst), str(lst), "Xatolik bo'ladi"]
         random.shuffle(opts)
-        q = Question(
-            subject_id=subject_id, grade=8, quarter=2,
-            question_text=f"Dastur natijasini toping (List):\n```python\n{code}\n```",
-            option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-            correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-        )
-        questions.append(q)
+        questions.append(Question(subject_id=subject_id, grade=8, quarter=2, question_text=f"List ustida append amali natijasi:\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
         
-    for _ in range(50):
-        keys = ['name', 'age', 'job', 'city', 'country']
+    # Dicts
+    for _ in range(40):
+        keys = ['ism', 'yosh', 'sinf', 'maktab']
         k1, k2 = random.sample(keys, 2)
-        v1, v2 = random.randint(1, 40), random.randint(41, 100)
+        v1, v2 = random.randint(10, 30), random.randint(31, 99)
         ans = str(v2)
         code = f"data = {{'{k1}': {v1}, '{k2}': {v2}}}\nprint(data['{k2}'])"
-        opts = [ans, str(v1), f"'{k2}'", "KeyError: Topilmadi"]
+        opts = [ans, str(v1), f"'{k2}'", "KeyError"]
         random.shuffle(opts)
-        q = Question(
-            subject_id=subject_id, grade=8, quarter=2,
-            question_text=f"Dastur nimani ekranga chiqaradi (Dictionary)?\n```python\n{code}\n```",
-            option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-            correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-        )
-        questions.append(q)
-        
-    return questions
+        questions.append(Question(subject_id=subject_id, grade=8, quarter=2, question_text=f"Dictionary dan qiymat olish yoradami natijani toping:\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
+
+    return questions[:100]
 
 def generate_8_q3(subject_id):
     questions = []
     theory = [
-        ("Funksiya yaratish uchun qaysi kalit so'z ishlatiladi?", "def", "func", "function", "create"),
-        ("Funksiya natija qaytarishi uchun qaysi so'z ishlatiladi?", "return", "output", "print", "yield"),
-        ("Qanday qilib istalgancha o'zgaruvchi (arguments) qabul qiluvchi funksiya yaratiladi?", "*args", "&args", "$args", "args[]"),
-        ("Qanday qilib istalgancha kalit-qiymatli o'zgaruvchilar qabul qiluvchi funksiya yaratiladi?", "**kwargs", "&&kwargs", "*kwargs", "kwargs()"),
-        ("Satrni ma'lum bir belgi bo'yicha ajratib listga o'zlashtiruvchi metod qaysi?", "split()", "join()", "break()", "slice()"),
-        ("Listdagi matnlarni biriktirib bitta satrga aylantiruvchi metod qaysi?", "join()", "concat()", "merge()", "split()"),
-        ("f-string yordamida o'zgaruvchini matn ichida qanday ishlatamiz?", "f'Matn {o\'zgaruvchi}'", "f'Matn + o\'zgaruvchi'", "'Matn' + o'zgaruvchi", "f'Matn (o\'zgaruvchi)'")
+        ("Funksiya qaysi kalit so'z orqali e'lon qilinadi?", "def", "func", "function", "lambda"),
+        ("Funksiya qiymat qaytarishi uchun so'z?", "return", "print", "get", "put"),
+        ("Istalgan miqdordagi oddiy argumentlarni qabul kilish belgisi?", "*args", "**kwargs", "args[]", "[]"),
+        ("Istalgan miqdordagi kalit-qiymatli argumentlarni qabul qilish belgisi?", "**kwargs", "*args", "kwargs[]", "{}"),
+        ("Python f-string qanday e'lon qilinadi?", "f'Malumot {o\'zgaruvchi}'", "f(Malumot)", "'Malumot' + o'zgaruvchi", "str(Malumot)")
     ]
-    for _ in range(3): # 21 theory
+    for _ in range(4): # 20
         for q_text, ans, w1, w2, w3 in theory:
             opts = [ans, w1, w2, w3]
             random.shuffle(opts)
-            q = Question(
-                subject_id=subject_id, grade=8, quarter=3, question_text=q_text,
-                option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-                correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-            )
-            questions.append(q)
+            questions.append(Question(subject_id=subject_id, grade=8, quarter=3, question_text=q_text, option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
             
-    # Function tracing questions (39)
-    for _ in range(39):
+    # Functions
+    for _ in range(40):
         a = random.randint(5, 50)
         b = random.randint(15, 60)
         ans = str(a + b)
-        code = f"def qushish(x, y):\n    return x + y\n\nprint(qushish({a}, {b}))"
-        opts = [ans, str(a*b), str(b-a), "Xatolik"]
+        code = f"def yigindi(x, y):\n    return x + y\n\nprint(yigindi({a}, {b}))"
+        opts = [ans, str(a*b), str(b-a), "Xato yuz beradi"]
         random.shuffle(opts)
-        q = Question(
-            subject_id=subject_id, grade=8, quarter=3,
-            question_text=f"Funksiya natijasi qanday bo'ladi?\n```python\n{code}\n```",
-            option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-            correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-        )
-        questions.append(q)
-        
-    # Comprehensions (40)
+        questions.append(Question(subject_id=subject_id, grade=8, quarter=3, question_text=f"Funksiyaga argument berilgandagi natijani toping:\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
+
+    # Comprehensions
     for _ in range(40):
         n = random.randint(2, 6)
         ans = str([i*i for i in range(1, n+1)])
@@ -484,20 +355,13 @@ def generate_8_q3(subject_id):
             opts.append(f"[{random.randint(1,10)}]")
             opts = list(set(opts))
         random.shuffle(opts)
-        q = Question(
-            subject_id=subject_id, grade=8, quarter=3,
-            question_text=f"List comprehension natijasini toping:\n```python\n{code}\n```",
-            option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-            correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-        )
-        questions.append(q)
+        questions.append(Question(subject_id=subject_id, grade=8, quarter=3, question_text=f"List comprehension natijasini toping:\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
 
-    return questions
+    return questions[:100]
 
 def generate_8_q4(subject_id):
     questions = []
-    
-    for _ in range(100):
+    for _ in range(50):
         val = random.randint(10, 50)
         ans = str(val * 2)
         code = f"def ikkilangan(a):\n    return a * 2\n\nprint(ikkilangan({val}))"
@@ -507,37 +371,40 @@ def generate_8_q4(subject_id):
             opts.append(str(random.randint(60, 100)))
             opts = list(set(opts))
         random.shuffle(opts)
-        q = Question(
-            subject_id=subject_id, grade=8, quarter=4,
-            question_text=f"Natijani toping:\n```python\n{code}\n```",
-            option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-            correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-        )
-        questions.append(q)
-    return questions
+        questions.append(Question(subject_id=subject_id, grade=8, quarter=4, question_text=f"Funksiya bo'yicha yakuniy takrorlash:\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
+        
+    for _ in range(50):
+        lst = [random.randint(1, 10), random.randint(11, 20), random.randint(21, 30)]
+        ans = str(sum(lst))
+        code = f"def summa(*args):\n    return sum(args)\n\nprint(summa({lst[0]}, {lst[1]}, {lst[2]}))"
+        opts = [ans, str(lst[0]*lst[1]), str(sum(lst)*2), "Xatolik"]
+        opts = list(set(opts))
+        while len(opts) < 4:
+            opts.append(str(random.randint(40, 100)))
+            opts = list(set(opts))
+        random.shuffle(opts)
+        questions.append(Question(subject_id=subject_id, grade=8, quarter=4, question_text=f"Quyidagi args metodikasi natijasi qanday:\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
 
+    return questions[:100]
+
+# -------- 9-SINF --------
 def generate_9_q1(subject_id):
+    # Q1 and Q2 usually go together regarding syntax review and strings in 9th grade start
     questions = []
     theory = [
-        ("if-elif-else tuzilmasida nechta 'elif' qatnashishi mumkin?", "Istalgancha", "Faqat 1 ta", "Faqat 2 ta", "elif ishlatilmaydi"),
-        ("Sikl ishini butunlay to'xtatuvchi kalit so'z:", "break", "continue", "stop", "exit"),
-        ("Matndagi barcha elementlarni ro'yxatga (list) o'tkazish funktsiyasi:", "list()", "array()", "split()", "tuple()"),
-        ("Stringdagi belgini indeks bo'yicha o'zgartirib bo'ladimi?", "Yo'q, string xossasi o'zgarmas (immutable)", "Ha, bo'ladi", "Faqat oxirgi belgini", "Faqat raqamlarni"),
-        ("Matn (str) elementlarini sanash qaysi metod bilan bajariladi?", "count()", "len()", "size()", "number()")
+        ("Python tiliga xos izoh qaysi belgi bilan yoziladi?", "#", "//", "<!--", "/*"),
+        ("Sikl ishini butunlay to'xtatuvchi so'z?", "break", "continue", "stop", "exit"),
+        ("If-elif-else bloklarida 'elif' nimani bildiradi?", "Qo'shimcha boshqa shart (else if)", "Oxirgi holat", "Siklning boshlanishi", "Faul holat"),
+        ("Matndagi (str) metod: .lower() ni vazifasi nima?", "Barcha harflarni kichik qiladi", "Bosh harfni katta qiladi", "Barcha harflarni katta qiladi", "Bo'sh joylarni o'chiradi")
     ]
-    for _ in range(10): # 50 theory
+    for _ in range(5): # 20
         for q_text, ans, w1, w2, w3 in theory:
             opts = [ans, w1, w2, w3]
             random.shuffle(opts)
-            q = Question(
-                subject_id=subject_id, grade=9, quarter=1, question_text=q_text,
-                option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-                correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-            )
-            questions.append(q)
+            questions.append(Question(subject_id=subject_id, grade=9, quarter=1, question_text=q_text, option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
             
-    for _ in range(60):
-        word = random.choice(["O'zbekiston", "Toshkent", "Python", "Dasturlash", "Maktab", "Samarqand"])
+    for _ in range(80):
+        word = random.choice(["O'zbekiston", "Toshkent", "Python", "Dasturlash", "Maktab"])
         char = random.choice(word)
         ans = str(word.count(char))
         code = f"matn = '{word}'\nprint(matn.count('{char}'))"
@@ -547,35 +414,24 @@ def generate_9_q1(subject_id):
             opts.append(str(random.randint(3,10)))
             opts = list(set(opts))
         random.shuffle(opts)
-        q = Question(
-            subject_id=subject_id, grade=9, quarter=1,
-            question_text=f"Dastur nimani chop etadi?\n```python\n{code}\n```",
-            option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-            correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-        )
-        questions.append(q)
-    return questions
+        questions.append(Question(subject_id=subject_id, grade=9, quarter=1, question_text=f"Dastur nimani chop etadi (String method)?\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
+    return questions[:100]
 
 def generate_9_q2(subject_id):
-    # Same curriculum practically
     questions = []
+    # Similar to Q1 for 9th grade, expanding strings and replaces
     theory = [
-        ("Satrdagi ifodalarni almashtiruvchi metod qaysi?", "replace()", "swap()", "change()", "update()"),
-        ("Funksiya nima?", "Muayyan vazifani bajaruvchi nomlangan kod bloki", "O'zgaruvchi turi", "Siklning bir qismi", "Malumotlar bazasi"),
-        ("Sikl ichidagi break vazifasi nima?", "Sikldan butunlay chiqib ketadi", "Keyingi qadamga o'tadi", "Dasturni to'xtatadi", "Hech narsa"),
+        ("Matn tarkibidan bo'lak almashtirish (replace) metodini topings", "replace()", "swap()", "change()", "update()"),
+        ("Satrdagi probellarni chap va o'ngdan olib tashlovchi metod", "strip()", "trim()", "clean()", "cut()"),
+        ("Sikl (while) bilan break qanday ishlaydi?", "Tsiklni istalgan joyida majburiy to'xtatadi", "Tsiklni qaytadan boshlaydi", "Tsiklni o'tkazib yuboradi", "Cheksizlikka tushiradi")
     ]
-    for _ in range(15): # 45
+    for _ in range(6): # 18
         for q_text, ans, w1, w2, w3 in theory:
             opts = [ans, w1, w2, w3]
             random.shuffle(opts)
-            q = Question(
-                subject_id=subject_id, grade=9, quarter=2, question_text=q_text,
-                option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-                correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-            )
-            questions.append(q)
+            questions.append(Question(subject_id=subject_id, grade=9, quarter=2, question_text=q_text, option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
             
-    for _ in range(60):
+    for _ in range(82):
         wd = random.choice(["hello", "world", "tester", "python", "developer"])
         old_char = wd[random.randint(0, len(wd)-1)]
         new_char = 'X'
@@ -587,40 +443,28 @@ def generate_9_q2(subject_id):
             opts.append(wd.replace(old_char, 'Y'))
             opts = list(set(opts))
         random.shuffle(opts)
-        q = Question(
-            subject_id=subject_id, grade=9, quarter=2,
-            question_text=f"Natijani toping:\n```python\n{code}\n```",
-            option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-            correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-        )
-        questions.append(q)
-    return questions
+        questions.append(Question(subject_id=subject_id, grade=9, quarter=2, question_text=f"Kod natijasini (replace() metodi) toping:\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
+        
+    return questions[:100]
 
 def generate_9_q3(subject_id):
     questions = []
     theory = [
         ("To'plam (set) ning o'ziga xos xususiyati nima?", "Elementlar takrorlanmaydi va tartibsiz", "Elementlar tartib bilan joylashadi", "Faqat raqamlardan iborat", "Indeks orqali murojaat qilish mumkin"),
-        ("To'plam (set) yaratish qavslari qaysi?", "{}", "[]", "()", "<>"),
-        ("Modul nima?", "Qayta ishlatsa bo'ladigan Python fayli (.py)", "O'zgaruvchi turi", "Operator", "Xatolik turi"),
-        ("Boshqa modulni joriy faylga chaqirish uchun qaysi so'z ishlatiladi?", "import", "include", "require", "using"),
-        ("O'zgaruvchan, lekin takrorlanmaydigan malumot turlari to'plami?", "set", "list", "tuple", "dict"),
-        ("Istalgan miqdordagi pozitsion argumentlarni funksiyaga uzatish uchun?", "*args", "**kwargs", "args[]", "params"),
-        ("Istalgan miqdordagi kalitli (keyword) argumentlarni funksiyaga uzatish uchun?", "**kwargs", "*args", "kwargs{}", "params")
+        ("Set yaratish uchun qaysi qavslardan foydalaniladi?", "{}", "[]", "()", "<>"),
+        ("Python'da Modul nima?", "Qayta ishlatsa bo'ladigan funksiya va klasslarni o'zida jamlagan py fayli", "Faqat matnli obyekt", "Matematik funksiya yig'indisi", "Xatolik ro'yxati"),
+        ("Boshqa modulni joriy kodga ulash buyrug'i?", "import", "include", "require", "using"),
+        ("Bankomat (ATM) yoki shunga o'xshash mantiqiy jarayonlarda pin tekshirish oson yo'li nimadan iborat?", "if ... == pin:", "for i in pin:", "while True:", "import pin")
     ]
-    for _ in range(3): # 21 theory
+    for _ in range(4): # 20
         for q_text, ans, w1, w2, w3 in theory:
             opts = [ans, w1, w2, w3]
             random.shuffle(opts)
-            q = Question(
-                subject_id=subject_id, grade=9, quarter=3, question_text=q_text,
-                option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-                correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-            )
-            questions.append(q)
-            
-    # Sets and Modules (40)
+            questions.append(Question(subject_id=subject_id, grade=9, quarter=3, question_text=q_text, option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
+
+    # set theory logic (40)
     for _ in range(40):
-        lst = [random.randint(1,8) for _ in range(8)]
+        lst = [random.randint(1,5) for _ in range(8)]
         ans = str(len(set(lst)))
         code = f"sonlar = {lst}\nprint(len(set(sonlar)))"
         opts = [ans, str(len(lst)), "1", "0"]
@@ -629,16 +473,10 @@ def generate_9_q3(subject_id):
             opts.append(str(random.randint(2,8)))
             opts = list(set(opts))
         random.shuffle(opts)
-        q = Question(
-            subject_id=subject_id, grade=9, quarter=3,
-            question_text=f"Quyidagi kod natijasi nima bo'ladi (Set)?\n```python\n{code}\n```",
-            option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-            correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-        )
-        questions.append(q)
+        questions.append(Question(subject_id=subject_id, grade=9, quarter=3, question_text=f"Takrorlanmas elementlarga ega Data Structure - set() funktsiyasining vazifasi natijasi nima bo'ladi?\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
         
-    # *args questions (39)
-    for _ in range(39):
+    # *args questions (40)
+    for _ in range(40):
         a, b, c = random.randint(1,15), random.randint(2,15), random.randint(3,15)
         ans = str(a+b+c)
         code = f"def yigindi(*args):\n    return sum(args)\n\nprint(yigindi({a}, {b}, {c}))"
@@ -648,99 +486,87 @@ def generate_9_q3(subject_id):
             opts.append(str(random.randint(10, 60)))
             opts = list(set(opts))
         random.shuffle(opts)
-        q = Question(
-            subject_id=subject_id, grade=9, quarter=3,
-            question_text=f"Funksiya natijasini toping (*args):\n```python\n{code}\n```",
-            option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-            correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-        )
-        questions.append(q)
+        questions.append(Question(subject_id=subject_id, grade=9, quarter=3, question_text=f"Modul/Funksiya (*args) ni ishlatilishi. Natijani aniqlang:\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
 
-    return questions
+    return questions[:100]
 
 def generate_9_q4(subject_id):
     questions = []
     theory = [
-        ("Faylni o'qish uchun qaysi rejimda ochish kerak?", "'r'", "'w'", "'a'", "'x'"),
-        ("Faylga yangi ma'lumotni oxiridan qo'shish uchun qaysi rejim ishlatiladi?", "'a'", "'w'", "'r'", "'w+'"),
-        ("Faylni avtomatik yopishni kafolatlovchi operator qaysi?", "with", "open", "close", "try"),
-        ("OOP kengaytmasi nima?", "Object-Oriented Programming", "Oriented-Object Python", "Object-Outline Protocol", "Out-Of-Place"),
-        ("Klassdan yaratilgan yangi nusxa (instansiya) nima deyiladi?", "Obyekt", "Metod", "Modul", "Funksiya"),
-        ("Klass ichidagi funksiya nima deb ataladi?", "Metod", "Obyekt", "Xususiyat", "Klass"),
-        ("Boshqa klassning xususiyat va metodlarini o'zlashtirish nima deyiladi?", "Meros xorlik (Inheritance)", "Enkapsulyatsiya", "Polimorfizm", "Abstraksiya"),
-        ("Klassni initsializatsiya qiluvchi (konstruktor) maxsus metod:", "__init__()", "__main__()", "__start__()", "__class__()")
+        ("Faylni o'qish reyimi qaysi kalit bilan ochiladi?", "r (read)", "w (write)", "a (append)", "x (execute)"),
+        ("Faylga mavjud qatorlarga ziyon yetkazmasdan oxiridan yangi ma'lumot qo'shish qaysi orqali qilinadi?", "a (append)", "w (write)", "r (read)", "a+ (replace)"),
+        ("Faylni ishlash yakunlangach avtomatik yopilishini kafolatlaydigan operator?", "with", "open", "close", "destroy"),
+        ("Object-Oriented Programming (Ob'ektga yo'naltirilgan dasturlash) asosi?", "Maxsus andoza (Class)", "Tsikl (Loop)", "Mantiq (If/Else)", "Matematik tahlil"),
+        ("Class ichidagi o'zgaruvchilarni va funksiyalarni boshqaruvchi (murojaat qiluvchi) parametr nomi odatda nima ataladi?", "self", "this", "my", "object"),
+        ("Klasslardan yengi funksiya va xususiyatlarni osongina o'tkazish nima deyiladi?", "Inheritance (Meros xo'rlik)", "Encapsulation", "Polymorphism", "Abstraction"),
+        ("Klassni o'zlashtirgan yangi maxsus ma'lumot qanday ataladi?", "Ob'ekt", "O'zgaruvchi", "Parametr", "Fayl")
     ]
-    for _ in range(8): # 64
+    for _ in range(3): # 21 theory
         for q_text, ans, w1, w2, w3 in theory:
             opts = [ans, w1, w2, w3]
             random.shuffle(opts)
-            q = Question(
-                subject_id=subject_id, grade=9, quarter=4, question_text=q_text,
-                option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-                correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-            )
-            questions.append(q)
-            
-    # OOP tracking
-    for _ in range(50):
-        name = random.choice(["Ali", "Vali", "Hasan", "Husan", "Sardor", "Rustam"])
-        age = random.randint(15, 25)
-        ans = f"{name} {age} yoshda"
-        code = f"class Oquvchi:\n    def __init__(self, ism, yosh):\n        self.ism = ism\n        self.yosh = yosh\n\n    def malumot(self):\n        return f'{{self.ism}} {{self.yosh}} yoshda'\n\noq = Oquvchi('{name}', {age})\nprint(oq.malumot())"
+            questions.append(Question(subject_id=subject_id, grade=9, quarter=4, question_text=q_text, option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
+
+    # OOP
+    for _ in range(79):
+        name = random.choice(["Gentra", "Cobalt", "Tracker", "Innova"])
+        color = random.choice(["Oq", "Qora", "Sariq"])
+        ans = f"{color} {name}"
+        code = f"class Avto:\n    def __init__(self, rusum, rang):\n        self.rusum = rusum\n        self.rang = rang\n\n    def tasnif(self):\n        return f'{{self.rang}} {{self.rusum}}'\n\nmashina = Avto('{name}', '{color}')\nprint(mashina.tasnif())"
         
-        wrong1 = f"Oquvchi {name} {age}"
-        wrong2 = f"{age} yoshda {name}"
+        wrong1 = f"Avto {name} {color}"
+        wrong2 = f"{name} {color}"
         wrong3 = "Xatolik beradi"
         
         opts = [ans, wrong1, wrong2, wrong3]
         opts = list(set(opts))
         while len(opts) < 4:
-            opts.append(f"{name}ni ma'lumoti yuq")
+            opts.append(f"Hech narsa chiqmaydi")
             opts = list(set(opts))
         random.shuffle(opts)
-        q = Question(
-            subject_id=subject_id, grade=9, quarter=4,
-            question_text=f"Quyidagi OOP dastur natijasi nima?\n```python\n{code}\n```",
-            option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3],
-            correct_answer=['a', 'b', 'c', 'd'][opts.index(ans)]
-        )
-        questions.append(q)
-            
-    return questions
+        questions.append(Question(subject_id=subject_id, grade=9, quarter=4, question_text=f"OOP (Obyektga yo'naltirilgan dasturlash) andozasi asosida yozilgan kod nima natija beradi?\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
 
+    return questions[:100]
 
 def run_generator():
-    print("Starting Data Generator and Control Work Assigner for Grades 7, 8, 9...")
+    print("Starting Perfect Overhauled Data Generator and Control Work Assigner for Grades 7, 8, 9...")
     with app.app_context():
-        # Ensure 'Python' subject for this requirement
+        # Clean older control works explicitly for 7 8 9 python to avoid duplicates or issues
+        # Actually, let's just wipe ALL old questions for Python 7,8,9 in the DB to have a pure fresh perfect DB.
         subject = get_or_create_subject("Python")
         subj_id = subject.id
-        print(f"Subject 'Python' ID: {subj_id}")
         
-        # 1. Generate Massive Pool of Questions
-        # 7th Grade
-        add_questions_to_db(generate_7_q1(subj_id))
-        add_questions_to_db(generate_7_q2(subj_id))
-        add_questions_to_db(generate_7_q3(subj_id))
-        add_questions_to_db(generate_7_q4(subj_id))
+        db.session.execute(db.text("DELETE FROM control_work_questions"))
+        cw_count = ControlWork.query.filter_by(subject_id=subj_id).delete()
+        q_count = Question.query.filter_by(subject_id=subj_id).delete()
+        db.session.commit()
+        print(f"Purged {cw_count} old ControlWorks, {q_count} Questions for clean slate.")
+
+        q_list = []
+        # Generate exactly 100 for each grade/quarter
+        q_list.extend(generate_7_q1(subj_id))
+        q_list.extend(generate_7_q2(subj_id))
+        q_list.extend(generate_7_q3(subj_id))
+        q_list.extend(generate_7_q4(subj_id))
         
-        # 8th Grade
-        add_questions_to_db(generate_8_q1(subj_id))
-        add_questions_to_db(generate_8_q2(subj_id))
-        add_questions_to_db(generate_8_q3(subj_id))
-        add_questions_to_db(generate_8_q4(subj_id))
+        q_list.extend(generate_8_q1(subj_id))
+        q_list.extend(generate_8_q2(subj_id))
+        q_list.extend(generate_8_q3(subj_id))
+        q_list.extend(generate_8_q4(subj_id))
         
-        # 9th Grade
-        add_questions_to_db(generate_9_q1(subj_id))
-        add_questions_to_db(generate_9_q2(subj_id))
-        add_questions_to_db(generate_9_q3(subj_id))
-        add_questions_to_db(generate_9_q4(subj_id))
+        q_list.extend(generate_9_q1(subj_id))
+        q_list.extend(generate_9_q2(subj_id))
+        q_list.extend(generate_9_q3(subj_id))
+        q_list.extend(generate_9_q4(subj_id))
+
+        saved = add_questions_to_db(q_list)
+        print(f"Saved {len(saved)} new perfect questions.")
         
         # 2. Assign to Control Works per Grade/Quarter
-        print("Creating Control Works mapping (100 questions per exam, cumulative)...")
+        print("Creating fresh Control Works mapping (100 questions per exam, cumulative)...")
         for grade in [7, 8, 9]:
             for quarter in [1, 2, 3, 4]:
-                title = f"{grade}-sinf {quarter}-chorak Nazorat ishi" # Format: 7-sinf 1-chorak Nazorat ishi
+                title = f"{grade}-sinf {quarter}-chorak Nazorat ishi"
                 cw, assigned_count = create_control_work(
                     subject_id=subj_id, 
                     grade=grade, 

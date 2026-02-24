@@ -156,7 +156,7 @@ def control_start():
             
         selected_questions = []
         if cw.quarter > 1:
-            review_count = 5
+            review_count = 4
             
             prev_questions = Question.query.filter(
                 Question.subject_id == cw.subject_id,
