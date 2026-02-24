@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_babel import gettext as _, get_locale
 from extensions import db
-from models import Subject, Question, TestResult
+from models import Subject, Question, TestResult, ControlWork
 from datetime import datetime, timedelta
 import random
 import json
@@ -108,6 +108,101 @@ def start():
             
     return render_template('student_start.html', subjects=subjects, active_test_info=active_test_info)
 
+@student_bp.route('/control_start', methods=['GET', 'POST'])
+def control_start():
+    if request.method == 'POST':
+        name = request.form['name']
+        surname = request.form['surname']
+        class_number = request.form['class_number']
+        grade = int(request.form['grade'])
+        quarter = int(request.form['quarter'])
+        
+        cws = ControlWork.query.filter_by(grade=grade, quarter=quarter, is_active=True).all()
+        if not cws:
+            flash(_('Siz tanlagan sinf va chorak uchun faol nazorat ishi topilmadi.'), 'danger')
+            return redirect(url_for('student.control_start'))
+            
+        cw = cws[0] # Take the first active control work that matches
+        control_work_id = cw.id
+            
+        # Security: check if they are resuming their active test
+        if session.get('student_name') == name and \
+           session.get('student_surname') == surname and \
+           session.get('control_work_id') == control_work_id and \
+           'question_ids' in session:
+            session.permanent = True
+            return redirect(url_for('student.test'))
+
+        # Prepare new session for Control Work
+        session['student_name'] = name
+        session['student_surname'] = surname
+        session['grade'] = cw.grade
+        session['class_number'] = class_number
+        session['quarter'] = cw.quarter
+        session['subject_id'] = cw.subject_id
+        session['control_work_id'] = cw.id
+        session['start_time'] = datetime.now().timestamp()
+        session['cw_time_limit'] = cw.time_limit # minutes
+        session.permanent = True
+        
+        # Store protection status (reuse subject's protection config)
+        session['is_protected'] = cw.subject.is_protected if cw.subject else False
+        
+        base_questions = cw.questions
+        
+        if not base_questions:
+            flash(_('Ushbu nazorat ishida hali savollar kiritilmagan.'), 'warning')
+            return redirect(url_for('student.control_start'))
+            
+        selected_questions = []
+        if cw.quarter > 1:
+            review_count = 5
+            
+            prev_questions = Question.query.filter(
+                Question.subject_id == cw.subject_id,
+                Question.grade == cw.grade,
+                Question.quarter < cw.quarter
+            ).all()
+            
+            review_sample = random.sample(prev_questions, min(len(prev_questions), review_count))
+            current_count = 20 - len(review_sample)
+            
+            current_sample = random.sample(base_questions, min(len(base_questions), current_count))
+            selected_questions = current_sample + review_sample
+        else:
+            selected_questions = random.sample(base_questions, min(len(base_questions), 20))
+            
+        # Ensure the final selection is shuffled so review questions are mixed in
+        random.shuffle(selected_questions)
+            
+        session['question_ids'] = [q.id for q in selected_questions]
+        session['current_question'] = 0
+        session['answers'] = {}
+        session['option_map'] = {}
+        session['marked_questions'] = []
+        session['violation_count'] = 0
+        session['violation_details'] = []
+        
+        return redirect(url_for('student.test'))
+    
+    # GET Request
+    lang = str(get_locale())
+    active_test_info = None
+    
+    if 'question_ids' in session and session.get('control_work_id'):
+        cw = ControlWork.query.get(session.get('control_work_id'))
+        subject_name = cw.subject.name if cw and cw.subject else ""
+        
+        active_test_info = {
+            'name': session.get('student_name'),
+            'surname': session.get('student_surname'),
+            'subject': subject_name
+        }
+        
+    control_works = ControlWork.query.filter_by(is_active=True).order_by(ControlWork.created_at.desc()).all()
+    
+    return render_template('student_control_start.html', control_works=control_works, active_test_info=active_test_info)
+
 @student_bp.route('/test')
 def test():
     if 'question_ids' not in session:
@@ -176,6 +271,22 @@ def test():
     is_blocked = session.get('is_blocked', False)
     marked_questions = session.get('marked_questions', [])
 
+    cw_time_limit = session.get('cw_time_limit')
+    time_remaining_ms = None
+
+    if cw_time_limit:
+        start_time_timestamp = session.get('start_time')
+        if start_time_timestamp:
+            elapsed_seconds = datetime.now().timestamp() - start_time_timestamp
+            total_time_seconds = cw_time_limit * 60
+            remaining_seconds = total_time_seconds - elapsed_seconds
+            
+            if remaining_seconds <= 0:
+                # Time's up, force submit
+                return redirect(url_for('student.navigate', direction='finish', force='1'))
+                
+            time_remaining_ms = int(remaining_seconds * 1000)
+
     return render_template('student_test.html', 
                          question=question,
                          question_text=question_text,
@@ -186,7 +297,8 @@ def test():
                          answers=answers,
                          is_protected=is_protected,
                          is_blocked=is_blocked,
-                         marked_questions=marked_questions)
+                         marked_questions=marked_questions,
+                         time_remaining_ms=time_remaining_ms)
 
 @student_bp.route('/report_violation', methods=['POST'])
 def report_violation():
@@ -362,7 +474,8 @@ def result():
         percentage=percentage,
         grade_text=grade_text,
         test_date=tashkent_time,
-        answers_json=json.dumps(answers)
+        answers_json=json.dumps(answers),
+        control_work_id=session.get('control_work_id')
     )
     db.session.add(result)
     db.session.commit()
