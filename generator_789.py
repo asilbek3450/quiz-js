@@ -548,11 +548,11 @@ def generate_9_q2(subject_id):
         opts = list(set(opts))
         while len(opts) < 4:
             if t == 'replace':
-                opts.append(wd.replace(old_char, random.choice('ABC')))
+                opts.append(wd.replace(old_char, random.choice('ABCDEFGIJK')))
             elif t == 'strip':
-                opts.append(wd + "  ")
+                opts.append(wd + (" " * random.randint(1,10)))
             else:
-                opts.append(str(wd.split('o')))
+                opts.append(str(wd.split(random.choice("abcdefghijklmnopqrstuvwxyz"))))
             opts = list(set(opts))
         random.shuffle(opts)
         questions.append(Question(subject_id=subject_id, grade=9, quarter=2, question_text=f"Kod natijasini toping:\n```python\n{code}\n```", option_a=opts[0], option_b=opts[1], option_c=opts[2], option_d=opts[3], correct_answer=['a','b','c','d'][opts.index(ans)]))
