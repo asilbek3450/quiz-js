@@ -1,6 +1,5 @@
 .venv
 __pycache__/
 *.pyc
-instance/
 google_credentials.json
 instance/test_platform_backup_*.db
