@@ -424,10 +424,32 @@ def result():
     results = []
     lang = str(get_locale())
     
+    # Keys corresponding to indices 0, 1, 2, 3 in the database (option_a = 0, option_b = 1, option_c = 2, option_d = 3)
+    db_keys = ['a', 'b', 'c', 'd']
+    option_map = session.get('option_map', {})
+
     for qid in question_ids:
         question = Question.query.get(qid)
-        user_answer = answers.get(str(qid), '')
-        is_correct = str(user_answer).strip().lower() == str(question.correct_answer).strip().lower()
+        user_answer = answers.get(str(qid), '').strip().lower()
+        
+        # Original answer matching was broken because options are shuffled visually.
+        # option_map[qid] holds the shuffled indices. 'A' visually (0) -> maps to index option_map[qid][0].
+        # We need to map the visual choice 'A', 'B', 'C', 'D' to the original DB key 'a', 'b', 'c', 'd'.
+        is_correct = False
+        mapped_db_key = None
+        
+        if user_answer in db_keys and str(qid) in option_map:
+            # Get visual index (0 for 'a', 1 for 'b' etc)
+            visual_idx = db_keys.index(user_answer)
+            # Find the original DB index it maps to
+            original_idx = option_map[str(qid)][visual_idx]
+            # Convert back to 'a', 'b', 'c', 'd'
+            mapped_db_key = db_keys[original_idx]
+            
+            is_correct = mapped_db_key == str(question.correct_answer).strip().lower()
+        else:
+            is_correct = user_answer == str(question.correct_answer).strip().lower()
+
         if is_correct:
             score += 1
         
@@ -437,11 +459,16 @@ def result():
              q_text_display = question.question_text_en or question.question_text
         else:
              q_text_display = question.question_text
+
+        # We want to display the mapped value the user actually chose if needed, but for answers JSON saving
+        # it's usually better to save the original DB key they clicked for history
+        actual_answer_key = mapped_db_key if mapped_db_key else user_answer
+        answers[str(qid)] = actual_answer_key
         
         results.append({
             'question': q_text_display,
-            'user_answer': user_answer,
-            'correct_answer': question.correct_answer,
+            'user_answer': user_answer.upper(), # What they visually typed A/B/C/D
+            'correct_answer': question.correct_answer, # What it was in DB
             'is_correct': is_correct
         })
     
