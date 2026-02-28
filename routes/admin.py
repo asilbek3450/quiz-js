@@ -11,9 +11,14 @@ from sqlalchemy import func
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
 def auto_translate(text, target):
+    if not text or not target:
+        return text
     try:
-        return GoogleTranslator(source='auto', target=target).translate(text)
-    except:
+        # Use a timeout and handle empty strings
+        translator = GoogleTranslator(source='auto', target=target)
+        return translator.translate(text)
+    except Exception as e:
+        print(f"Translation error ({target}): {e}")
         return text
 
 @admin_bp.before_request
@@ -259,10 +264,51 @@ def question_edit(id):
 
         db.session.commit()
         flash(_('Savol muvaffaqiyatli o\'zgartirildi'), 'success')
-        return redirect(url_for('admin.questions'))
-
     subjects = Subject.query.all()
     return render_template('admin_question_form.html', subjects=subjects, question=question)
+
+@admin_bp.route('/questions/translate_missing', methods=['POST'])
+def translate_missing_questions():
+    try:
+        subject_id = request.json.get('subject_id')
+        grade = request.json.get('grade')
+        quarter = request.json.get('quarter')
+        
+        query = Question.query
+        if subject_id: query = query.filter_by(subject_id=subject_id)
+        if grade: query = query.filter_by(grade=grade)
+        if quarter: query = query.filter_by(quarter=quarter)
+        
+        # Find questions missing RU or EN translations
+        missing = query.filter(
+            (Question.question_text_ru == None) | (Question.question_text_ru == '') |
+            (Question.question_text_en == None) | (Question.question_text_en == '')
+        ).limit(20).all() # Process in small batches to avoid timeouts
+        
+        count = 0
+        for q in missing:
+            # Translate RU if missing
+            if not q.question_text_ru:
+                q.question_text_ru = auto_translate(q.question_text, 'ru')
+                q.option_a_ru = auto_translate(q.option_a, 'ru')
+                q.option_b_ru = auto_translate(q.option_b, 'ru')
+                q.option_c_ru = auto_translate(q.option_c, 'ru')
+                q.option_d_ru = auto_translate(q.option_d, 'ru')
+            
+            # Translate EN if missing
+            if not q.question_text_en:
+                q.question_text_en = auto_translate(q.question_text, 'en')
+                q.option_a_en = auto_translate(q.option_a, 'en')
+                q.option_b_en = auto_translate(q.option_b, 'en')
+                q.option_c_en = auto_translate(q.option_c, 'en')
+                q.option_d_en = auto_translate(q.option_d, 'en')
+            
+            count += 1
+        
+        db.session.commit()
+        return jsonify({'success': True, 'translated_count': count, 'remaining': query.filter((Question.question_text_ru == None) | (Question.question_text_ru == '') | (Question.question_text_en == None) | (Question.question_text_en == '')).count()})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @admin_bp.route('/question/delete/<int:id>', methods=['GET'])
 def question_delete(id):
@@ -348,22 +394,13 @@ def import_questions():
                 grade=grade,
                 quarter=quarter,
                 question_text=q_text,
-                question_text_ru=auto_translate(q_text, 'ru'),
-                question_text_en=auto_translate(q_text, 'en'),
                 option_a=opt_a,
-                option_a_ru=auto_translate(opt_a, 'ru'),
-                option_a_en=auto_translate(opt_a, 'en'),
                 option_b=opt_b,
-                option_b_ru=auto_translate(opt_b, 'ru'),
-                option_b_en=auto_translate(opt_b, 'en'),
                 option_c=opt_c,
-                option_c_ru=auto_translate(opt_c, 'ru'),
-                option_c_en=auto_translate(opt_c, 'en'),
                 option_d=opt_d,
-                option_d_ru=auto_translate(opt_d, 'ru'),
-                option_d_en=auto_translate(opt_d, 'en'),
                 correct_answer=correct
             )
+            # Translations are now LAZY or BATCHED to avoid timeouts during import
             db.session.add(question)
             count += 1
 
@@ -617,6 +654,9 @@ def subject_add():
             name = request.form.get('name', '').strip()
             grades = request.form.get('grades', '').strip()
             is_protected = 'is_protected' in request.form
+            question_count = int(request.form.get('question_count', 20))
+            time_limit = int(request.form.get('time_limit', 30)) # Added time_limit
+            show_results = 'show_results' in request.form
 
             if not name or not grades:
                 flash(_('Nom va sinflarni kiriting'), 'warning')
@@ -627,7 +667,10 @@ def subject_add():
                 grades=grades,
                 name_ru=auto_translate(name, 'ru'),
                 name_en=auto_translate(name, 'en'),
-                is_protected=is_protected
+                is_protected=is_protected,
+                question_count=question_count,
+                time_limit=time_limit, # Added time_limit
+                show_results=show_results
             )
             db.session.add(subject)
             db.session.commit()
@@ -653,6 +696,9 @@ def subject_edit(id):
 
         subject.grades = request.form['grades']
         subject.is_protected = 'is_protected' in request.form
+        subject.question_count = int(request.form.get('question_count', 20))
+        subject.time_limit = int(request.form.get('time_limit', 30))
+        subject.show_results = 'show_results' in request.form
 
         db.session.commit()
         flash(_('Fan muvaffaqiyatli o\'zgartirildi'), 'success')

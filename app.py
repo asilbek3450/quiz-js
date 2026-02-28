@@ -58,6 +58,22 @@ def create_app():
             with db.engine.connect() as conn:
                 conn.execute(db.text("ALTER TABLE subject ADD COLUMN is_protected BOOLEAN DEFAULT 0"))
                 conn.commit()
+        if 'question_count' not in columns:
+            print("Migrating database: Adding question_count to Subject table...")
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE subject ADD COLUMN question_count INTEGER DEFAULT 20"))
+                conn.commit()
+        if 'time_limit' not in columns:
+            print("Migrating database: Adding time_limit to Subject table...")
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE subject ADD COLUMN time_limit INTEGER DEFAULT 30"))
+                conn.commit()
+
+        if 'show_results' not in columns:
+            print("Migrating database: Adding show_results to Subject table...")
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE subject ADD COLUMN show_results BOOLEAN DEFAULT 1"))
+                conn.commit()
 
         # Check and migrate TestResult table
         test_result_columns = [c['name'] for c in inspector.get_columns('test_result')]

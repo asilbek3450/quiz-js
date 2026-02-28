@@ -304,13 +304,8 @@
     <h1 class="display-3 fw-bold">{{ _('QOIDABUZARLIK!') }}</h1>
     <h3 class="mb-4">{{ _('Siz test oynasidan chiqdingiz!') }}</h3>
     <div class="mb-4">
-        <p class="h5 mb-3">{{ _('Testni davom ettirish uchun nazoratchi parolini kiriting:') }}</p>
-        <div class="input-group justify-content-center" style="max-width: 300px; margin: 0 auto;">
-            <input type="password" id="unlock-password" class="form-control" placeholder="{{ _('Parol') }}"
-                autocomplete="new-password" name="supervisor_unlock_code">
-            <button class="btn btn-dark" onclick="checkUnlock()">{{ _('Ochish') }}</button>
-        </div>
-        <div id="unlock-error" class="text-white mt-2 small" style="display:none;">{{ _('Noto\'g\'ri parol!') }}</div>
+        <p class="h5 mb-3">{{ _('Sizga 15 soniyalik jazo berildi!') }}</p>
+        <div class="display-1 fw-bold mb-3" id="violation-timer">15</div>
     </div>
 </div>
 
@@ -453,29 +448,28 @@
             }
         }
 
-        function checkUnlock() {
-            const pwd = document.getElementById('unlock-password').value;
-            const err = document.getElementById('unlock-error');
+        const IS_BLOCKED_INIT = {{ 'true' if is_blocked else 'false' }};
+        let violationTimerInterval = null;
 
-            fetch('/student/verify_unlock', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password: pwd })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        document.getElementById('violation-overlay').style.display = 'none';
-                        document.getElementById('unlock-password').value = '';
-                        if (err) err.style.display = 'none';
-                        // Optional: reload or just keep going
-                    } else {
-                        if (err) err.style.display = 'block';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
+        if (IS_BLOCKED_INIT) {
+            startViolationCountdown();
+        }
+
+        function startViolationCountdown() {
+            let timeLeft = 15;
+            const timerEl = document.getElementById('violation-timer');
+            if (timerEl) timerEl.textContent = timeLeft;
+
+            if (violationTimerInterval) clearInterval(violationTimerInterval);
+
+            violationTimerInterval = setInterval(() => {
+                timeLeft--;
+                if (timerEl) timerEl.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(violationTimerInterval);
+                    clearViolationOnServer();
+                }
+            }, 1000);
         }
 
         function triggerViolation(type = 'Blur/Visibility') {
@@ -487,12 +481,31 @@
 
             playWarningSound();
 
+            startViolationCountdown();
+
             // Report to server with type
             fetch('/student/report_violation', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ type: type })
             });
+        }
+
+        function clearViolationOnServer() {
+            fetch('/student/clear_violation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('violation-overlay').style.display = 'none';
+                        // Re-enter fullscreen if it was exited
+                        if (!document.fullscreenElement && IS_PROTECTED) {
+                            document.documentElement.requestFullscreen().catch(() => { });
+                        }
+                    }
+                });
         }
 
         document.addEventListener('visibilitychange', () => {
@@ -577,10 +590,11 @@
         }
 
         // Timer configuration
+        const VIOLATION_TIMEOUT = 15000; // 15 seconds
         {% if session.get('cw_time_limit') %}
         const TEST_DURATION = {{ session.get('cw_time_limit') }} * 60;
         {% else %}
-        const TEST_DURATION = 30 * 60; // Default 30 minutes for regular test
+        const TEST_DURATION = 30 * 60; // Fallback 30 minutes
         {% endif %}
 
         const startTimePayload = {{ session.get('start_time', 0) }};

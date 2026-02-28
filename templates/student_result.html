@@ -216,12 +216,12 @@
 
         <div class="score-display">
             <div class="score-item">
-                <div class="score-label">{{ _('To\'plangan ball') }}</div>
-                <div class="score-value">{{ score }}</div>
+                <div class="score-label">{{ _('To\'g\'ri javoblar') }}</div>
+                <div class="score-value">{{ score }} / {{ total }}</div>
             </div>
             <div class="score-item">
-                <div class="score-label">{{ _('Maksimal ball') }}</div>
-                <div class="score-value">{{ total }}</div>
+                <div class="score-label">{{ _('Umumiy ball') }}</div>
+                <div class="score-value">{{ (score * 100 / total)|int }}</div>
             </div>
             <div class="score-item">
                 <div class="score-label">{{ _('Foiz') }}</div>
@@ -240,6 +240,7 @@
         {% endif %}
     </div>
 
+    {% if show_results %}
     <div class="detailed-results">
         <h3 class="mb-4">
             <i class="fas fa-list-check"></i> {{ _('Batafsil natijalar') }}
@@ -277,6 +278,16 @@
         </div>
         {% endfor %}
     </div>
+    {% else %}
+    <div class="alert alert-info border-0 shadow-sm rounded-4 p-4 text-center">
+        <div class="mb-3">
+            <i class="fas fa-info-circle fa-3x text-primary"></i>
+        </div>
+        <h4 class="fw-bold">{{ _('Batafsil natijalar yashirilgan') }}</h4>
+        <p class="mb-0 text-muted">{{ _('Ushbu fan uchun batafsil natijalarni ko\'rish cheklangan. Faqat umumiy
+            ballingiz ko\'rsatiladi.') }}</p>
+    </div>
+    {% endif %}
 
     <div class="text-center mt-4">
         <a href="{{ url_for('student.start') }}" class="btn btn-primary btn-lg me-2">

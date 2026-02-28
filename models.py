@@ -33,6 +33,9 @@ class Subject(db.Model):
     name_en = db.Column(db.String(50))
     grades = db.Column(db.String(20), nullable=False)  # "5,6" yoki "7,8,9"
     is_protected = db.Column(db.Boolean, default=False) # Anti-cheat protection
+    question_count = db.Column(db.Integer, default=20)
+    time_limit = db.Column(db.Integer, default=30)
+    show_results = db.Column(db.Boolean, default=True)
 
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)

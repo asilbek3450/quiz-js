@@ -17,7 +17,7 @@ def _safe_sample(seq, k: int):
     return random.sample(seq, min(len(seq), k))
 
 
-def _build_balanced_practice_set(subject_id: int, grade: int, quarter: int):
+def _build_balanced_practice_set(subject_id: int, grade: int, quarter: int, target_count: int = 20):
     # Practice-only questions for this quarter
     base = (
         Question.query.filter_by(subject_id=subject_id, grade=grade, quarter=quarter)
@@ -25,8 +25,7 @@ def _build_balanced_practice_set(subject_id: int, grade: int, quarter: int):
         .all()
     )
 
-    if len(base) < 15:
-        # We still might be able to build 20 with review, but likely not
+    if len(base) < (target_count * 0.75): # Arbitrary threshold, but let's say 75%
         return None, len(base)
 
     # Review pool from previous quarters (practice-only)
@@ -42,8 +41,13 @@ def _build_balanced_practice_set(subject_id: int, grade: int, quarter: int):
             .all()
         )
 
-    review_qs = _safe_sample(review_pool, 5)
+    review_needed = int(target_count * 0.25) # 25% review questions
+    review_qs = _safe_sample(review_pool, review_needed)
     used_ids = {q.id for q in review_qs}
+
+    current_needed = target_count - len(review_qs)
+    medium_needed = int(current_needed * 0.5) # 50% of current quarter should be medium
+    hard_needed = int(current_needed * 0.25) # 25% of current quarter should be hard
 
     base_medium = [q for q in base if (q.difficulty or 2) == 2 and q.id not in used_ids]
     base_hard = [q for q in base if (q.difficulty or 2) >= 3 and q.id not in used_ids]
@@ -51,24 +55,24 @@ def _build_balanced_practice_set(subject_id: int, grade: int, quarter: int):
 
     selected = []
     selected.extend(review_qs)
-    selected.extend(_safe_sample(base_medium, 10))
+    selected.extend(_safe_sample(base_medium, medium_needed))
     used_ids.update(q.id for q in selected)
 
-    hard_pick = _safe_sample([q for q in base_hard if q.id not in used_ids], 5)
+    hard_pick = _safe_sample([q for q in base_hard if q.id not in used_ids], hard_needed)
     selected.extend(hard_pick)
     used_ids.update(q.id for q in selected)
 
     # Fill any missing slots from remaining base
-    if len(selected) < 20:
+    if len(selected) < target_count:
         remaining = [q for q in base_other + base_medium + base_hard if q.id not in used_ids]
-        selected.extend(_safe_sample(remaining, 20 - len(selected)))
+        selected.extend(_safe_sample(remaining, target_count - len(selected)))
 
-    if len(selected) < 20:
+    if len(selected) < target_count:
         # If still short, try to top up from review pool
         more_review = [q for q in review_pool if q.id not in used_ids]
-        selected.extend(_safe_sample(more_review, 20 - len(selected)))
+        selected.extend(_safe_sample(more_review, target_count - len(selected)))
 
-    if len(selected) < 20:
+    if len(selected) < target_count:
         return None, len(base)
 
     random.shuffle(selected)
@@ -108,14 +112,20 @@ def start():
         session['quarter'] = int(request.form['quarter'])
         session['subject_id'] = subject_id
         session['start_time'] = datetime.now().timestamp()
+        
+        # Store time limit for regular tests too
+        subject = Subject.query.get(subject_id)
+        session['cw_time_limit'] = subject.time_limit if subject else 30
+        
         session.permanent = True
         
         subject = Subject.query.get(session['subject_id'])
         # Store protection status in session for frontend use
         session['is_protected'] = subject.is_protected if subject else False
         
+        target_count = subject.question_count if subject else 20
         selected_questions, base_count = _build_balanced_practice_set(
-            session['subject_id'], session['grade'], session['quarter']
+            session['subject_id'], session['grade'], session['quarter'], target_count
         )
 
         if not selected_questions:
@@ -187,6 +197,7 @@ def control_start():
             
         cw = cws[0] # Take the first active control work that matches
         control_work_id = cw.id
+        target_count = cw.subject.question_count if cw.subject else 20
             
         # Security: check if they are resuming their active test
         if session.get('student_name') == name and \
@@ -227,10 +238,10 @@ def control_start():
                     Question.grade == cw.grade,
                     Question.quarter < cw.quarter,
                 )
-                .filter(Question.control_works.any())
                 .all()
             )
-            review_sample = _safe_sample(prev_control_questions, 5)
+            review_needed = int(target_count * 0.25)
+            review_sample = _safe_sample(prev_control_questions, review_needed)
 
         used_ids = {q.id for q in review_sample}
         current_pool = [q for q in base_questions if q.id not in used_ids]
@@ -238,15 +249,19 @@ def control_start():
         current_hard = [q for q in current_pool if (q.difficulty or 2) >= 3]
         current_other = [q for q in current_pool if q not in current_medium and q not in current_hard]
 
+        current_needed = target_count - len(review_sample)
+        medium_needed = int(current_needed * 0.5)
+        hard_needed = int(current_needed * 0.25)
+
         selected_questions.extend(review_sample)
-        selected_questions.extend(_safe_sample(current_medium, 10))
+        selected_questions.extend(_safe_sample(current_medium, medium_needed))
         used_ids.update(q.id for q in selected_questions)
-        selected_questions.extend(_safe_sample([q for q in current_hard if q.id not in used_ids], 5))
+        selected_questions.extend(_safe_sample([q for q in current_hard if q.id not in used_ids], hard_needed))
         used_ids.update(q.id for q in selected_questions)
 
-        if len(selected_questions) < 20:
+        if len(selected_questions) < target_count:
             remaining = [q for q in current_other + current_medium + current_hard if q.id not in used_ids]
-            selected_questions.extend(_safe_sample(remaining, 20 - len(selected_questions)))
+            selected_questions.extend(_safe_sample(remaining, target_count - len(selected_questions)))
             
         # Ensure the final selection is shuffled so review questions are mixed in
         random.shuffle(selected_questions)
@@ -296,17 +311,37 @@ def test():
     lang = str(get_locale())
     
     if lang == 'ru':
-        question_text = question.question_text_ru or question.question_text
-        option_a = question.option_a_ru or question.option_a
-        option_b = question.option_b_ru or question.option_b
-        option_c = question.option_c_ru or question.option_c
-        option_d = question.option_d_ru or question.option_d
+        if not question.question_text_ru:
+            # Lazy translation
+            from .admin import auto_translate
+            question.question_text_ru = auto_translate(question.question_text, 'ru')
+            question.option_a_ru = auto_translate(question.option_a, 'ru')
+            question.option_b_ru = auto_translate(question.option_b, 'ru')
+            question.option_c_ru = auto_translate(question.option_c, 'ru')
+            question.option_d_ru = auto_translate(question.option_d, 'ru')
+            db.session.commit()
+
+        question_text = question.question_text_ru
+        option_a = question.option_a_ru
+        option_b = question.option_b_ru
+        option_c = question.option_c_ru
+        option_d = question.option_d_ru
     elif lang == 'en':
-        question_text = question.question_text_en or question.question_text
-        option_a = question.option_a_en or question.option_a
-        option_b = question.option_b_en or question.option_b
-        option_c = question.option_c_en or question.option_c
-        option_d = question.option_d_en or question.option_d
+        if not question.question_text_en:
+            # Lazy translation
+            from .admin import auto_translate
+            question.question_text_en = auto_translate(question.question_text, 'en')
+            question.option_a_en = auto_translate(question.option_a, 'en')
+            question.option_b_en = auto_translate(question.option_b, 'en')
+            question.option_c_en = auto_translate(question.option_c, 'en')
+            question.option_d_en = auto_translate(question.option_d, 'en')
+            db.session.commit()
+
+        question_text = question.question_text_en
+        option_a = question.option_a_en
+        option_b = question.option_b_en
+        option_c = question.option_c_en
+        option_d = question.option_d_en
     else:
         question_text = question.question_text
         option_a = question.option_a
@@ -398,21 +433,14 @@ def report_violation():
     session.permanent = True
     return jsonify({'success': True})
 
-@student_bp.route('/verify_unlock', methods=['POST'])
-def verify_unlock():
+@student_bp.route('/clear_violation', methods=['POST'])
+def clear_violation():
     if 'question_ids' not in session:
         return jsonify({'error': 'Session expired'}), 400
     
-    data = request.json
-    password = data.get('password')
-    
-    # Use the same password as in the template: 'jahonschool'
-    if password == 'jahonschool':
-        session['is_blocked'] = False
-        session.permanent = True
-        return jsonify({'success': True})
-    else:
-        return jsonify({'success': False, 'message': 'Invalid password'}), 401
+    session['is_blocked'] = False
+    session.permanent = True
+    return jsonify({'success': True})
 
 @student_bp.route('/answer', methods=['POST'])
 def answer():
@@ -589,15 +617,19 @@ def result():
     db.session.add(result)
     db.session.commit()
     
-    # Cleanup session but keep lang
+    subject = Subject.query.get(session['subject_id'])
+    
+    # Cleanup session but keep lang - MOVED AFTER subject access
     keys_to_keep = ['lang']
     for key in list(session.keys()):
         if key not in keys_to_keep:
             session.pop(key, None)
-    
+    show_results = subject.show_results if subject else True
+
     return render_template('student_result.html', 
                          score=score, 
                          total=total, 
                          percentage=percentage,
                          grade_text=grade_text,
-                         results=results)
+                         results=results,
+                         show_results=show_results)
