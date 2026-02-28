@@ -59,70 +59,71 @@ def logout():
 @admin_bp.route('/dashboard')
 def dashboard():
     total_questions = Question.query.count()
-    results = TestResult.query.all()
-    total_results = len(results)
+    total_results = TestResult.query.count()
     subjects = Subject.query.all()
     recent_results = TestResult.query.order_by(TestResult.test_date.desc()).limit(10).all()
 
+    # Calculate Pass Rate (Score >= 70%) efficiently
+    passing_results_count = TestResult.query.filter(TestResult.percentage >= 70).count()
+    pass_rate = (passing_results_count / total_results * 100) if total_results > 0 else 0
+
+    # Subject Analytics using aggregation
+    subject_stats_raw = db.session.query(
+        TestResult.subject_id,
+        func.count(TestResult.id)
+    ).group_by(TestResult.subject_id).all()
+    
+    res_counts_map = {sid: count for sid, count in subject_stats_raw}
+    
     subject_names = [s.name for s in subjects]
-    question_counts = [len(s.questions) for s in subjects]
-    result_counts = [len(s.results) for s in subjects]
+    question_counts = [Question.query.filter_by(subject_id=s.id).count() for s in subjects]
+    result_counts = [res_counts_map.get(s.id, 0) for s in subjects]
 
-    # Calculate Pass Rate (Score >= 70%)
-    passing_results = [r for r in results if r.percentage >= 70]
-    pass_rate = (len(passing_results) / total_results * 100) if total_results > 0 else 0
-
-    # Analytics: Top 5 Difficult Questions
-    question_stats = {} # {question_id: {'wrong': 0, 'total': 0}}
-
-    for r in results:
-        try:
-            answers = json.loads(r.answers_json)
-            for q_id, user_ans in answers.items():
-                q_id_int = int(q_id)
-                if q_id_int not in question_stats:
-                    question_stats[q_id_int] = {'wrong': 0, 'total': 0}
-
-                question_stats[q_id_int]['total'] += 1
-                # We need correct answer to check if it was wrong
-                # This could be slow if we query for each question.
-                # Let's optimize by getting correct answers once.
-        except:
-            continue
-
+    # Analytics: Top 5 Difficult Questions (Limit to last 500 results for performance)
     difficult_questions_data = []
-    if question_stats:
-        # Get all relevant questions in one go
-        all_q_ids = list(question_stats.keys())
-        questions_db = {q.id: q for q in Question.query.filter(Question.id.in_(all_q_ids)).all()}
-
-        # Re-calc 'wrong' counts correctly
-        for r in results:
+    recent_analytics_results = TestResult.query.order_by(TestResult.test_date.desc()).limit(500).all()
+    
+    if recent_analytics_results:
+        question_stats = {} # {question_id: {'wrong': 0, 'total': 0}}
+        all_q_ids_set = set()
+        
+        for r in recent_analytics_results:
             try:
-                answers = json.loads(r.answers_json)
+                answers = json.loads(r.answers_json or '{}')
                 for q_id, user_ans in answers.items():
                     q_id_int = int(q_id)
-                    q_obj = questions_db.get(q_id_int)
-                    if q_obj and user_ans != q_obj.correct_answer:
-                        question_stats[q_id_int]['wrong'] += 1
-            except:
-                continue
+                    if q_id_int not in question_stats:
+                        question_stats[q_id_int] = {'wrong': 0, 'total': 0}
+                    question_stats[q_id_int]['total'] += 1
+                    all_q_ids_set.add(q_id_int)
+            except: continue
 
-        # Sort by failure rate (wrong / total)
-        for q_id, stats in question_stats.items():
-            if stats['total'] > 5: # Only include questions with enough data
-                stats['fail_rate'] = (stats['wrong'] / stats['total']) * 100
-                q_obj = questions_db.get(q_id)
-                if q_obj:
-                    difficult_questions_data.append({
-                        'text': q_obj.question_text[:100] + '...',
-                        'fail_rate': stats['fail_rate'],
-                        'wrong_count': stats['wrong'],
-                        'total_count': stats['total'],
-                        'subject': q_obj.subject.name
-                    })
+        if all_q_ids_set:
+            questions_db = {q.id: q for q in Question.query.filter(Question.id.in_(list(all_q_ids_set))).all()}
+            
+            for r in recent_analytics_results:
+                try:
+                    answers = json.loads(r.answers_json or '{}')
+                    for q_id, user_ans in answers.items():
+                        q_id_int = int(q_id)
+                        q_obj = questions_db.get(q_id_int)
+                        if q_obj and user_ans != q_obj.correct_answer:
+                            question_stats[q_id_int]['wrong'] += 1
+                except: continue
 
-        difficult_questions_data = sorted(difficult_questions_data, key=lambda x: x['fail_rate'], reverse=True)[:5]
+            for q_id, stats in question_stats.items():
+                if stats['total'] > 3: # Lower threshold for limited sample
+                    stats['fail_rate'] = (stats['wrong'] / stats['total']) * 100
+                    q_obj = questions_db.get(q_id)
+                    if q_obj:
+                        difficult_questions_data.append({
+                            'text': q_obj.question_text[:100] + '...',
+                            'fail_rate': stats['fail_rate'],
+                            'wrong_count': stats['wrong'],
+                            'total_count': stats['total'],
+                            'subject': q_obj.subject.name
+                        })
+            difficult_questions_data = sorted(difficult_questions_data, key=lambda x: x['fail_rate'], reverse=True)[:5]
 
     return render_template('admin_dashboard.html',
                          total_questions=total_questions,
@@ -165,12 +166,26 @@ def questions():
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     questions = pagination.items
 
-    all_questions = Question.query.all()
+    # Efficiently get statistics using aggregation
+    stats_raw = db.session.query(
+        Question.subject_id, 
+        Question.grade, 
+        Question.quarter, 
+        func.count(Question.id)
+    ).group_by(Question.subject_id, Question.grade, Question.quarter).all()
+
+    # Convert to a dictionary for easier access in template
+    stats_dict = {}
+    for sid, grade, quarter, count in stats_raw:
+        if sid not in stats_dict: stats_dict[sid] = {}
+        if grade not in stats_dict[sid]: stats_dict[sid][grade] = {}
+        stats_dict[sid][grade][quarter] = count
+
     subjects = Subject.query.all()
 
     return render_template('admin_questions.html',
                          questions=questions,
-                         all_questions=all_questions,
+                         stats_dict=stats_dict,
                          pagination=pagination,
                          subjects=subjects)
 
@@ -273,43 +288,9 @@ def translate_missing_questions():
         subject_id = request.json.get('subject_id')
         grade = request.json.get('grade')
         quarter = request.json.get('quarter')
-        
-        query = Question.query
-        if subject_id: query = query.filter_by(subject_id=subject_id)
-        if grade: query = query.filter_by(grade=grade)
-        if quarter: query = query.filter_by(quarter=quarter)
-        
-        # Find questions missing RU or EN translations
-        missing = query.filter(
-            (Question.question_text_ru == None) | (Question.question_text_ru == '') |
-            (Question.question_text_en == None) | (Question.question_text_en == '')
-        ).limit(20).all() # Process in small batches to avoid timeouts
-        
-        count = 0
-        for q in missing:
-            # Translate RU if missing
-            if not q.question_text_ru:
-                q.question_text_ru = auto_translate(q.question_text, 'ru')
-                q.option_a_ru = auto_translate(q.option_a, 'ru')
-                q.option_b_ru = auto_translate(q.option_b, 'ru')
-                q.option_c_ru = auto_translate(q.option_c, 'ru')
-                q.option_d_ru = auto_translate(q.option_d, 'ru')
-            
-            # Translate EN if missing
-            if not q.question_text_en:
-                q.question_text_en = auto_translate(q.question_text, 'en')
-                q.option_a_en = auto_translate(q.option_a, 'en')
-                q.option_b_en = auto_translate(q.option_b, 'en')
-                q.option_c_en = auto_translate(q.option_c, 'en')
-                q.option_d_en = auto_translate(q.option_d, 'en')
-            
-            count += 1
-        
-        db.session.commit()
-        return jsonify({'success': True, 'translated_count': count, 'remaining': query.filter((Question.question_text_ru == None) | (Question.question_text_ru == '') | (Question.question_text_en == None) | (Question.question_text_en == '')).count()})
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
+        return jsonify({'success': False, 'error': str(e)}), 400
+        
 @admin_bp.route('/question/delete/<int:id>', methods=['GET'])
 def question_delete(id):
     question = Question.query.get_or_404(id)
@@ -588,8 +569,13 @@ def results():
 
     excellent_count = query.filter(TestResult.percentage >= 90).count()
 
-    avg_percentage = query.with_entities(func.avg(TestResult.percentage)).scalar() or 0
-    avg_score = query.with_entities(func.avg(TestResult.score)).scalar() or 0
+    stats_tuple = query.with_entities(
+        func.avg(TestResult.percentage),
+        func.avg(TestResult.score)
+    ).first()
+    
+    avg_percentage = stats_tuple[0] or 0
+    avg_score = stats_tuple[1] or 0
 
     # Pagination
     page = request.args.get('page', 1, type=int)

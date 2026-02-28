@@ -18,65 +18,70 @@ def _safe_sample(seq, k: int):
 
 
 def _build_balanced_practice_set(subject_id: int, grade: int, quarter: int, target_count: int = 20):
-    # Practice-only questions for this quarter
-    base = (
-        Question.query.filter_by(subject_id=subject_id, grade=grade, quarter=quarter)
-        .filter(~Question.control_works.any())
-        .all()
-    )
+    # 1. Check total available questions for the current quarter
+    current_q_filter = [
+        Question.subject_id == subject_id,
+        Question.grade == grade,
+        Question.quarter == quarter,
+        ~Question.control_works.any()
+    ]
+    current_count = Question.query.filter(*current_q_filter).count()
 
-    if len(base) < (target_count * 0.75): # Arbitrary threshold, but let's say 75%
-        return None, len(base)
+    if current_count < (target_count * 0.75):
+        return None, current_count
 
-    # Review pool from previous quarters (practice-only)
-    review_pool = []
-    if quarter > 1:
-        review_pool = (
-            Question.query.filter(
-                Question.subject_id == subject_id,
-                Question.grade == grade,
-                Question.quarter < quarter,
-            )
-            .filter(~Question.control_works.any())
-            .all()
-        )
+    # 2. Plan ratios
+    review_needed = int(target_count * 0.25) if quarter > 1 else 0
+    current_needed = target_count - review_needed
+    
+    medium_needed = int(current_needed * 0.5)
+    hard_needed = int(current_needed * 0.25)
+    
+    selected_ids = []
 
-    review_needed = int(target_count * 0.25) # 25% review questions
-    review_qs = _safe_sample(review_pool, review_needed)
-    used_ids = {q.id for q in review_qs}
+    def get_random_ids(filters, count):
+        if count <= 0: return []
+        q = db.session.query(Question.id).filter(*filters)
+        return [row[0] for row in q.order_by(func.random()).limit(count).all()]
 
-    current_needed = target_count - len(review_qs)
-    medium_needed = int(current_needed * 0.5) # 50% of current quarter should be medium
-    hard_needed = int(current_needed * 0.25) # 25% of current quarter should be hard
+    # 3. Select from current quarter by difficulty
+    # Medium
+    selected_ids.extend(get_random_ids(current_q_filter + [Question.difficulty == 2], medium_needed))
+    # Hard
+    selected_ids.extend(get_random_ids(current_q_filter + [Question.difficulty >= 3], hard_needed))
+    
+    # 4. Fill remaining needed for current quarter
+    still_need_current = current_needed - len(selected_ids)
+    if still_need_current > 0:
+        fill_filters = current_q_filter + [~Question.id.in_(selected_ids if selected_ids else [-1])]
+        selected_ids.extend(get_random_ids(fill_filters, still_need_current))
 
-    base_medium = [q for q in base if (q.difficulty or 2) == 2 and q.id not in used_ids]
-    base_hard = [q for q in base if (q.difficulty or 2) >= 3 and q.id not in used_ids]
-    base_other = [q for q in base if q.id not in used_ids and q not in base_medium and q not in base_hard]
+    # 5. Select from review pool (previous quarters)
+    if review_needed > 0:
+        review_filter = [
+            Question.subject_id == subject_id,
+            Question.grade == grade,
+            Question.quarter < quarter,
+            ~Question.control_works.any()
+        ]
+        selected_ids.extend(get_random_ids(review_filter, review_needed))
 
-    selected = []
-    selected.extend(review_qs)
-    selected.extend(_safe_sample(base_medium, medium_needed))
-    used_ids.update(q.id for q in selected)
+    # 6. Final top-up if still not enough (e.g. review pool was empty)
+    final_needed = target_count - len(selected_ids)
+    if final_needed > 0:
+        final_fill_filters = [
+            Question.subject_id == subject_id,
+            Question.grade == grade,
+            ~Question.control_works.any(),
+            ~Question.id.in_(selected_ids if selected_ids else [-1])
+        ]
+        selected_ids.extend(get_random_ids(final_fill_filters, final_needed))
 
-    hard_pick = _safe_sample([q for q in base_hard if q.id not in used_ids], hard_needed)
-    selected.extend(hard_pick)
-    used_ids.update(q.id for q in selected)
-
-    # Fill any missing slots from remaining base
-    if len(selected) < target_count:
-        remaining = [q for q in base_other + base_medium + base_hard if q.id not in used_ids]
-        selected.extend(_safe_sample(remaining, target_count - len(selected)))
-
-    if len(selected) < target_count:
-        # If still short, try to top up from review pool
-        more_review = [q for q in review_pool if q.id not in used_ids]
-        selected.extend(_safe_sample(more_review, target_count - len(selected)))
-
-    if len(selected) < target_count:
-        return None, len(base)
-
-    random.shuffle(selected)
-    return selected, len(base)
+    # 7. Fetch full question objects and Return
+    results = Question.query.filter(Question.id.in_(selected_ids)).all()
+    # Ensure exact count for session safety
+    random.shuffle(results)
+    return results[:target_count], current_count
 
 def calculate_grade(score, total=20):
     percentage = (score / total) * 100

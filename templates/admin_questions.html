@@ -3,53 +3,6 @@
 {% block title %}{{ _('Savollar boshqaruvi') }} - Admin{% endblock %}
 
 {% block extra_js %}
-<script>
-    function translateAllMissing() {
-        const btn = document.getElementById('translate-btn');
-        const originalContent = btn.innerHTML;
-
-        // Get current filters
-        const urlParams = new URLSearchParams(window.location.search);
-        const subject_id = urlParams.get('subject_id');
-        const grade = urlParams.get('grade');
-        const quarter = urlParams.get('quarter');
-
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> {{ _("Tarjimada...") }}';
-
-        function processBatch() {
-            console.log("Processing translation batch...");
-            fetch('{{ url_for("admin.translate_missing_questions") }}', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ subject_id, grade, quarter })
-            })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        if (data.remaining > 0) {
-                            btn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i> ${data.remaining} {{ _("ta qoldi...") }}`;
-                            processBatch(); // Continue next batch
-                        } else {
-                            btn.innerHTML = '<i class="fas fa-check me-2"></i> {{ _("Tayyor!") }}';
-                            setTimeout(() => location.reload(), 1000);
-                        }
-                    } else {
-                        alert("Error: " + data.error);
-                        btn.disabled = false;
-                        btn.innerHTML = originalContent;
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    btn.disabled = false;
-                    btn.innerHTML = originalContent;
-                });
-        }
-
-        processBatch();
-    }
-</script>
 {% endblock %}
 
 {% block content %}
@@ -61,9 +14,6 @@
             <p class="text-muted">{{ _('Test savollarini yaratish va boshqarish bo\'limi') }}</p>
         </div>
         <div class="col-md-4 text-md-end">
-            <button type="button" class="btn btn-warning me-2" id="translate-btn" onclick="translateAllMissing()">
-                <i class="fas fa-language me-2"></i> {{ _('Tarjima qilish') }}
-            </button>
             <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#importModal">
                 <i class="fas fa-file-excel me-2"></i> {{ _('Excel yuklash') }}
             </button>
@@ -384,16 +334,18 @@
                                         <tr>
                                             <td class="fw-bold text-muted">{{ grade }}-sinf</td>
                                             {% for quarter in range(1, 5) %}
-                                            {% set count = all_questions|selectattr('subject_id', 'equalto',
-                                            subject.id)|selectattr('grade', 'equalto', grade|int)|selectattr('quarter',
-                                            'equalto', quarter)|list|length %}
+                                            {% set count = stats_dict.get(subject.id, {}).get(grade|int,
+                                            {}).get(quarter, 0) %}
                                             <td
                                                 class="fw-semibold {% if count >= 200 %}text-success bg-success bg-opacity-10{% elif count >= 20 %}text-warning bg-warning bg-opacity-10{% else %}text-danger bg-danger bg-opacity-10{% endif %}">
                                                 {{ count }}
                                             </td>
                                             {% endfor %}
-                                            {% set total = all_questions|selectattr('subject_id', 'equalto',
-                                            subject.id)|selectattr('grade', 'equalto', grade|int)|list|length %}
+                                            {% set total = 0 %}
+                                            {% for q_count in stats_dict.get(subject.id, {}).get(grade|int, {}).values()
+                                            %}
+                                            {% set total = total + q_count %}
+                                            {% endfor %}
                                             <td class="fw-bold bg-light">{{ total }}</td>
                                         </tr>
                                         {% endfor %}
