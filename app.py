@@ -38,6 +38,23 @@ def create_app():
     app.register_blueprint(admin_bp)
     app.register_blueprint(student_bp)
 
+    @app.errorhandler(404)
+    def page_not_found(e):
+        return render_template('error.html', code=404), 404
+
+    @app.errorhandler(500)
+    def internal_server_error(e):
+        return render_template('error.html', code=500), 500
+
+    @app.errorhandler(Exception)
+    def handle_exception(e):
+        # Log the actual error for debugging
+        app.logger.error(f"Unhandled Exception: {str(e)}")
+        # In production would show custom error page
+        if not app.debug:
+            return render_template('error.html', code=500), 500
+        raise e
+
     with app.app_context():
         # Create tables if not exist (includes new column for Subject)
         # Note: SQLAlchemy bind does not auto-migrate existing tables usually unless drop_all is called or using migration tool.

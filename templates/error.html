@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if code == 404 %}
+{{ _('Sahifa topilmadi') }}
+{% else %}
+{{ _('Xatolik yuz berdi') }}
+{% endif %}
+- Test Platformasi
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .error-container {
+        min-height: 70vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .error-card {
+        max-width: 600px;
+        width: 100%;
+        text-align: center;
+        padding: 50px 40px;
+        position: relative;
+        overflow: visible;
+    }
+
+    .error-code {
+        font-size: 8rem;
+        font-weight: 900;
+        line-height: 1;
+        margin-bottom: 20px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        opacity: 0.2;
+        position: absolute;
+        top: -40px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: -1;
+    }
+
+    .error-icon {
+        font-size: 4rem;
+        color: var(--primary);
+        margin-bottom: 30px;
+        filter: drop-shadow(0 10px 15px rgba(13, 148, 16, 0.2));
+        animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+
+    .error-title {
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: 15px;
+        color: var(--dark);
+    }
+
+    .error-message {
+        color: #64748b;
+        font-size: 1.1rem;
+        margin-bottom: 35px;
+        line-height: 1.6;
+    }
+
+    .error-actions {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+    }
+
+    .btn-home {
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        color: white;
+        padding: 14px 35px;
+        font-weight: 700;
+        font-size: 1rem;
+    }
+
+    .btn-back {
+        background: white;
+        color: var(--dark);
+        border: 2px solid #e2e8f0;
+        padding: 14px 25px;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    .btn-back:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+    }
+
+    .decoration-blob {
+        position: absolute;
+        width: 200px;
+        height: 200px;
+        background: var(--primary);
+        filter: blur(80px);
+        opacity: 0.05;
+        border-radius: 50%;
+        z-index: -1;
+    }
+
+    .blob-1 {
+        top: -50px;
+        left: -50px;
+    }
+
+    .blob-2 {
+        bottom: -50px;
+        right: -50px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="card error-card">
+        <div class="decoration-blob blob-1"></div>
+        <div class="decoration-blob blob-2"></div>
+
+        <div class="error-code">{{ code }}</div>
+
+        <div class="error-icon">
+            {% if code == 404 %}
+            <i class="fas fa-search-location"></i>
+            {% else %}
+            <i class="fas fa-exclamation-triangle"></i>
+            {% endif %}
+        </div>
+
+        <h1 class="error-title">
+            {% if code == 404 %}
+            {{ _('Kechirasiz, sahifa topilmadi') }}
+            {% else %}
+            {{ _('Kutilmagan xatolik yuz berdi') }}
+            {% endif %}
+        </h1>
+
+        <p class="error-message">
+            {% if code == 404 %}
+            {{ _('Siz qidirayotgan sahifa o\'chirilgan, nomi o\'zgartirilgan yoki vaqtincha foydalanish imkoniyati yo\'q
+            bo\'lishi mumkin.') }}
+            {% else %}
+            {{ _('Serverda muammo yuzaga keldi. Bizning muhandislarimiz bu haqda xabardor qilindi va uni tuzatish ustida
+            ishlamoqda.') }}
+            {% endif %}
+        </p>
+
+        <div class="error-actions">
+            <button onclick="window.history.back()" class="btn btn-back">
+                <i class="fas fa-arrow-left me-2"></i> {{ _('Ortga qaytish') }}
+            </button>
+            <a href="{{ url_for('main.index') }}" class="btn btn-home">
+                <i class="fas fa-home me-2"></i> {{ _('Bosh sahifa') }}
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

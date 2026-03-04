@@ -4,6 +4,7 @@ from flask_babel import gettext as _, get_locale
 from extensions import db
 from models import Subject, Question, TestResult, ControlWork
 from datetime import datetime, timedelta
+from sqlalchemy import func
 import random
 import json
 
