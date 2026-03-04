@@ -391,9 +391,11 @@
         }
 
         .flag-icon {
-            width: 20px;
-            height: 15px;
-            object-fit: cover;
+            width: 24px !important;
+            height: 16px !important;
+            object-fit: cover !important;
+            vertical-align: middle;
+            margin-right: 8px;
             border-radius: 2px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
@@ -420,8 +422,10 @@
 <body>
     <nav class="navbar navbar-expand-lg fixed-top">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('main.index') }}">
-                <i class="fas fa-layer-group me-2"></i>Test Platformasi
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.index') }}">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" width="35" height="35" class="me-2"
+                    alt="Logo" style="pointer-events: none;">
+                Test Platformasi
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -466,26 +470,26 @@
                             <div class="lang-btn">
                                 {% set current_lang = get_locale() %}
                                 {% if current_lang == 'uz' %}
-                                <img src="https://flagcdn.com/w40/uz.png" class="flag-icon" alt="UZ"> UZ
+                                <img src="{{ url_for('static', filename='icons/uz.png') }}" class="flag-icon" alt="UZ"> UZ
                                 {% elif current_lang == 'ru' %}
-                                <img src="https://flagcdn.com/w40/ru.png" class="flag-icon" alt="RU"> RU
+                                <img src="{{ url_for('static', filename='icons/ru.png') }}" class="flag-icon" alt="RU"> RU
                                 {% else %}
-                                <img src="https://flagcdn.com/w40/gb.png" class="flag-icon" alt="EN"> EN
+                                <img src="{{ url_for('static', filename='icons/gb.png') }}" class="flag-icon" alt="EN"> EN
                                 {% endif %}
                                 <i class="fas fa-chevron-down small"></i>
                             </div>
                             <div class="lang-menu">
                                 <a href="{{ url_for('main.set_language', lang='uz') }}"
                                     class="lang-item {{ 'active' if current_lang == 'uz' else '' }}">
-                                    <img src="https://flagcdn.com/w40/uz.png" class="flag-icon" alt="UZ"> O'zbekcha
+                                    <img src="{{ url_for('static', filename='icons/uz.png') }}" class="flag-icon" alt="UZ"> O'zbekcha
                                 </a>
                                 <a href="{{ url_for('main.set_language', lang='ru') }}"
                                     class="lang-item {{ 'active' if current_lang == 'ru' else '' }}">
-                                    <img src="https://flagcdn.com/w40/ru.png" class="flag-icon" alt="RU"> Русский
+                                    <img src="{{ url_for('static', filename='icons/ru.png') }}" class="flag-icon" alt="RU"> Русский
                                 </a>
                                 <a href="{{ url_for('main.set_language', lang='en') }}"
                                     class="lang-item {{ 'active' if current_lang == 'en' else '' }}">
-                                    <img src="https://flagcdn.com/w40/gb.png" class="flag-icon" alt="EN"> English
+                                    <img src="{{ url_for('static', filename='icons/gb.png') }}" class="flag-icon" alt="EN"> English
                                 </a>
                             </div>
                         </div>
@@ -503,26 +507,26 @@
                             <div class="lang-btn">
                                 {% set current_lang = get_locale() %}
                                 {% if current_lang == 'uz' %}
-                                <img src="https://flagcdn.com/w40/uz.png" class="flag-icon" alt="UZ"> UZ
+                                <img src="{{ url_for('static', filename='icons/uz.png') }}" class="flag-icon" alt="UZ"> UZ
                                 {% elif current_lang == 'ru' %}
-                                <img src="https://flagcdn.com/w40/ru.png" class="flag-icon" alt="RU"> RU
+                                <img src="{{ url_for('static', filename='icons/ru.png') }}" class="flag-icon" alt="RU"> RU
                                 {% else %}
-                                <img src="https://flagcdn.com/w40/gb.png" class="flag-icon" alt="EN"> EN
+                                <img src="{{ url_for('static', filename='icons/gb.png') }}" class="flag-icon" alt="EN"> EN
                                 {% endif %}
                                 <i class="fas fa-chevron-down small"></i>
                             </div>
                             <div class="lang-menu">
                                 <a href="{{ url_for('main.set_language', lang='uz') }}"
                                     class="lang-item {{ 'active' if current_lang == 'uz' else '' }}">
-                                    <img src="https://flagcdn.com/w40/uz.png" class="flag-icon" alt="UZ"> O'zbekcha
+                                    <img src="{{ url_for('static', filename='icons/uz.png') }}" class="flag-icon" alt="UZ"> O'zbekcha
                                 </a>
                                 <a href="{{ url_for('main.set_language', lang='ru') }}"
                                     class="lang-item {{ 'active' if current_lang == 'ru' else '' }}">
-                                    <img src="https://flagcdn.com/w40/ru.png" class="flag-icon" alt="RU"> Русский
+                                    <img src="{{ url_for('static', filename='icons/ru.png') }}" class="flag-icon" alt="RU"> Русский
                                 </a>
                                 <a href="{{ url_for('main.set_language', lang='en') }}"
                                     class="lang-item {{ 'active' if current_lang == 'en' else '' }}">
-                                    <img src="https://flagcdn.com/w40/gb.png" class="flag-icon" alt="EN"> English
+                                    <img src="{{ url_for('static', filename='icons/gb.png') }}" class="flag-icon" alt="EN"> English
                                 </a>
                             </div>
                         </div>

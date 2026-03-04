@@ -1,4 +1,4 @@
-from flask import Flask, session
+from flask import Flask, session, render_template
 from datetime import timedelta
 from extensions import db, babel
 from routes.main import main_bp
