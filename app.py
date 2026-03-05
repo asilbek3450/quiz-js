@@ -92,6 +92,12 @@ def create_app():
                 conn.execute(db.text("ALTER TABLE subject ADD COLUMN show_results BOOLEAN DEFAULT 1"))
                 conn.commit()
 
+        if 'is_visible' not in columns:
+            print("Migrating database: Adding is_visible to Subject table...")
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE subject ADD COLUMN is_visible BOOLEAN DEFAULT 1"))
+                conn.commit()
+
         # Check and migrate TestResult table
         test_result_columns = [c['name'] for c in inspector.get_columns('test_result')]
         if 'control_work_id' not in test_result_columns:

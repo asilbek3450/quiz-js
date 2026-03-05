@@ -36,6 +36,7 @@ class Subject(db.Model):
     question_count = db.Column(db.Integer, default=20)
     time_limit = db.Column(db.Integer, default=30)
     show_results = db.Column(db.Boolean, default=True)
+    is_visible = db.Column(db.Boolean, default=True)
 
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)

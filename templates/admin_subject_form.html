@@ -95,6 +95,19 @@
                         </div>
                     </div>
 
+                    <div class="mb-3">
+                        <div class="form-check form-switch p-3 bg-light rounded border">
+                            <input class="form-check-input ms-0 me-3" type="checkbox" id="is_visible" name="is_visible"
+                                {% if not subject or subject.is_visible %}checked{% endif %}
+                                style="width: 3em; height: 1.5em;">
+                            <label class="form-check-label d-inline-block align-middle" for="is_visible">
+                                <span class="fw-bold">{{ _('Ko\'rinish (Aktiv)') }}</span>
+                                <small class="d-block text-muted mt-1">{{ _('O\'quvchilarga ushbu fanni ko\'rsatish yoki
+                                    yashirish.') }}</small>
+                            </label>
+                        </div>
+                    </div>
+
                     <div class="mb-4">
                         <div class="form-check form-switch p-3 bg-light rounded border">
                             <input class="form-check-input ms-0 me-3" type="checkbox" id="is_protected"

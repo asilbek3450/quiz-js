@@ -22,6 +22,7 @@
                         <th class="ps-4">ID</th>
                         <th>{{ _('Nomi') }}</th>
                         <th>{{ _('Holati') }}</th>
+                        <th>{{ _('Korinish') }}</th>
                         <th>{{ _('Sinflar') }}</th>
                         <th>{{ _('Savollar soni') }}</th>
                         <th>{{ _('Natijalar') }}</th>
@@ -47,6 +48,13 @@
                                 }}</span>
                             {% else %}
                             <span class="badge bg-light text-dark">{{ _('Oddiy') }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if subject.is_visible %}
+                            <span class="badge bg-info"><i class="fas fa-eye"></i> {{ _('Ochiq') }}</span>
+                            {% else %}
+                            <span class="badge bg-secondary"><i class="fas fa-eye-slash"></i> {{ _('Yopiq') }}</span>
                             {% endif %}
                         </td>
                         <td>

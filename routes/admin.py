@@ -643,6 +643,7 @@ def subject_add():
             question_count = int(request.form.get('question_count', 20))
             time_limit = int(request.form.get('time_limit', 30)) # Added time_limit
             show_results = 'show_results' in request.form
+            is_visible = 'is_visible' in request.form
 
             if not name or not grades:
                 flash(_('Nom va sinflarni kiriting'), 'warning')
@@ -656,7 +657,8 @@ def subject_add():
                 is_protected=is_protected,
                 question_count=question_count,
                 time_limit=time_limit, # Added time_limit
-                show_results=show_results
+                show_results=show_results,
+                is_visible=is_visible
             )
             db.session.add(subject)
             db.session.commit()
@@ -685,6 +687,7 @@ def subject_edit(id):
         subject.question_count = int(request.form.get('question_count', 20))
         subject.time_limit = int(request.form.get('time_limit', 30))
         subject.show_results = 'show_results' in request.form
+        subject.is_visible = 'is_visible' in request.form
 
         db.session.commit()
         flash(_('Fan muvaffaqiyatli o\'zgartirildi'), 'success')
