@@ -459,6 +459,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.feedbacks') }}">
+                            <i class="fas fa-comments me-1"></i> {{ _('Feedbacklar') }}
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('admin.results') }}">
                             <i class="fas fa-list-alt me-1"></i> {{ _('Natijalar') }}
                         </a>
@@ -470,26 +475,32 @@
                             <div class="lang-btn">
                                 {% set current_lang = get_locale() %}
                                 {% if current_lang == 'uz' %}
-                                <img src="{{ url_for('static', filename='icons/uz.png') }}" class="flag-icon" alt="UZ"> UZ
+                                <img src="{{ url_for('static', filename='icons/uz.png') }}" class="flag-icon" alt="UZ">
+                                UZ
                                 {% elif current_lang == 'ru' %}
-                                <img src="{{ url_for('static', filename='icons/ru.png') }}" class="flag-icon" alt="RU"> RU
+                                <img src="{{ url_for('static', filename='icons/ru.png') }}" class="flag-icon" alt="RU">
+                                RU
                                 {% else %}
-                                <img src="{{ url_for('static', filename='icons/gb.png') }}" class="flag-icon" alt="EN"> EN
+                                <img src="{{ url_for('static', filename='icons/gb.png') }}" class="flag-icon" alt="EN">
+                                EN
                                 {% endif %}
                                 <i class="fas fa-chevron-down small"></i>
                             </div>
                             <div class="lang-menu">
                                 <a href="{{ url_for('main.set_language', lang='uz') }}"
                                     class="lang-item {{ 'active' if current_lang == 'uz' else '' }}">
-                                    <img src="{{ url_for('static', filename='icons/uz.png') }}" class="flag-icon" alt="UZ"> O'zbekcha
+                                    <img src="{{ url_for('static', filename='icons/uz.png') }}" class="flag-icon"
+                                        alt="UZ"> O'zbekcha
                                 </a>
                                 <a href="{{ url_for('main.set_language', lang='ru') }}"
                                     class="lang-item {{ 'active' if current_lang == 'ru' else '' }}">
-                                    <img src="{{ url_for('static', filename='icons/ru.png') }}" class="flag-icon" alt="RU"> Русский
+                                    <img src="{{ url_for('static', filename='icons/ru.png') }}" class="flag-icon"
+                                        alt="RU"> Русский
                                 </a>
                                 <a href="{{ url_for('main.set_language', lang='en') }}"
                                     class="lang-item {{ 'active' if current_lang == 'en' else '' }}">
-                                    <img src="{{ url_for('static', filename='icons/gb.png') }}" class="flag-icon" alt="EN"> English
+                                    <img src="{{ url_for('static', filename='icons/gb.png') }}" class="flag-icon"
+                                        alt="EN"> English
                                 </a>
                             </div>
                         </div>
@@ -507,26 +518,32 @@
                             <div class="lang-btn">
                                 {% set current_lang = get_locale() %}
                                 {% if current_lang == 'uz' %}
-                                <img src="{{ url_for('static', filename='icons/uz.png') }}" class="flag-icon" alt="UZ"> UZ
+                                <img src="{{ url_for('static', filename='icons/uz.png') }}" class="flag-icon" alt="UZ">
+                                UZ
                                 {% elif current_lang == 'ru' %}
-                                <img src="{{ url_for('static', filename='icons/ru.png') }}" class="flag-icon" alt="RU"> RU
+                                <img src="{{ url_for('static', filename='icons/ru.png') }}" class="flag-icon" alt="RU">
+                                RU
                                 {% else %}
-                                <img src="{{ url_for('static', filename='icons/gb.png') }}" class="flag-icon" alt="EN"> EN
+                                <img src="{{ url_for('static', filename='icons/gb.png') }}" class="flag-icon" alt="EN">
+                                EN
                                 {% endif %}
                                 <i class="fas fa-chevron-down small"></i>
                             </div>
                             <div class="lang-menu">
                                 <a href="{{ url_for('main.set_language', lang='uz') }}"
                                     class="lang-item {{ 'active' if current_lang == 'uz' else '' }}">
-                                    <img src="{{ url_for('static', filename='icons/uz.png') }}" class="flag-icon" alt="UZ"> O'zbekcha
+                                    <img src="{{ url_for('static', filename='icons/uz.png') }}" class="flag-icon"
+                                        alt="UZ"> O'zbekcha
                                 </a>
                                 <a href="{{ url_for('main.set_language', lang='ru') }}"
                                     class="lang-item {{ 'active' if current_lang == 'ru' else '' }}">
-                                    <img src="{{ url_for('static', filename='icons/ru.png') }}" class="flag-icon" alt="RU"> Русский
+                                    <img src="{{ url_for('static', filename='icons/ru.png') }}" class="flag-icon"
+                                        alt="RU"> Русский
                                 </a>
                                 <a href="{{ url_for('main.set_language', lang='en') }}"
                                     class="lang-item {{ 'active' if current_lang == 'en' else '' }}">
-                                    <img src="{{ url_for('static', filename='icons/gb.png') }}" class="flag-icon" alt="EN"> English
+                                    <img src="{{ url_for('static', filename='icons/gb.png') }}" class="flag-icon"
+                                        alt="EN"> English
                                 </a>
                             </div>
                         </div>

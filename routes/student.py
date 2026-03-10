@@ -2,13 +2,38 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_babel import gettext as _, get_locale
 from extensions import db
-from models import Subject, Question, TestResult, ControlWork
+from models import Subject, Question, TestResult, ControlWork, Feedback
 from datetime import datetime, timedelta
 from sqlalchemy import func
 import random
 import json
 
 student_bp = Blueprint('student', __name__, url_prefix='/student')
+
+@student_bp.route('/feedback', methods=['POST'])
+def submit_feedback():
+    data = request.get_json()
+    if not data or 'message' not in data or 'user_uuid' not in data:
+        return jsonify({'success': False, 'error': 'Invalid data'}), 400
+    
+    new_feedback = Feedback(
+        user_uuid=data['user_uuid'],
+        message=data['message']
+    )
+    db.session.add(new_feedback)
+    db.session.commit()
+    return jsonify({'success': True})
+
+@student_bp.route('/my_feedbacks/<user_uuid>')
+def get_my_feedbacks(user_uuid):
+    feedbacks = Feedback.query.filter_by(user_uuid=user_uuid).order_by(Feedback.created_at.asc()).all()
+    return jsonify([{
+        'id': f.id,
+        'message': f.message,
+        'admin_response': f.admin_response,
+        'created_at': f.created_at.strftime('%Y-%m-%d %H:%M'),
+        'responded_at': f.responded_at.strftime('%Y-%m-%d %H:%M') if f.responded_at else None
+    } for f in feedbacks])
 
 def _safe_sample(seq, k: int):
     if k <= 0:

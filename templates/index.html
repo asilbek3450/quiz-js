@@ -8,9 +8,14 @@
         <h1 class="display-3 fw-bold mb-3 project-title">
             <span class="text-gradient">{{ _('Test topshirish') }}</span> {{ _('Platformasi') }}
         </h1>
-        <p class="lead text-muted mb-5">
+        <p class="lead text-muted mb-4">
             {{ _('Informatika va zamonaviy texnologiyalar bo\'yicha') }} <br> {{ _('interaktiv test sinovlari') }}
         </p>
+        <div class="mb-5">
+            <button class="btn btn-soft-primary btn-lg px-5 pill-btn fw-bold shadow-sm" onclick="toggleChat()">
+                <i class="fas fa-comment-dots me-2"></i> {{ _('Feedback qoldirish') }}
+            </button>
+        </div>
     </div>
 </div>
 
@@ -77,6 +82,37 @@
                 </a>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Floating Chat Window for Feedback -->
+<div class="fab-container shadow-lg animate-fade-in-up" style="animation-delay: 0.5s;">
+    <button class="btn btn-primary fab-btn" onclick="toggleChat()" id="feedbackFab">
+        <i class="fas fa-comment-dots fa-2x"></i>
+        <span class="fab-badge pulse d-none" id="studentUnreadBadge"></span>
+    </button>
+</div>
+
+<div class="student-chat-window shadow-lg d-none" id="studentChatWindow">
+    <div class="chat-header bg-primary text-white p-3 d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0"><i class="fas fa-comments me-2"></i> {{ _('Fikr va mulohazalar') }}</h6>
+        <button class="btn-close btn-close-white" onclick="toggleChat()"></button>
+    </div>
+    <div class="chat-body p-3 overflow-auto" id="feedbackHistory" style="height: 350px;">
+        <!-- History will be loaded here -->
+    </div>
+    <div class="chat-footer p-3 border-top bg-light">
+        <form id="feedbackForm">
+            <div class="input-group">
+                <textarea id="feedbackMessage" class="form-control border-0 bg-white" rows="1" required
+                    placeholder="{{ _('Savol yoki fikringiz...') }}" style="resize: none;"></textarea>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+            <small class="text-muted mt-2 d-block" style="font-size: 0.65rem;">{{ _('Xabaringiz anonim tarzda
+                yuboriladi') }}</small>
+        </form>
     </div>
 </div>
 
@@ -166,5 +202,205 @@
             transform: translateY(0);
         }
     }
+
+    .btn-soft-primary {
+        background: rgba(99, 102, 241, 0.1);
+        color: var(--primary);
+        border: 1px solid rgba(99, 102, 241, 0.2);
+    }
+
+    .btn-soft-primary:hover {
+        background: var(--primary);
+        color: white;
+    }
+
+    .student-chat-window {
+        position: fixed;
+        bottom: 110px;
+        right: 30px;
+        width: 350px;
+        background: white;
+        border-radius: 15px;
+        z-index: 1001;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .student-chat-window.d-none {
+        display: none !important;
+        transform: scale(0.8) translateY(20px);
+        opacity: 0;
+    }
+
+    .chat-bubble {
+        padding: 10px 15px;
+        border-radius: 18px;
+        margin-bottom: 10px;
+        max-width: 85%;
+        font-size: 0.85rem;
+        position: relative;
+    }
+
+    .user-msg {
+        background: var(--primary);
+        color: white;
+        margin-left: auto;
+        border-bottom-right-radius: 4px;
+        box-shadow: 0 4px 10px rgba(99, 102, 241, 0.2);
+    }
+
+    .admin-msg {
+        background: #f1f5f9;
+        color: #334155;
+        margin-right: auto;
+        border-bottom-left-radius: 4px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .fab-container {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 1000;
+    }
+
+    .fab-btn {
+        width: 65px;
+        height: 65px;
+        border-radius: 50% !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 25px rgba(13, 148, 16, 0.4);
+        position: relative;
+        transition: all 0.3s ease;
+    }
+
+    .fab-btn:hover {
+        transform: scale(1.1);
+    }
+
+    .fab-badge {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 18px;
+        height: 18px;
+        background: #ef4444;
+        border: 2px solid white;
+        border-radius: 50%;
+    }
+
+    .pulse {
+        animation: pulse-animation 2s infinite;
+    }
+
+    @keyframes pulse-animation {
+        0% {
+            box-shadow: 0 0 0 0px rgba(239, 68, 68, 0.4);
+        }
+
+        70% {
+            box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+        }
+
+        100% {
+            box-shadow: 0 0 0 0px rgba(239, 68, 68, 0);
+        }
+    }
 </style>
+
+<script>
+    let lastMessageCount = 0;
+
+    function toggleChat() {
+        const window = document.getElementById('studentChatWindow');
+        const isOpening = window.classList.contains('d-none');
+        window.classList.toggle('d-none');
+
+        if (isOpening) {
+            loadFeedbackHistory(true);
+            document.getElementById('studentUnreadBadge').classList.add('d-none');
+        }
+    }
+
+    function loadFeedbackHistory(shouldScroll = false) {
+        const userUuid = localStorage.getItem('user_feedback_uuid');
+        if (!userUuid) return;
+
+        fetch(`/student/my_feedbacks/${userUuid}`)
+            .then(res => res.json())
+            .then(feedbacks => {
+                const historyDiv = document.getElementById('feedbackHistory');
+
+                // Check for new messages to show notification if window is closed
+                const chatWindow = document.getElementById('studentChatWindow');
+                if (feedbacks.length > lastMessageCount && chatWindow.classList.contains('d-none') && lastMessageCount !== 0) {
+                    document.getElementById('studentUnreadBadge').classList.remove('d-none');
+                }
+                lastMessageCount = feedbacks.length;
+
+                if (feedbacks.length === 0) {
+                    historyDiv.innerHTML = `<div class="text-center text-muted small py-5">
+                <i class="fas fa-comments fa-3x mb-3 opacity-25"></i><br>
+                Hozircha xabarlar yo'q
+            </div>`;
+                    return;
+                }
+
+                historyDiv.innerHTML = feedbacks.map(f => `
+            <div class="chat-bubble user-msg animate-fade-in-up">
+                <div>${f.message}</div>
+                <div class="text-end" style="font-size: 0.6rem; opacity: 0.7; margin-top: 4px;">${f.created_at}</div>
+            </div>
+            ${f.admin_response ? `
+            <div class="chat-bubble admin-msg animate-fade-in-up">
+                <div class="fw-bold small mb-1 text-primary">Admin:</div>
+                <div>${f.admin_response}</div>
+                <div class="text-end" style="font-size: 0.6rem; opacity: 0.7; margin-top: 4px;">${f.responded_at}</div>
+            </div>
+            ` : ''}
+        `).join('');
+
+                if (shouldScroll) {
+                    setTimeout(() => {
+                        historyDiv.scrollTop = historyDiv.scrollHeight;
+                    }, 50);
+                }
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        let userUuid = localStorage.getItem('user_feedback_uuid');
+        if (!userUuid) {
+            userUuid = 'user-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now();
+            localStorage.setItem('user_feedback_uuid', userUuid);
+        }
+
+        loadFeedbackHistory(); // Initial load to set message count
+        setInterval(() => loadFeedbackHistory(false), 10000); // Poll for new responses every 10s
+
+        const feedbackForm = document.getElementById('feedbackForm');
+        feedbackForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const input = document.getElementById('feedbackMessage');
+            const message = input.value.trim();
+            if (!message) return;
+
+            fetch('/student/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_uuid: userUuid, message: message })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        input.value = '';
+                        loadFeedbackHistory(true);
+                    }
+                });
+        });
+    });
+</script>
 {% endblock %}

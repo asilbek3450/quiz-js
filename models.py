@@ -89,3 +89,12 @@ class TestResult(db.Model):
     control_work = db.relationship('ControlWork', backref='results')
     
     subject = db.relationship('Subject', backref='results')
+
+class Feedback(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_uuid = db.Column(db.String(36), nullable=False) # UUID for anonymity
+    message = db.Column(db.Text, nullable=False)
+    admin_response = db.Column(db.Text)
+    is_read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    responded_at = db.Column(db.DateTime)

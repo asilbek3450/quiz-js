@@ -5,7 +5,7 @@ from routes.main import main_bp
 from routes.admin import admin_bp
 from routes.student import student_bp
 import markdown
-from models import Admin, Subject, Question
+from models import Admin, Subject, Question, Feedback
 
 def create_app():
     app = Flask(__name__, template_folder="templates")
@@ -141,9 +141,7 @@ def create_app():
 
 app = create_app()
 
+import os
 if __name__ == '__main__':
-    # Port 5000 is occupied by ControlCenter (AirPlay Receiver) on macOS Monterey+
-    # Using 5001 to avoid conflict
-    import os
     port = int(os.environ.get("PORT", 5050))
     app.run(host='0.0.0.0', port=port, debug=True)

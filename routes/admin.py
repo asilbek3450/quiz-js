@@ -2,13 +2,123 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from flask_babel import gettext as _
 from werkzeug.security import check_password_hash
 from extensions import db
-from models import Admin, Subject, Question, TestResult, ControlWork
+from models import Admin, Subject, Question, TestResult, ControlWork, Feedback
 from deep_translator import GoogleTranslator
 from datetime import datetime
 import json
 from sqlalchemy import func
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
+
+@admin_bp.route('/feedbacks')
+@admin_bp.route('/feedbacks/<user_uuid>')
+def feedbacks(user_uuid=None):
+    # Group by user_uuid and get the latest message for each
+    subquery = db.session.query(
+        Feedback.user_uuid,
+        func.max(Feedback.created_at).label('latest_msg')
+    ).group_by(Feedback.user_uuid).subquery()
+
+    conversations = db.session.query(Feedback).join(
+        subquery, (Feedback.user_uuid == subquery.c.user_uuid) & (Feedback.created_at == subquery.c.latest_msg)
+    ).order_by(Feedback.created_at.desc()).all()
+
+    # Get unread counts for each user
+    unread_counts = db.session.query(
+        Feedback.user_uuid,
+        func.count(Feedback.id)
+    ).filter(Feedback.is_read == False).group_by(Feedback.user_uuid).all()
+    unread_map = {u[0]: u[1] for u in unread_counts}
+
+    active_messages = []
+    if user_uuid:
+        active_messages = Feedback.query.filter_by(user_uuid=user_uuid).order_by(Feedback.created_at.asc()).all()
+        # Mark as read for this specific user
+        Feedback.query.filter_by(user_uuid=user_uuid, is_read=False).update({Feedback.is_read: True})
+        db.session.commit()
+    
+    return render_template('admin_feedbacks.html', 
+                           conversations=conversations, 
+                           active_messages=active_messages,
+                           active_uuid=user_uuid,
+                           unread_map=unread_map)
+
+@admin_bp.route('/api/feedback/conversations')
+def api_conversations():
+    # Similar grouping to feedbacks route but returns JSON
+    subquery = db.session.query(
+        Feedback.user_uuid,
+        func.max(Feedback.created_at).label('latest_msg')
+    ).group_by(Feedback.user_uuid).subquery()
+
+    conversations = db.session.query(Feedback).join(
+        subquery, (Feedback.user_uuid == subquery.c.user_uuid) & (Feedback.created_at == subquery.c.latest_msg)
+    ).order_by(Feedback.created_at.desc()).all()
+
+    unread_counts = db.session.query(
+        Feedback.user_uuid,
+        func.count(Feedback.id)
+    ).filter(Feedback.is_read == False).group_by(Feedback.user_uuid).all()
+    unread_map = {u[0]: u[1] for u in unread_counts}
+
+    return jsonify([{
+        'user_uuid': c.user_uuid,
+        'message': c.message,
+        'created_at': c.created_at.strftime('%H:%M'),
+        'unread_count': unread_map.get(c.user_uuid, 0)
+    } for c in conversations])
+
+@admin_bp.route('/api/feedback/messages/<user_uuid>')
+def api_messages(user_uuid):
+    messages = Feedback.query.filter_by(user_uuid=user_uuid).order_by(Feedback.created_at.asc()).all()
+    # Mark as read when fetched via API too
+    Feedback.query.filter_by(user_uuid=user_uuid, is_read=False).update({Feedback.is_read: True})
+    db.session.commit()
+    
+    return jsonify([{
+        'id': m.id,
+        'message': m.message,
+        'admin_response': m.admin_response,
+        'created_at': m.created_at.strftime('%H:%M, %d-%m'),
+        'responded_at': m.responded_at.strftime('%H:%M, %d-%m') if m.responded_at else None
+    } for m in messages])
+
+@admin_bp.route('/feedback/respond/<user_uuid>', methods=['POST'])
+def respond_feedback(user_uuid):
+    response_text = request.form.get('response', '').strip()
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.args.get('ajax') == '1'
+    
+    if response_text:
+        latest_feedback = Feedback.query.filter_by(user_uuid=user_uuid).order_by(Feedback.created_at.desc()).first()
+        if latest_feedback:
+            latest_feedback.admin_response = response_text
+            latest_feedback.responded_at = datetime.utcnow()
+            db.session.commit()
+            
+            if is_ajax:
+                return jsonify({
+                    'success': True,
+                    'message': _('Javobingiz muvaffaqiyatli yuborildi'),
+                    'response': response_text,
+                    'responded_at': latest_feedback.responded_at.strftime('%H:%M, %d-%m')
+                })
+            flash(_('Javobingiz muvaffaqiyatli yuborildi'), 'success')
+    else:
+        if is_ajax:
+            return jsonify({'success': False, 'error': _('Javob matni bo\'sh bo\'lmasligi kerak')}), 400
+        flash(_('Javob matni bo\'sh bo\'lmasligi kerak'), 'warning')
+    
+    return redirect(url_for('admin.feedbacks', user_uuid=user_uuid))
+
+@admin_bp.route('/feedback/clear/<user_uuid>', methods=['POST'])
+def clear_feedback(user_uuid):
+    try:
+        Feedback.query.filter_by(user_uuid=user_uuid).delete()
+        db.session.commit()
+        return jsonify({'success': True, 'message': _('Chat muvaffaqiyatli tozalandi')})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 def auto_translate(text, target):
     if not text or not target:
