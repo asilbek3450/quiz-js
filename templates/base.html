@@ -562,11 +562,13 @@
                         </ul>
                     </li>
 
+                    {% if session.admin_role == 'admin' %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('admin.feedbacks') }}">
                             <i class="fas fa-comments"></i> {{ _('Feedbacklar') }}
                         </a>
                     </li>
+                    {% endif %}
                     {% if session.admin_role == 'admin' %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('admin.teachers') }}">
