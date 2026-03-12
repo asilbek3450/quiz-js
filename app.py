@@ -42,9 +42,9 @@ def create_app():
     app.register_blueprint(student_bp)
     
     
-    @app.route('/google123456789.html')
+    @app.route('/googleef6572d0f05659ed.html')
     def google_verification():
-        return send_from_directory('.', 'google123456789.html')
+        return send_from_directory('.', 'googleef6572d0f05659ed.html')
 
     @app.get("/robots.txt")
     def robots_txt():
