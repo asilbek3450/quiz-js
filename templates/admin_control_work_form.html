@@ -144,7 +144,7 @@
             {% if control_work %}
             {% for q in control_work.questions %}{ { q.id } }, {% endfor %}
     {% endif %}
-    ];
+        ];
 
     function fetchQuestions() {
         const subject_id = subjectSelect.value;

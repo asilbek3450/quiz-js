@@ -193,11 +193,13 @@
                                         title="{{ _('Tahrirlash') }}">
                                         <i class="fas fa-edit text-primary"></i>
                                     </a>
+                                    {% if session.admin_role == 'admin' %}
                                     <button type="button" class="btn btn-light border text-danger"
                                         onclick="deleteQuestion({{ question.id }}, this)" data-bs-toggle="tooltip"
                                         title="{{ _('O\'chirish') }}">
                                         <i class="fas fa-trash"></i>
                                     </button>
+                                    {% endif %}
                                 </div>
                             </td>
                         </tr>

@@ -68,6 +68,24 @@ def create_app():
         from sqlalchemy import inspect
         inspector = inspect(db.engine)
         
+        # Check and migrate Admin table
+        admin_columns = [c['name'] for c in inspector.get_columns('admin')]
+        if 'role' not in admin_columns:
+            print("Migrating database: Adding role to Admin table...")
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE admin ADD COLUMN role VARCHAR(20) DEFAULT 'admin'"))
+                conn.commit()
+        if 'phone_number' not in admin_columns:
+            print("Migrating database: Adding phone_number to Admin table...")
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE admin ADD COLUMN phone_number VARCHAR(20)"))
+                conn.commit()
+        if 'email' not in admin_columns:
+            print("Migrating database: Adding email to Admin table...")
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE admin ADD COLUMN email VARCHAR(100)"))
+                conn.commit()
+
         # Check and migrate Subject table
         columns = [c['name'] for c in inspector.get_columns('subject')]
         if 'is_protected' not in columns:
@@ -143,5 +161,5 @@ app = create_app()
 
 import os
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5050))
+    port = int(os.environ.get("PORT", 5005))
     app.run(host='0.0.0.0', port=port, debug=True)

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('O\'qituvchi qo\'shish') }} - Admin{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="d-flex align-items-center mb-4">
+            <a href="{{ url_for('admin.teachers') }}" class="btn btn-soft-secondary me-3">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <h2 class="fw-bold mb-0">{{ _('Yangi o\'qituvchi') }}</h2>
+        </div>
+
+        <div class="card border-0 shadow-lg p-4">
+            <form action="{{ url_for('admin.teacher_add') }}" method="POST">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">{{ _('F.I.O') }} <span class="text-danger">*</span></label>
+                    <input type="text" name="full_name" class="form-control" placeholder="E.g. Eshmatov Toshmat"
+                        required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">{{ _('Username') }} <span class="text-danger">*</span></label>
+                    <input type="text" name="username" class="form-control" placeholder="eshmat123" required>
+                    <div class="form-text small">{{ _('Tizimga kirish uchun foydalaniladi') }}</div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">{{ _('Telefon raqami') }}</label>
+                        <input type="text" name="phone_number" class="form-control" placeholder="+998901234567">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">{{ _('Email') }}</label>
+                        <input type="email" name="email" class="form-control" placeholder="example@mail.com">
+                    </div>
+                </div>
+
+                <div class="alert alert-info border-0 shadow-none mb-4" style="background: rgba(13, 148, 16, 0.05);">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-shield-alt fa-2x me-3 text-primary"></i>
+                        <div>
+                            <h6 class="mb-1 fw-bold">{{ _('Xavfsizlik') }}</h6>
+                            <p class="small mb-0 text-muted">{{ _('Parol tizim tomonidan avtomatik ravishada yaratiladi
+                                va saqlangandan so\'ng sizga ko\'rsatiladi.') }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save me-2"></i> {{ _('Saqlash va yaratish') }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-soft-secondary {
+        background-color: rgba(100, 116, 139, 0.1);
+        color: var(--secondary);
+    }
+
+    .btn-soft-secondary:hover {
+        background-color: var(--secondary);
+        color: white;
+    }
+</style>
+{% endblock %}

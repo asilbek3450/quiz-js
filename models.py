@@ -25,6 +25,9 @@ class Admin(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
     full_name = db.Column(db.String(100), nullable=False)
+    role = db.Column(db.String(20), default='teacher') # 'admin' or 'teacher'
+    phone_number = db.Column(db.String(20))
+    email = db.Column(db.String(100))
 
 class Subject(db.Model):
     id = db.Column(db.Integer, primary_key=True)

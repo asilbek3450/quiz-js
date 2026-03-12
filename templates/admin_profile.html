@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center animate-fade-in-up">
+    <div class="col-md-8 col-lg-6">
+        <div class="card border-0 shadow-lg overflow-hidden">
+            <div class="card-header bg-gradient-primary text-white p-4 text-center position-relative">
+                <div class="profile-avatar-wrapper mb-3">
+                    <div class="profile-avatar bg-white text-primary rounded-circle d-inline-flex align-items-center justify-content-center shadow"
+                        style="width: 80px; height: 80px; font-size: 2rem; font-weight: bold;">
+                        {{ admin.full_name[:1] if admin.full_name else admin.username[:1]|upper }}
+                    </div>
+                </div>
+                <h3 class="fw-bold mb-1">{{ admin.full_name }}</h3>
+                <span class="badge bg-white text-primary rounded-pill px-3">{{ _('Admin') if admin.role == 'admin' else
+                    _('O\'qituvchi') }}</span>
+
+                <style>
+                    .bg-gradient-primary {
+                        background: linear-gradient(135deg, #4f46e5, #06b6d4);
+                    }
+
+                    .profile-avatar-wrapper {
+                        margin-top: 10px;
+                    }
+                </style>
+            </div>
+
+            <div class="card-body p-4 p-md-5">
+                <form method="POST">
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <label class="form-label fw-bold small text-uppercase text-muted">{{ _('Foydalanuvchi nomi')
+                                }}</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="fas fa-at"></i></span>
+                                <input type="text" class="form-control border-start-0 bg-light"
+                                    value="{{ admin.username }}" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase text-muted">{{ _('To\'liq ism')
+                                }}</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="fas fa-user"></i></span>
+                                <input type="text" name="full_name" class="form-control border-start-0"
+                                    value="{{ admin.full_name }}" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <label class="form-label fw-bold small text-uppercase text-muted">{{ _('Telefon raqam')
+                                }}</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="fas fa-phone"></i></span>
+                                <input type="text" name="phone_number" class="form-control border-start-0"
+                                    value="{{ admin.phone_number or '' }}" placeholder="+998 90 123 45 67">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase text-muted">{{ _('Email') }}</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i
+                                        class="fas fa-envelope"></i></span>
+                                <input type="email" name="email" class="form-control border-start-0"
+                                    value="{{ admin.email or '' }}" placeholder="example@mail.com">
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4 opacity-10">
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-uppercase text-primary">{{ _('Parolni
+                            o\'zgartirish') }}</label>
+                        <p class="text-muted small mb-3">{{ _('Agar parolni o\'zgartirmoqchi bo\'lsangiz, quyidagi
+                            maydonni to\'ldiring. Bo\'sh qoldirilsa, parol o\'zgarmaydi.') }}</p>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="fas fa-lock"></i></span>
+                            <input type="password" name="new_password" class="form-control border-start-0"
+                                placeholder="{{ _('Yangi parol (kamida 6 ta belgi)') }}">
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-5">
+                        <button type="submit" class="btn btn-primary py-3 rounded-3 shadow-sm fw-bold">
+                            <i class="fas fa-save me-2"></i> {{ _('Ma\'lumotlarni saqlash') }}
+                        </button>
+                        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-light py-3 rounded-3 border fw-bold">
+                            {{ _('Bekor qilish') }}
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .input-group-text {
+        border-radius: 12px 0 0 12px;
+        border: 1px solid #e2e8f0;
+        border-right: none;
+        color: #64748b;
+    }
+
+    .form-control {
+        border-radius: 0 12px 12px 0 !important;
+        border: 1px solid #e2e8f0;
+        padding: 0.75rem 1rem;
+    }
+
+    .form-control:focus {
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    .animate-fade-in-up {
+        animation: fadeInUp 0.5s ease-out forwards;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}

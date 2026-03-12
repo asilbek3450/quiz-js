@@ -76,11 +76,13 @@
                                 class="btn btn-sm btn-outline-primary me-2">
                                 <i class="fas fa-edit"></i>
                             </a>
+                            {% if session.admin_role == 'admin' %}
                             <a href="{{ url_for('admin.subject_delete', id=subject.id) }}"
                                 class="btn btn-sm btn-outline-danger"
                                 onclick="return confirm('{{ _('Haqiqatan ham bu fanni o\'chirmoqchimisiz? Unga bog\'liq barcha ma\'lumotlar tekshiriladi.') }}')">
                                 <i class="fas fa-trash"></i>
                             </a>
+                            {% endif %}
                         </td>
                     </tr>
                     {% else %}

@@ -5,39 +5,83 @@
     <div class="row g-0 h-100">
         <!-- Sidebar: Conversation List -->
         <div class="col-md-4 col-lg-3 border-end chat-sidebar bg-light d-flex flex-column h-100">
-            <div class="p-4 border-bottom bg-white">
-                <h5 class="fw-bold mb-0 text-gradient d-flex align-items-center">
-                    <i class="fas fa-comments me-2"></i> {{ _('Muloqotlar') }}
-                </h5>
-                <small class="text-muted">{{ conversations|length }} {{ _('ta faol chat') }}</small>
+            <div class="p-4 border-bottom bg-white d-flex align-items-center justify-content-between">
+                <div>
+                    <h5 class="fw-bold mb-0 text-gradient d-flex align-items-center">
+                        <i class="fas fa-comments me-2"></i> {{ _('Muloqotlar') }}
+                    </h5>
+                    <small class="text-muted">{{ conversations|length }} {{ _('ta faol chat') }}</small>
+                </div>
+                {% if session.admin_role == 'admin' %}
+                <div class="dropdown">
+                    <button class="btn btn-light btn-sm rounded-circle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-tasks"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="toggleSelectionMode()">
+                                <i class="fas fa-check-square me-2"></i> {{ _('Tanlash') }}
+                            </a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item text-danger" href="javascript:void(0)"
+                                onclick="clearAllConversations()">
+                                <i class="fas fa-trash-alt me-2"></i> {{ _('Hammasini o\'chirish') }}
+                            </a></li>
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Bulk Actions Bar -->
+            <div id="bulkActionsToolbar"
+                class="p-2 bg-soft-primary border-bottom d-none align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <input type="checkbox" id="selectAllConversations" class="form-check-input ms-2"
+                        onchange="selectAll(this.checked)">
+                    <small class="fw-bold">{{ _('Hammasi') }}</small>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-danger btn-sm rounded-pill px-3" onclick="deleteSelected()">
+                        <i class="fas fa-trash me-1"></i> {{ _('O\'chirish') }}
+                    </button>
+                    <button class="btn btn-light btn-sm rounded-pill px-3" onclick="toggleSelectionMode()">
+                        {{ _('Bekor qilish') }}
+                    </button>
+                </div>
             </div>
 
             <div class="flex-grow-1 overflow-auto conversations-list">
                 {% for conv in conversations %}
-                <a href="{{ url_for('admin.feedbacks', user_uuid=conv.user_uuid) }}"
-                    class="list-group-item list-group-item-action p-3 border-0 border-bottom d-flex align-items-center gap-3 transition-all {{ 'active-conv' if active_uuid == conv.user_uuid }}">
-                    <div class="avatar-wrapper position-relative">
-                        <div class="avatar-circle bg-soft-primary text-primary shadow-sm">
-                            <i class="fas fa-user-secret"></i>
-                        </div>
-                        {% if unread_map.get(conv.user_uuid) %}
-                        <span
-                            class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light animate-pulse"
-                            style="font-size: 0.6rem;">
-                            {{ unread_map.get(conv.user_uuid) }}
-                        </span>
-                        {% endif %}
+                <div class="d-flex align-items-center border-bottom conversation-item-wrapper">
+                    <div class="selection-box ps-3 d-none">
+                        <input type="checkbox" class="form-check-input conv-checkbox" value="{{ conv.user_uuid }}">
                     </div>
+                    <a href="{{ url_for('admin.feedbacks', user_uuid=conv.user_uuid) }}"
+                        class="list-group-item list-group-item-action p-3 border-0 d-flex align-items-center gap-3 transition-all flex-grow-1 {{ 'active-conv' if active_uuid == conv.user_uuid }}">
+                        <div class="avatar-wrapper position-relative">
+                            <div class="avatar-circle bg-soft-primary text-primary shadow-sm">
+                                <i class="fas fa-user-secret"></i>
+                            </div>
+                            {% if unread_map.get(conv.user_uuid) %}
+                            <span
+                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light animate-pulse"
+                                style="font-size: 0.6rem;">
+                                {{ unread_map.get(conv.user_uuid) }}
+                            </span>
+                            {% endif %}
+                        </div>
 
-                    <div class="flex-grow-1 overflow-hidden">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <h6 class="fw-bold mb-0 text-truncate student-id">ID: {{ conv.user_uuid[:8] }}</h6>
-                            <small class="text-muted" style="font-size: 0.65rem;">{{ conv.created_at.strftime('%H:%M')
-                                }}</small>
+                        <div class="flex-grow-1 overflow-hidden">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <h6 class="fw-bold mb-0 text-truncate student-id">ID: {{ conv.user_uuid[:8] }}</h6>
+                                <small class="text-muted" style="font-size: 0.65rem;">{{
+                                    conv.created_at.strftime('%H:%M') }}</small>
+                            </div>
+                            <p class="small text-muted mb-0 text-truncate last-msg">{{ conv.message }}</p>
                         </div>
-                        <p class="small text-muted mb-0 text-truncate last-msg">{{ conv.message }}</p>
-                    </div>
-                </a>
+                    </a>
+                </div>
                 {% else %}
                 <div class="p-5 text-center text-muted">
                     <i class="fas fa-comment-slash fa-3x mb-3 opacity-25"></i>
@@ -64,6 +108,7 @@
                         </small>
                     </div>
                 </div>
+                {% if session.admin_role == 'admin' %}
                 <div class="dropdown">
                     <button class="btn btn-light btn-sm rounded-circle" type="button" data-bs-toggle="dropdown">
                         <i class="fas fa-ellipsis-v"></i>
@@ -74,6 +119,7 @@
                                 _('Tozalash') }}</a></li>
                     </ul>
                 </div>
+                {% endif %}
             </div>
 
             <!-- Messages Container -->
@@ -160,6 +206,11 @@
     .conversations-list .list-group-item:hover {
         background: #f1f5f9;
         cursor: pointer;
+    }
+
+    .selection-box {
+        transition: width 0.3s ease;
+        overflow: hidden;
     }
 
     .avatar-circle {
@@ -276,7 +327,10 @@
 
 <script>
     const activeUuid = "{{ active_uuid or '' }}";
-    let lastMsgId = 0;
+    const isAdmin = {{ (session.admin_role == 'admin') | tojson }};
+    let lastMsgId = parseInt("{{ active_messages[-1].id if active_messages else 0 }}") || 0;
+    let isSelectionMode = false;
+    let selectedUuids = new Set();
 
     function scrollBottom() {
         const chatMessages = document.getElementById('chatMessages');
@@ -286,6 +340,12 @@
     }
 
     function updateConversations() {
+        if (!isAdmin || isSelectionMode) {
+            if (!isAdmin && isSelectionMode) isSelectionMode = false; // Guard
+            if (!isAdmin) {
+                // Normal refresh for teachers without selection boxes
+            } else if (isSelectionMode) return;
+        }
         fetch("{{ url_for('admin.api_conversations') }}")
             .then(res => res.json())
             .then(conversations => {
@@ -296,72 +356,153 @@
                 conversations.forEach(c => {
                     const isActive = c.user_uuid === activeUuid;
                     html += `
-                <a href="/admin/feedbacks/${c.user_uuid}" 
-                   class="list-group-item list-group-item-action p-3 border-0 border-bottom d-flex align-items-center gap-3 transition-all ${isActive ? 'active-conv' : ''}">
-                    <div class="avatar-wrapper position-relative">
-                        <div class="avatar-circle bg-soft-primary text-primary shadow-sm">
-                            <i class="fas fa-user-secret"></i>
-                        </div>
-                        ${c.unread_count > 0 ? `
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light animate-pulse" style="font-size: 0.6rem;">
-                            ${c.unread_count}
-                        </span>` : ''}
+                <div class="d-flex align-items-center border-bottom conversation-item-wrapper">
+                    <div class="selection-box ps-3 ${isAdmin && isSelectionMode ? '' : 'd-none'}">
+                        <input type="checkbox" class="form-check-input conv-checkbox" value="${c.user_uuid}" onchange="toggleUuid('${c.user_uuid}', this.checked)" ${selectedUuids.has(c.user_uuid) ? 'checked' : ''}>
                     </div>
-                    <div class="flex-grow-1 overflow-hidden">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <h6 class="fw-bold mb-0 text-truncate student-id">ID: ${c.user_uuid.substring(0, 8)}</h6>
-                            <small class="text-muted" style="font-size: 0.65rem;">${c.created_at}</small>
+                    <a href="/admin/feedbacks/${c.user_uuid}" 
+                       class="list-group-item list-group-item-action p-3 border-0 d-flex align-items-center gap-3 transition-all flex-grow-1 ${isActive ? 'active-conv' : ''}">
+                        <div class="avatar-wrapper position-relative">
+                            <div class="avatar-circle bg-soft-primary text-primary shadow-sm">
+                                <i class="fas fa-user-secret"></i>
+                            </div>
+                            ${c.unread_count > 0 ? `
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light animate-pulse" style="font-size: 0.6rem;">
+                                ${c.unread_count}
+                            </span>` : ''}
                         </div>
-                        <p class="small text-muted mb-0 text-truncate last-msg">${c.message}</p>
-                    </div>
-                </a>`;
+                        <div class="flex-grow-1 overflow-hidden">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <h6 class="fw-bold mb-0 text-truncate student-id">ID: ${c.user_uuid.substring(0, 8)}</h6>
+                                <small class="text-muted" style="font-size: 0.65rem;">${c.created_at}</small>
+                            </div>
+                            <p class="small text-muted mb-0 text-truncate last-msg">${c.message}</p>
+                        </div>
+                    </a>
+                </div>`;
                 });
                 list.innerHTML = html || `<div class="p-5 text-center text-muted"><i class="fas fa-comment-slash fa-3x mb-3 opacity-25"></i><p class="small mb-0">{{ _('Hozircha chatlar yo\'q') }}</p></div>`;
             });
     }
 
+    function toggleSelectionMode() {
+        isSelectionMode = !isSelectionMode;
+        const toolbar = document.getElementById('bulkActionsToolbar');
+        const selectionBoxes = document.querySelectorAll('.selection-box');
+
+        if (isSelectionMode) {
+            toolbar.classList.remove('d-none');
+            toolbar.classList.add('d-flex');
+            selectionBoxes.forEach(box => box.classList.remove('d-none'));
+            selectedUuids.clear();
+            document.querySelectorAll('.conv-checkbox').forEach(cb => cb.checked = false);
+            document.getElementById('selectAllConversations').checked = false;
+        } else {
+            toolbar.classList.add('d-none');
+            toolbar.classList.remove('d-flex');
+            selectionBoxes.forEach(box => box.classList.add('d-none'));
+        }
+    }
+
+    function toggleUuid(uuid, checked) {
+        if (checked) selectedUuids.add(uuid);
+        else selectedUuids.delete(uuid);
+    }
+
+    function selectAll(checked) {
+        const checkboxes = document.querySelectorAll('.conv-checkbox');
+        checkboxes.forEach(cb => {
+            cb.checked = checked;
+            toggleUuid(cb.value, checked);
+        });
+    }
+
+    function deleteSelected() {
+        if (selectedUuids.size === 0) {
+            alert("{{ _('Hech qanday chat tanlanmadi') }}");
+            return;
+        }
+        if (!confirm("{{ _('Tanlangan chatlarni o\'chirib tashlamoqchimisiz?') }}")) return;
+
+        fetch("{{ url_for('admin.bulk_delete_feedback') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ user_uuids: Array.from(selectedUuids) })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const wasActiveSelected = selectedUuids.has(activeUuid);
+                    toggleSelectionMode();
+                    if (wasActiveSelected) {
+                        window.location.href = "{{ url_for('admin.feedbacks') }}";
+                    } else {
+                        updateConversations();
+                    }
+                } else {
+                    alert(data.error || 'Server error');
+                }
+            });
+    }
+
+    function clearAllConversations() {
+        if (!confirm("{{ _('Barcha chatlarni butunlay tozalab tashlamoqchimisiz? Bu amalni ortga qaytarib bo\'lmaydi!') }}")) return;
+
+        fetch("{{ url_for('admin.clear_all_feedback') }}", {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = "{{ url_for('admin.feedbacks') }}";
+                } else {
+                    alert(data.error || 'Server error');
+                }
+            });
+    }
+
     function pollMessages() {
         if (!activeUuid) return;
-        fetch(`/admin/api/feedback/messages/${activeUuid}`)
+        fetch(`/admin/api/feedback/messages/${activeUuid}?since_id=${lastMsgId}`)
             .then(res => res.json())
             .then(messages => {
                 if (messages.length === 0) return;
 
-                const lastId = messages[messages.length - 1].id;
-                if (lastId === lastMsgId) return; // No new messages
-
                 const container = document.getElementById('chatMessages');
-                let html = '';
                 messages.forEach(msg => {
-                    html += `
-                <div class="message-group student-message mb-4">
-                    <div class="d-flex align-items-end gap-2">
-                        <div class="message-bubble bg-light px-4 py-3 rounded-4 shadow-sm">
-                            <div class="message-content">${msg.message}</div>
-                            <div class="message-meta text-end mt-1">
-                                <small class="text-muted">${msg.created_at}</small>
+                    const studentMsgHtml = `
+                        <div class="message-group student-message mb-4 animate-fade-in">
+                            <div class="d-flex align-items-end gap-2">
+                                <div class="message-bubble bg-light px-4 py-3 rounded-4 shadow-sm">
+                                    <div class="message-content">${msg.message}</div>
+                                    <div class="message-meta text-end mt-1">
+                                        <small class="text-muted">${msg.created_at}</small>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-                ${msg.admin_response ? `
-                <div class="message-group admin-message mb-4 d-flex justify-content-end">
-                    <div class="d-flex align-items-end gap-2">
-                        <div class="message-bubble admin-bubble px-4 py-3 rounded-4 shadow-sm text-white bg-primary">
-                            <div class="message-content">${msg.admin_response}</div>
-                            <div class="message-meta text-end mt-1">
-                                <small class="text-white-50">${msg.responded_at}</small>
+                        </div>`;
+
+                    const adminMsgHtml = msg.admin_response ? `
+                        <div class="message-group admin-message mb-4 d-flex justify-content-end animate-fade-in">
+                            <div class="d-flex align-items-end gap-2">
+                                <div class="message-bubble admin-bubble px-4 py-3 rounded-4 shadow-sm text-white bg-primary">
+                                    <div class="message-content">${msg.admin_response}</div>
+                                    <div class="message-meta text-end mt-1">
+                                        <small class="text-white-50">${msg.responded_at}</small>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                </div>` : ''}`;
+                        </div>` : '';
+
+                    container.insertAdjacentHTML('beforeend', studentMsgHtml + adminMsgHtml);
+                    lastMsgId = msg.id;
                 });
 
-                container.innerHTML = html;
-                if (lastId !== lastMsgId) {
-                    scrollBottom();
-                    lastMsgId = lastId;
-                }
+                scrollBottom();
             });
     }
 
@@ -395,6 +536,18 @@
             setInterval(pollMessages, 5000);
         }
         setInterval(updateConversations, 12000);
+
+        // Click handler for selection mode
+        document.querySelector('.conversations-list').addEventListener('click', function (e) {
+            if (!isSelectionMode) return;
+            const item = e.target.closest('.conversation-item-wrapper');
+            if (item && !e.target.classList.contains('conv-checkbox')) {
+                e.preventDefault();
+                const cb = item.querySelector('.conv-checkbox');
+                cb.checked = !cb.checked;
+                toggleUuid(cb.value, cb.checked);
+            }
+        });
 
         const replyForm = document.getElementById('adminReplyForm');
         if (replyForm) {

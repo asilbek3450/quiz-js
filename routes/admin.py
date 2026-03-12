@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_babel import gettext as _
 from werkzeug.security import check_password_hash
 from extensions import db
@@ -7,8 +7,24 @@ from deep_translator import GoogleTranslator
 from datetime import datetime
 import json
 from sqlalchemy import func
+from functools import wraps
+import secrets
+import string
+from werkzeug.security import generate_password_hash
+# import admin_required
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'admin_id' not in session:
+            return redirect(url_for('admin.login'))
+        if session.get('admin_role') != 'admin':
+            flash(_('Bu amalni bajarish uchun admin huquqi kerak'), 'danger')
+            return redirect(url_for('admin.dashboard'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 @admin_bp.route('/feedbacks')
 @admin_bp.route('/feedbacks/<user_uuid>')
@@ -70,10 +86,18 @@ def api_conversations():
 
 @admin_bp.route('/api/feedback/messages/<user_uuid>')
 def api_messages(user_uuid):
-    messages = Feedback.query.filter_by(user_uuid=user_uuid).order_by(Feedback.created_at.asc()).all()
+    since_id = request.args.get('since_id', type=int)
+    
+    query = Feedback.query.filter_by(user_uuid=user_uuid).order_by(Feedback.created_at.asc())
+    if since_id:
+        query = query.filter(Feedback.id > since_id)
+        
+    messages = query.all()
+    
     # Mark as read when fetched via API too
-    Feedback.query.filter_by(user_uuid=user_uuid, is_read=False).update({Feedback.is_read: True})
-    db.session.commit()
+    if messages:
+        Feedback.query.filter_by(user_uuid=user_uuid, is_read=False).update({Feedback.is_read: True})
+        db.session.commit()
     
     return jsonify([{
         'id': m.id,
@@ -111,6 +135,7 @@ def respond_feedback(user_uuid):
     return redirect(url_for('admin.feedbacks', user_uuid=user_uuid))
 
 @admin_bp.route('/feedback/clear/<user_uuid>', methods=['POST'])
+@admin_required
 def clear_feedback(user_uuid):
     try:
         Feedback.query.filter_by(user_uuid=user_uuid).delete()
@@ -119,6 +144,59 @@ def clear_feedback(user_uuid):
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@admin_bp.route('/api/feedback/bulk-delete', methods=['POST'])
+@admin_required
+def bulk_delete_feedback():
+    data = request.get_json() or {}
+    user_uuids = data.get('user_uuids', [])
+    if not user_uuids:
+        return jsonify({'success': False, 'error': _('Hech qanday chat tanlanmadi')}), 400
+    
+    try:
+        Feedback.query.filter(Feedback.user_uuid.in_(user_uuids)).delete(synchronize_session=False)
+        db.session.commit()
+        return jsonify({'success': True, 'message': _('Tanlangan chatlar muvaffaqiyatli o\'chirildi')})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@admin_bp.route('/api/feedback/clear-all', methods=['POST'])
+@admin_required
+def clear_all_feedback():
+    try:
+        Feedback.query.delete()
+        db.session.commit()
+        return jsonify({'success': True, 'message': _('Barcha chatlar muvaffaqiyatli tozalandi')})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@admin_bp.route('/profile', methods=['GET', 'POST'])
+def profile():
+    admin = Admin.query.get_or_404(session['admin_id'])
+    if request.method == 'POST':
+        full_name = request.form.get('full_name')
+        phone = request.form.get('phone_number')
+        email = request.form.get('email')
+        new_password = request.form.get('new_password')
+        
+        admin.full_name = full_name
+        admin.phone_number = phone
+        admin.email = email
+        
+        if new_password:
+            if len(new_password) < 6:
+                flash(_('Parol kamida 6 ta belgidan iborat bo\'lishi kerak'), 'danger')
+            else:
+                admin.password_hash = generate_password_hash(new_password)
+                flash(_('Parol muvaffaqiyatli yangilandi'), 'success')
+        
+        db.session.commit()
+        flash(_('Profil ma\'lumotlari yangilandi'), 'success')
+        return redirect(url_for('admin.profile'))
+        
+    return render_template('admin_profile.html', admin=admin)
 
 def auto_translate(text, target):
     if not text or not target:
@@ -131,12 +209,15 @@ def auto_translate(text, target):
         print(f"Translation error ({target}): {e}")
         return text
 
+
+
 @admin_bp.before_request
 def require_login():
-    allowed_routes = ['admin.login', 'admin.result_delete']
-    # Note: result_delete is POST, might be called from outside? No, internal.
-    # admin routes usually require login except login itself.
-    if request.endpoint != 'admin.login' and 'admin_id' not in session:
+    # Only login route is allowed without check
+    if request.endpoint == 'admin.login':
+        return
+        
+    if 'admin_id' not in session:
         return redirect(url_for('admin.login'))
 
 @admin_bp.route('/login', methods=['GET', 'POST'])
@@ -152,6 +233,7 @@ def login():
         if admin and check_password_hash(admin.password_hash, password):
             session['admin_id'] = admin.id
             session['admin_name'] = admin.full_name
+            session['admin_role'] = admin.role or 'teacher'
             flash(_('Xush kelibsiz {}!').format(admin.full_name), 'success')
             return redirect(url_for('admin.dashboard'))
         else:
@@ -163,6 +245,7 @@ def login():
 def logout():
     session.pop('admin_id', None)
     session.pop('admin_name', None)
+    session.pop('admin_role', None)
     flash(_('Tizimdan chiqdingiz'), 'info')
     return redirect(url_for('main.index'))
 
@@ -402,6 +485,7 @@ def translate_missing_questions():
         return jsonify({'success': False, 'error': str(e)}), 400
         
 @admin_bp.route('/question/delete/<int:id>', methods=['GET'])
+@admin_required
 def question_delete(id):
     question = Question.query.get_or_404(id)
     db.session.delete(question)
@@ -707,6 +791,7 @@ def results():
                          avg_score=round(avg_score, 1))
 
 @admin_bp.route('/result/delete/<int:id>', methods=['POST'])
+@admin_required
 def result_delete(id):
     result = TestResult.query.get_or_404(id)
     db.session.delete(result)
@@ -719,6 +804,7 @@ def result_delete(id):
     return redirect(url_for('admin.results'))
 
 @admin_bp.route('/results/delete-by-date', methods=['POST'])
+@admin_required
 def results_delete_by_date():
     date_str = request.form['delete_date']
     try:
@@ -806,6 +892,7 @@ def subject_edit(id):
     return render_template('admin_subject_form.html', subject=subject)
 
 @admin_bp.route('/subject/delete/<int:id>')
+@admin_required
 def subject_delete(id):
     subject = Subject.query.get_or_404(id)
     if subject.questions or subject.results:
@@ -901,6 +988,7 @@ def control_work_edit(id):
     return render_template('admin_control_work_form.html', subjects=subjects, control_work=cw)
 
 @admin_bp.route('/control_work/delete/<int:id>')
+@admin_required
 def control_work_delete(id):
     cw = ControlWork.query.get_or_404(id)
     # Removing relations with results (set to NULL via db behavior, or cascade depending on schema)
@@ -917,14 +1005,14 @@ def control_work_delete(id):
     flash(_('Nazorat ishi o\'chirildi'), 'success')
     return redirect(url_for('admin.control_works'))
 
-@admin_bp.route('/api/get_questions')
+@admin_bp.route('/api/questions')
 def api_get_questions():
     subject_id = request.args.get('subject_id', type=int)
     grade = request.args.get('grade', type=int)
     quarter = request.args.get('quarter', type=int)
     
     if not all([subject_id, grade, quarter]):
-        return {'questions': []}
+        return jsonify({'questions': []})
         
     questions = Question.query.filter_by(
         subject_id=subject_id,
@@ -945,3 +1033,73 @@ def api_get_questions():
         })
         
     return {'questions': data}
+
+# --- Teacher Management ---
+
+@admin_bp.route('/teachers')
+@admin_required
+def teachers():
+    teachers_list = Admin.query.filter_by(role='teacher').all()
+    return render_template('admin_teachers.html', teachers=teachers_list)
+
+@admin_bp.route('/teachers/add', methods=['GET', 'POST'])
+@admin_required
+def teacher_add():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        full_name = request.form.get('full_name')
+        phone = request.form.get('phone_number')
+        email = request.form.get('email')
+        
+        if Admin.query.filter_by(username=username).first():
+            flash(_('Bu username band'), 'danger')
+            return redirect(url_for('admin.teacher_add'))
+            
+        # Generate random 8-char password (alphabet + digits)
+        alphabet = string.ascii_letters + string.digits
+        password = ''.join(secrets.choice(alphabet) for i in range(8))
+        
+        new_teacher = Admin(
+            username=username,
+            password_hash=generate_password_hash(password),
+            full_name=full_name,
+            role='teacher',
+            phone_number=phone,
+            email=email
+        )
+        db.session.add(new_teacher)
+        db.session.commit()
+        
+        flash(_('O\'qituvchi muvaffaqiyatli qo\'shildi. Parol: {}').format(password), 'success')
+        return redirect(url_for('admin.teachers'))
+        
+    return render_template('admin_teacher_add.html')
+
+@admin_bp.route('/teachers/delete/<int:id>')
+@admin_required
+def teacher_delete(id):
+    teacher = Admin.query.get_or_404(id)
+    if teacher.role == 'admin':
+        flash(_('Adminni o\'chirib bo\'lmaydi'), 'danger')
+    else:
+        db.session.delete(teacher)
+        db.session.commit()
+        flash(_('O\'qituvchi o\'chirildi'), 'success')
+    return redirect(url_for('admin.teachers'))
+
+@admin_bp.route('/teachers/reset-password/<int:id>')
+@admin_required
+def teacher_reset_password(id):
+    teacher = Admin.query.get_or_404(id)
+    if teacher.role == 'admin':
+        flash(_('Admin parolini bu yerdan o\'zgartirib bo\'lmaydi'), 'danger')
+        return redirect(url_for('admin.teachers'))
+        
+    alphabet = string.ascii_letters + string.digits
+    password = ''.join(secrets.choice(alphabet) for i in range(8))
+    
+    teacher.password_hash = generate_password_hash(password)
+    db.session.commit()
+    
+    flash(_('{} uchun yangi parol: {}').format(teacher.full_name, password), 'success')
+    return redirect(url_for('admin.teachers'))

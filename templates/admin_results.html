@@ -108,10 +108,12 @@
                         class="btn btn-success me-2">
                         <i class="fas fa-file-excel me-2"></i> {{ _('Excelga yuklash') }}
                     </a>
+                    {% if session.admin_role == 'admin' %}
                     <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal"
                         data-bs-target="#deleteByDateModal">
                         <i class="fas fa-trash-alt me-2"></i> {{ _('Kun bo\'yicha o\'chirish') }}
                     </button>
+                    {% endif %}
                 </div>
             </div>
 
@@ -186,10 +188,12 @@
                                 <small>{{ result.test_date.strftime('%d.%m.%Y %H:%M') }}</small>
                             </td>
                             <td>
+                                {% if session.admin_role == 'admin' %}
                                 <button type="button" class="btn btn-sm btn-outline-danger"
                                     onclick="deleteResult({{ result.id }}, this)" title="{{ _('O\'chirish') }}">
                                     <i class="fas fa-trash"></i>
                                 </button>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}
@@ -344,6 +348,7 @@
 
 {% block extra_js %}
 <!-- Delete By Date Modal -->
+{% if session.admin_role == 'admin' %}
 <div class="modal fade" id="deleteByDateModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -371,6 +376,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const btn = document.getElementById('smartScrollBtn');

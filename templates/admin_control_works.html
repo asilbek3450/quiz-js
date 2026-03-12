@@ -46,11 +46,13 @@
                                 title="{{ _('Tahrirlash') }}">
                                 <i class="fas fa-edit"></i>
                             </a>
+                            {% if session.admin_role == 'admin' %}
                             <button type="button" class="btn btn-sm btn-outline-danger rounded-circle"
-                                onclick="deleteControlWork({{ cw.id }}, this, '{{ cw.title|escape }}')"
+                                onclick="deleteControlWork({{ cw.id }}, this, {{ cw.title|tojson }})"
                                 title="{{ _('O\'chirish') }}">
                                 <i class="fas fa-trash"></i>
                             </button>
+                            {% endif %}
                         </td>
                     </tr>
                     {% else %}
