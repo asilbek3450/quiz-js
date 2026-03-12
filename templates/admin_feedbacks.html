@@ -125,8 +125,8 @@
                     {% set sender = msg.sender or 'student' %}
                     {% set text = msg.text or (msg.message if sender == 'student' else msg.admin_response) %}
                     {% if sender == 'admin' %}
-                    <div class="message-group admin-message mb-3 d-flex justify-content-end">
-                        <div class="d-flex align-items-end gap-2">
+                    <div class="message-group admin-message mb-3">
+                        <div class="d-flex align-items-end gap-2 justify-content-end w-100">
                             <div class="message-bubble admin-bubble px-3 py-2 rounded-4 shadow-sm text-white bg-primary">
                                 <div class="message-content">{{ text }}</div>
                                 <div class="message-meta text-end mt-1">
@@ -137,7 +137,7 @@
                     </div>
                     {% else %}
                     <div class="message-group student-message mb-3">
-                        <div class="d-flex align-items-end gap-2">
+                        <div class="d-flex align-items-end gap-2 justify-content-start w-100">
                             <div class="message-bubble bg-light px-3 py-2 rounded-4 shadow-sm">
                                 <div class="message-content">{{ text }}</div>
                                 <div class="message-meta text-end mt-1">
@@ -240,6 +240,10 @@
         width: auto;
         display: inline-block;
         position: relative;
+    }
+
+    .message-group {
+        width: 100%;
     }
 
     .student-message .message-bubble {
@@ -642,7 +646,8 @@
             });
 
             document.getElementById('replyTextarea').addEventListener('keydown', function (e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                // Enter = send. Shift+Enter or Ctrl/Cmd+Enter = new line.
+                if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
                     e.preventDefault();
                     replyForm.dispatchEvent(new Event('submit'));
                 }

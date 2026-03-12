@@ -240,14 +240,26 @@
         max-width: 85%;
         font-size: 0.85rem;
         position: relative;
+        display: inline-block;
+    }
+
+    #feedbackHistory {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .bubble-text {
         white-space: pre-wrap;
         overflow-wrap: anywhere;
+        word-break: break-word;
+        line-height: 1.3;
     }
 
     .user-msg {
         background: var(--primary);
         color: white;
-        margin-left: auto;
+        align-self: flex-end;
         border-bottom-right-radius: 4px;
         box-shadow: 0 4px 10px rgba(10, 117, 12, 0.18);
     }
@@ -255,7 +267,7 @@
     .admin-msg {
         background: #f1f5f9;
         color: #334155;
-        margin-right: auto;
+        align-self: flex-start;
         border-bottom-left-radius: 4px;
         border: 1px solid #e2e8f0;
     }
@@ -356,16 +368,14 @@
                     const text = f.text || '';
                     if (!text) return '';
                     if (sender === 'admin') {
-                        return `
-                        <div class="chat-bubble admin-msg animate-fade-in-up">
+                        return `<div class="chat-bubble admin-msg animate-fade-in-up">
                             <div class="fw-bold small mb-1 text-primary">Admin:</div>
-                            <div>${text}</div>
+                            <div class="bubble-text">${text}</div>
                             <div class="text-end" style="font-size: 0.6rem; opacity: 0.7; margin-top: 4px;">${f.created_at}</div>
                         </div>`;
                     }
-                    return `
-                    <div class="chat-bubble user-msg animate-fade-in-up">
-                        <div>${text}</div>
+                    return `<div class="chat-bubble user-msg animate-fade-in-up">
+                        <div class="bubble-text">${text}</div>
                         <div class="text-end" style="font-size: 0.6rem; opacity: 0.7; margin-top: 4px;">${f.created_at}</div>
                     </div>`;
                 }).join('');
@@ -408,6 +418,17 @@
                     }
                 });
         });
+
+        const feedbackMessage = document.getElementById('feedbackMessage');
+        if (feedbackMessage) {
+            // Enter = send. Shift+Enter or Ctrl/Cmd+Enter = new line.
+            feedbackMessage.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    feedbackForm.dispatchEvent(new Event('submit'));
+                }
+            });
+        }
     });
 </script>
 {% endblock %}
