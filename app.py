@@ -1,5 +1,5 @@
-from flask import Flask, session
-from datetime import timedelta
+from flask import Flask, Response, session
+from datetime import date, timedelta
 from extensions import db, babel
 from routes.main import main_bp
 from routes.admin import admin_bp
@@ -13,6 +13,8 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test_platform.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=60)
+    # Public base URL for sitemap/OG tags (PythonAnywhere domain)
+    app.config.setdefault("PUBLIC_BASE_URL", "https://jahonschool.pythonanywhere.com")
 
     db.init_app(app)
     
@@ -37,6 +39,50 @@ def create_app():
     app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(student_bp)
+
+    @app.get("/robots.txt")
+    def robots_txt():
+        base = app.config.get("PUBLIC_BASE_URL", "").rstrip("/")
+        body = "\n".join([
+            "User-agent: *",
+            "Allow: /",
+            f"Sitemap: {base}/sitemap.xml",
+            "",
+        ])
+        return Response(body, content_type="text/plain; charset=utf-8")
+
+    @app.get("/sitemap.xml")
+    def sitemap_xml():
+        base = app.config.get("PUBLIC_BASE_URL", "").rstrip("/")
+
+        today = date.today().isoformat()
+        urls = [
+            {"path": "/", "changefreq": "daily", "priority": "1.0"},
+            {"path": "/about", "changefreq": "monthly", "priority": "0.7"},
+            {"path": "/contact", "changefreq": "yearly", "priority": "0.5"},
+            {"path": "/services", "changefreq": "monthly", "priority": "0.7"},
+            {"path": "/blog", "changefreq": "weekly", "priority": "0.8"},
+        ]
+
+        urls_xml = "\n".join([
+            "\n".join([
+                "  <url>",
+                f"    <loc>{base}{u['path']}</loc>",
+                f"    <lastmod>{today}</lastmod>",
+                f"    <changefreq>{u['changefreq']}</changefreq>",
+                f"    <priority>{u['priority']}</priority>",
+                "  </url>",
+            ])
+            for u in urls
+        ])
+        xml = "\n".join([
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+            urls_xml,
+            "</urlset>",
+            "",
+        ])
+        return Response(xml, content_type="application/xml; charset=utf-8")
 
     with app.app_context():
         # Create tables if not exist (includes new column for Subject)

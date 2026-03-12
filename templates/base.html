@@ -4,7 +4,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Test Platformasi{% endblock %}</title>
+
+    {# ============ SEO defaults (override per page via blocks) ============ #}
+    {% set site_name = "Test Platformasi" %}
+    {% set base_url = (config.get("PUBLIC_BASE_URL", "") or request.url_root).rstrip("/") %}
+    {% set default_title = site_name %}
+    {% set default_description = "Informatika va zamonaviy texnologiyalar bo'yicha interaktiv test platformasi." %}
+    {% set default_keywords = "asilbek, mirolimov, test, quiz, informatika, python, maktab, o'quvchi, o'qituvchi" %}
+    {% set default_robots = "index, follow" %}
+    {% set default_og_image = base_url + url_for('static', filename='img/logo.png') %}
+
+    <title>{% block title %}{{ default_title }}{% endblock %}</title>
+    <meta name="description"
+        content="{% block meta_description %}{{ (seo_description or default_description) | striptags }}{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}{{ default_keywords }}{% endblock %}">
+    <meta name="robots" content="{% block meta_robots %}{{ default_robots }}{% endblock %}">
+
+    {# Open Graph tags #}
+    <meta property="og:title" content="{{ self.title() | striptags }}">
+    <meta property="og:description"
+        content="{{ (self.meta_description() or (seo_description or default_description)) | striptags }}">
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:image" content="{% block og_image %}{{ default_og_image }}{% endblock %}">
+
+    {# Twitter card tags #}
+    <meta name="twitter:card" content="{% block twitter_card %}summary_large_image{% endblock %}">
+    <meta name="twitter:title" content="{{ self.title() | striptags }}">
+    <meta name="twitter:description"
+        content="{{ (self.meta_description() or (seo_description or default_description)) | striptags }}">
+    <meta name="twitter:image" content="{% block twitter_image %}{{ default_og_image }}{% endblock %}">
+
+    {# JSON-LD structured data (Website) #}
+    <script type="application/ld+json">
+        {{ {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": site_name,
+            "url": base_url
+        } | tojson }}
+    </script>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
@@ -465,7 +505,8 @@
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg fixed-top">
+    <header>
+        <nav class="navbar navbar-expand-lg fixed-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.index') }}">
                 <img src="{{ url_for('static', filename='img/logo.png') }}" width="35" height="35" class="me-2"
@@ -629,11 +670,12 @@
                 </ul>
             </div>
         </div>
-    </nav>
+        </nav>
+    </header>
 
     <div style="height: 100px;"></div>
 
-    <div class="main-container">
+    <main class="main-container" role="main">
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         {% for category, message in messages %}
@@ -647,7 +689,13 @@
         {% endwith %}
 
         {% block content %}{% endblock %}
-    </div>
+    </main>
+
+    <footer class="py-4">
+        <div class="container text-center small text-muted">
+            <span>&copy; Asilbek Mirolimov | {{ site_name }}.</span>
+        </div>
+    </footer>
 
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
