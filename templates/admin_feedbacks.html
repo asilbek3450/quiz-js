@@ -71,7 +71,7 @@
                                 <small class="text-muted" style="font-size: 0.65rem;">{{
                                     conv.created_at.strftime('%H:%M') }}</small>
                             </div>
-                            <p class="small text-muted mb-0 text-truncate last-msg">{{ conv.message }}</p>
+                            <p class="small text-muted mb-0 text-truncate last-msg">{{ conv.text or conv.message or conv.admin_response }}</p>
                         </div>
                     </a>
                 </div>
@@ -122,38 +122,40 @@
             <!-- Messages Container -->
             <div class="flex-grow-1 p-4 overflow-auto chat-container" id="chatMessages">
                 {% for msg in active_messages %}
-                <!-- Student Message -->
-                <div class="message-group student-message mb-3">
-                    <div class="d-flex align-items-end gap-2">
-                        <div class="message-bubble bg-light px-3 py-2 rounded-4 shadow-sm">
-                            <div class="message-content">{{ msg.message }}</div>
-                            <div class="message-meta text-end mt-1">
-                                <small class="text-muted">{{ msg.created_at.strftime('%H:%M, %d-%m') }}</small>
+                    {% set sender = msg.sender or 'student' %}
+                    {% set text = msg.text or (msg.message if sender == 'student' else msg.admin_response) %}
+                    {% if sender == 'admin' %}
+                    <div class="message-group admin-message mb-3 d-flex justify-content-end">
+                        <div class="d-flex align-items-end gap-2">
+                            <div class="message-bubble admin-bubble px-3 py-2 rounded-4 shadow-sm text-white bg-primary">
+                                <div class="message-content">{{ text }}</div>
+                                <div class="message-meta text-end mt-1">
+                                    <small class="text-white-50">{{ msg.created_at.strftime('%H:%M, %d-%m') }}</small>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Admin Response -->
-                {% if msg.admin_response %}
-                <div class="message-group admin-message mb-3 d-flex justify-content-end">
-                    <div class="d-flex align-items-end gap-2">
-                        <div class="message-bubble admin-bubble px-3 py-2 rounded-4 shadow-sm text-white bg-primary">
-                            <div class="message-content">{{ msg.admin_response }}</div>
-                            <div class="message-meta text-end mt-1">
-                                <small class="text-white-50">{{ msg.responded_at.strftime('%H:%M, %d-%m') if
-                                    msg.responded_at }}</small>
+                    {% else %}
+                    <div class="message-group student-message mb-3">
+                        <div class="d-flex align-items-end gap-2">
+                            <div class="message-bubble bg-light px-3 py-2 rounded-4 shadow-sm">
+                                <div class="message-content">{{ text }}</div>
+                                <div class="message-meta text-end mt-1">
+                                    <small class="text-muted">{{ msg.created_at.strftime('%H:%M, %d-%m') }}</small>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                {% endif %}
+                    {% endif %}
                 {% endfor %}
             </div>
 
             <!-- Chat Footer: Input Area -->
             <div class="p-3 border-top bg-light">
-                <form id="adminReplyForm" class="d-flex gap-2 align-items-center">
+                <form id="adminReplyForm"
+                    class="d-flex gap-2 align-items-center"
+                    method="post"
+                    action="{{ url_for('admin.respond_feedback', user_uuid=active_uuid) }}">
                     <div class="flex-grow-1 bg-white rounded-pill px-4 py-1 d-flex align-items-center shadow-sm border">
                         <textarea id="replyTextarea" name="response"
                             class="form-control border-0 bg-transparent shadow-none"
@@ -234,8 +236,8 @@
     }
 
     .message-bubble {
-        max-width: 75%;
-        width: fit-content;
+        max-width: 80%;
+        width: auto;
         display: inline-block;
         position: relative;
     }
@@ -253,7 +255,9 @@
     .message-content {
         line-height: 1.4;
         font-size: 1rem;
-        word-wrap: break-word;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        word-break: break-word;
     }
 
     .message-meta {
@@ -485,44 +489,61 @@
             .catch(err => alert('Xatolik: ' + err.message));
     }
 
-    function pollMessages() {
+    function renderMessages(messages, { replace = false } = {}) {
+        const container = document.getElementById('chatMessages');
+        if (!container) return;
+        if (replace) container.innerHTML = '';
+
+        messages.forEach(msg => {
+            const sender = msg.sender || 'student';
+            const text = msg.text || '';
+            if (!text) return;
+
+            if (sender === 'admin') {
+                const adminHtml = `
+                <div class="message-group admin-message mb-3 d-flex justify-content-end ${replace ? '' : 'animate-fade-in'}">
+                    <div class="d-flex align-items-end gap-2">
+                        <div class="message-bubble admin-bubble px-3 py-2 rounded-4 shadow-sm text-white bg-primary">
+                            <div class="message-content">${text}</div>
+                            <div class="message-meta text-end mt-1">
+                                <small class="text-white-50">${msg.created_at || ''}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+                container.insertAdjacentHTML('beforeend', adminHtml);
+            } else {
+                const studentHtml = `
+                <div class="message-group student-message mb-3 ${replace ? '' : 'animate-fade-in'}">
+                    <div class="d-flex align-items-end gap-2">
+                        <div class="message-bubble bg-light px-3 py-2 rounded-4 shadow-sm">
+                            <div class="message-content">${text}</div>
+                            <div class="message-meta text-end mt-1">
+                                <small class="text-muted">${msg.created_at || ''}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+                container.insertAdjacentHTML('beforeend', studentHtml);
+            }
+
+            lastMsgId = msg.id;
+        });
+
+        scrollBottom();
+    }
+
+    function fetchMessages({ fullRefresh = false } = {}) {
         if (!activeUuid) return;
-        fetch(`/admin/api/feedback/messages/${activeUuid}?since_id=${lastMsgId}`)
+        const url = fullRefresh || !lastMsgId
+            ? `/admin/api/feedback/messages/${activeUuid}`
+            : `/admin/api/feedback/messages/${activeUuid}?since_id=${lastMsgId}`;
+
+        fetch(url)
             .then(res => res.json())
             .then(messages => {
                 if (messages.length === 0) return;
-
-                const container = document.getElementById('chatMessages');
-                messages.forEach(msg => {
-                    const studentMsgHtml = `
-                        <div class="message-group student-message mb-3 animate-fade-in">
-                            <div class="d-flex align-items-end gap-2">
-                                <div class="message-bubble bg-light px-3 py-2 rounded-4 shadow-sm">
-                                    <div class="message-content">${msg.message}</div>
-                                    <div class="message-meta text-end mt-1">
-                                        <small class="text-muted">${msg.created_at}</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>`;
-
-                    const adminMsgHtml = msg.admin_response ? `
-                        <div class="message-group admin-message mb-3 d-flex justify-content-end animate-fade-in">
-                            <div class="d-flex align-items-end gap-2">
-                                <div class="message-bubble admin-bubble px-3 py-2 rounded-4 shadow-sm text-white bg-primary">
-                                    <div class="message-content">${msg.admin_response}</div>
-                                    <div class="message-meta text-end mt-1">
-                                        <small class="text-white-50">${msg.responded_at}</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>` : '';
-
-                    container.insertAdjacentHTML('beforeend', studentMsgHtml + adminMsgHtml);
-                    lastMsgId = msg.id;
-                });
-
-                scrollBottom();
+                renderMessages(messages, { replace: fullRefresh });
             });
     }
 
@@ -551,7 +572,7 @@
 
         // Initial polling set
         if (activeUuid) {
-            setInterval(pollMessages, 5000);
+            setInterval(() => fetchMessages({ fullRefresh: false }), 5000);
         }
         setInterval(updateConversations, 12000);
 
@@ -597,14 +618,23 @@
                     body: formData,
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 })
-                    .then(res => res.json())
+                    .then(async res => {
+                        if (!res.ok) {
+                            const text = await res.text();
+                            throw new Error(text || res.statusText);
+                        }
+                        return res.json();
+                    })
                     .then(data => {
                         if (data.success) {
                             textarea.value = '';
-                            pollMessages(); // Immediately poll to show our new response
+                            fetchMessages({ fullRefresh: true }); // Reload thread so admin javobi darhol ko'rinsin
                         } else {
                             alert(data.error || 'Server error');
                         }
+                    })
+                    .catch(err => {
+                        alert('Xatolik: ' + err.message);
                     })
                     .finally(() => {
                         submitBtn.disabled = false;

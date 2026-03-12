@@ -15,6 +15,18 @@ from werkzeug.security import generate_password_hash
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
+def staff_required(f):
+    """Allow any authenticated staff (admin or teacher)."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        if 'admin_id' not in session:
+            if is_ajax or request.is_json:
+                return jsonify({'success': False, 'error': _('Tizimga kirish talab qilinadi')}), 401
+            return redirect(url_for('admin.login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -33,6 +45,7 @@ def admin_required(f):
 
 @admin_bp.route('/feedbacks')
 @admin_bp.route('/feedbacks/<user_uuid>')
+@staff_required
 def feedbacks(user_uuid=None):
     # Group by user_uuid and get the latest message for each
     subquery = db.session.query(
@@ -65,6 +78,7 @@ def feedbacks(user_uuid=None):
                            unread_map=unread_map)
 
 @admin_bp.route('/api/feedback/conversations')
+@staff_required
 def api_conversations():
     # Similar grouping to feedbacks route but returns JSON
     subquery = db.session.query(
@@ -84,12 +98,13 @@ def api_conversations():
 
     return jsonify([{
         'user_uuid': c.user_uuid,
-        'message': c.message,
+        'message': (c.text or c.message or c.admin_response or ''),
         'created_at': c.created_at.strftime('%H:%M'),
         'unread_count': unread_map.get(c.user_uuid, 0)
     } for c in conversations])
 
 @admin_bp.route('/api/feedback/messages/<user_uuid>')
+@staff_required
 def api_messages(user_uuid):
     since_id = request.args.get('since_id', type=int)
     
@@ -106,32 +121,40 @@ def api_messages(user_uuid):
     
     return jsonify([{
         'id': m.id,
-        'message': m.message,
-        'admin_response': m.admin_response,
+        'sender': m.sender or 'student',
+        'text': (m.text or m.message or m.admin_response or ''),
         'created_at': m.created_at.strftime('%H:%M, %d-%m'),
-        'responded_at': m.responded_at.strftime('%H:%M, %d-%m') if m.responded_at else None
-    } for m in messages])
+    } for m in messages if (m.text or m.message or m.admin_response)])
 
 @admin_bp.route('/feedback/respond/<user_uuid>', methods=['POST'])
+@staff_required
 def respond_feedback(user_uuid):
     response_text = request.form.get('response', '').strip()
-    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.args.get('ajax') == '1'
+    is_ajax = (
+        request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        or request.args.get('ajax') == '1'
+        or request.form.get('ajax') == '1'
+        or request.is_json
+    )
     
     if response_text:
-        latest_feedback = Feedback.query.filter_by(user_uuid=user_uuid).order_by(Feedback.created_at.desc()).first()
-        if latest_feedback:
-            latest_feedback.admin_response = response_text
-            latest_feedback.responded_at = datetime.utcnow()
-            db.session.commit()
-            
-            if is_ajax:
-                return jsonify({
-                    'success': True,
-                    'message': _('Javobingiz muvaffaqiyatli yuborildi'),
-                    'response': response_text,
-                    'responded_at': latest_feedback.responded_at.strftime('%H:%M, %d-%m')
-                })
-            flash(_('Javobingiz muvaffaqiyatli yuborildi'), 'success')
+        msg = Feedback(
+            user_uuid=user_uuid,
+            message='',  # legacy non-null column
+            sender='admin',
+            text=response_text,
+            is_read=True,
+            created_at=datetime.utcnow(),
+        )
+        db.session.add(msg)
+        db.session.commit()
+
+        if is_ajax:
+            return jsonify({
+                'success': True,
+                'message': _('Javobingiz muvaffaqiyatli yuborildi'),
+            })
+        flash(_('Javobingiz muvaffaqiyatli yuborildi'), 'success')
     else:
         if is_ajax:
             return jsonify({'success': False, 'error': _('Javob matni bo\'sh bo\'lmasligi kerak')}), 400

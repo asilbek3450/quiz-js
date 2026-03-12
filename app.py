@@ -1,11 +1,11 @@
-from flask import Flask, session, render_template
+from flask import Flask, session
 from datetime import timedelta
 from extensions import db, babel
 from routes.main import main_bp
 from routes.admin import admin_bp
 from routes.student import student_bp
 import markdown
-from models import Admin, Subject, Question, Feedback
+from models import Admin, Subject, Question, TestResult, ControlWork, Feedback
 
 def create_app():
     app = Flask(__name__, template_folder="templates")
@@ -37,23 +37,6 @@ def create_app():
     app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(student_bp)
-
-    @app.errorhandler(404)
-    def page_not_found(e):
-        return render_template('error.html', code=404), 404
-
-    @app.errorhandler(500)
-    def internal_server_error(e):
-        return render_template('error.html', code=500), 500
-
-    @app.errorhandler(Exception)
-    def handle_exception(e):
-        # Log the actual error for debugging
-        app.logger.error(f"Unhandled Exception: {str(e)}")
-        # In production would show custom error page
-        if not app.debug:
-            return render_template('error.html', code=500), 500
-        raise e
 
     with app.app_context():
         # Create tables if not exist (includes new column for Subject)
@@ -103,13 +86,11 @@ def create_app():
             with db.engine.connect() as conn:
                 conn.execute(db.text("ALTER TABLE subject ADD COLUMN time_limit INTEGER DEFAULT 30"))
                 conn.commit()
-
         if 'show_results' not in columns:
             print("Migrating database: Adding show_results to Subject table...")
             with db.engine.connect() as conn:
                 conn.execute(db.text("ALTER TABLE subject ADD COLUMN show_results BOOLEAN DEFAULT 1"))
                 conn.commit()
-
         if 'is_visible' not in columns:
             print("Migrating database: Adding is_visible to Subject table...")
             with db.engine.connect() as conn:
@@ -123,6 +104,85 @@ def create_app():
             with db.engine.connect() as conn:
                 conn.execute(db.text("ALTER TABLE test_result ADD COLUMN control_work_id INTEGER REFERENCES control_work(id)"))
                 conn.commit()
+
+        # Check and migrate Feedback table
+        feedback_columns = [c['name'] for c in inspector.get_columns('feedback')]
+        sender_added = False
+        text_added = False
+        if 'admin_response' not in feedback_columns:
+            print("Migrating database: Adding admin_response to Feedback table...")
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE feedback ADD COLUMN admin_response TEXT"))
+                conn.commit()
+        if 'is_read' not in feedback_columns:
+            print("Migrating database: Adding is_read to Feedback table...")
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE feedback ADD COLUMN is_read BOOLEAN DEFAULT 0"))
+                conn.commit()
+        if 'responded_at' not in feedback_columns:
+            print("Migrating database: Adding responded_at to Feedback table...")
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE feedback ADD COLUMN responded_at DATETIME"))
+                conn.commit()
+        if 'sender' not in feedback_columns:
+            print("Migrating database: Adding sender to Feedback table...")
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE feedback ADD COLUMN sender VARCHAR(10) DEFAULT 'student'"))
+                conn.commit()
+            sender_added = True
+        if 'text' not in feedback_columns:
+            print("Migrating database: Adding text to Feedback table...")
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE feedback ADD COLUMN text TEXT"))
+                conn.commit()
+            text_added = True
+
+        # Backfill to new chat-style format (idempotent-ish)
+        if sender_added or text_added:
+            try:
+                # 1) Ensure existing rows have sender/text
+                db.session.execute(db.text(
+                    "UPDATE feedback SET sender='student' WHERE sender IS NULL OR sender=''"
+                ))
+                db.session.execute(db.text(
+                    "UPDATE feedback SET text=message WHERE text IS NULL"
+                ))
+                db.session.commit()
+
+                # 2) Convert legacy admin_response into separate admin messages
+                rows = db.session.execute(db.text(
+                    "SELECT id, user_uuid, admin_response, responded_at, created_at "
+                    "FROM feedback "
+                    "WHERE admin_response IS NOT NULL AND TRIM(admin_response) <> ''"
+                )).mappings().all()
+
+                for r in rows:
+                    # Avoid duplicating if this exact response already exists as an admin message
+                    exists = db.session.execute(db.text(
+                        "SELECT 1 FROM feedback "
+                        "WHERE user_uuid=:user_uuid AND sender='admin' AND text=:text LIMIT 1"
+                    ), {"user_uuid": r["user_uuid"], "text": r["admin_response"]}).first()
+                    if exists:
+                        continue
+
+                    # Insert an admin message row
+                    db.session.execute(db.text(
+                        "INSERT INTO feedback (user_uuid, message, admin_response, sender, text, is_read, created_at, responded_at) "
+                        "VALUES (:user_uuid, '', NULL, 'admin', :text, 1, :created_at, NULL)"
+                    ), {
+                        "user_uuid": r["user_uuid"],
+                        "text": r["admin_response"],
+                        "created_at": r["responded_at"] or r["created_at"],
+                    })
+
+                # Optional: clear legacy admin_response so UI doesn’t double-render
+                db.session.execute(db.text(
+                    "UPDATE feedback SET admin_response=NULL WHERE admin_response IS NOT NULL"
+                ))
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                print(f"Feedback migration warning: {e}")
 
         # Check and migrate Question table (difficulty/lesson for balanced tests)
         question_columns = [c['name'] for c in inspector.get_columns('question')]
@@ -143,10 +203,18 @@ def create_app():
             admin = Admin(
                 username='asilbek',
                 password_hash=generate_password_hash('jahonschool'),
-                full_name='Administrator'
+                full_name='Administrator',
+                role='admin'
             )
             db.session.add(admin)
             db.session.commit()
+
+        # If there is no admin with role='admin', promote the first admin user
+        if not Admin.query.filter_by(role='admin').first():
+            first_admin = Admin.query.first()
+            if first_admin:
+                first_admin.role = 'admin'
+                db.session.commit()
 
         if not Subject.query.first():
             informatika = Subject(name='Informatika', grades='5,6', is_protected=True)
@@ -159,7 +227,9 @@ def create_app():
 
 app = create_app()
 
-import os
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5005))
+    # Port 5000 is occupied by ControlCenter (AirPlay Receiver) on macOS Monterey+
+    # Using 5001 to avoid conflict
+    import os
+    port = int(os.environ.get("PORT", 5050))
     app.run(host='0.0.0.0', port=port, debug=True)

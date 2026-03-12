@@ -4,36 +4,54 @@ from flask_babel import gettext as _, get_locale
 from extensions import db
 from models import Subject, Question, TestResult, ControlWork, Feedback
 from datetime import datetime, timedelta
-from sqlalchemy import func
 import random
 import json
 
 student_bp = Blueprint('student', __name__, url_prefix='/student')
 
+
+# ---------- Feedback (Student side) ----------
 @student_bp.route('/feedback', methods=['POST'])
 def submit_feedback():
-    data = request.get_json()
-    if not data or 'message' not in data or 'user_uuid' not in data:
-        return jsonify({'success': False, 'error': 'Invalid data'}), 400
-    
-    new_feedback = Feedback(
-        user_uuid=data['user_uuid'],
-        message=data['message']
+    data = request.get_json(silent=True) or {}
+    user_uuid = data.get('user_uuid') or request.form.get('user_uuid')
+    message = (data.get('message') or request.form.get('message') or '').strip()
+
+    if not user_uuid or not message:
+        return jsonify({'success': False, 'error': _('Xabar yoki foydalanuvchi ID topilmadi')}), 400
+
+    fb = Feedback(
+        user_uuid=user_uuid,
+        message=message,  # legacy
+        sender='student',
+        text=message,
+        created_at=datetime.utcnow(),
+        is_read=False,
     )
-    db.session.add(new_feedback)
+    db.session.add(fb)
     db.session.commit()
-    return jsonify({'success': True})
+
+    return jsonify({'success': True, 'message': _('Xabaringiz yuborildi')})
+
 
 @student_bp.route('/my_feedbacks/<user_uuid>')
 def get_my_feedbacks(user_uuid):
-    feedbacks = Feedback.query.filter_by(user_uuid=user_uuid).order_by(Feedback.created_at.asc()).all()
-    return jsonify([{
-        'id': f.id,
-        'message': f.message,
-        'admin_response': f.admin_response,
-        'created_at': f.created_at.strftime('%Y-%m-%d %H:%M'),
-        'responded_at': f.responded_at.strftime('%Y-%m-%d %H:%M') if f.responded_at else None
-    } for f in feedbacks])
+    feedbacks = (
+        Feedback.query.filter_by(user_uuid=user_uuid)
+        .order_by(Feedback.created_at.asc())
+        .all()
+    )
+    return jsonify([
+        {
+            'id': f.id,
+            'sender': f.sender or 'student',
+            'text': f.text or (f.message if (f.sender or 'student') == 'student' else f.admin_response) or '',
+            'created_at': f.created_at.strftime('%H:%M, %d-%m'),
+        }
+        for f in feedbacks
+        if (f.text or f.message or f.admin_response)
+    ])
+
 
 def _safe_sample(seq, k: int):
     if k <= 0:
@@ -43,71 +61,62 @@ def _safe_sample(seq, k: int):
     return random.sample(seq, min(len(seq), k))
 
 
-def _build_balanced_practice_set(subject_id: int, grade: int, quarter: int, target_count: int = 20):
-    # 1. Check total available questions for the current quarter
-    current_q_filter = [
-        Question.subject_id == subject_id,
-        Question.grade == grade,
-        Question.quarter == quarter,
-        ~Question.control_works.any()
-    ]
-    current_count = Question.query.filter(*current_q_filter).count()
+def _build_balanced_practice_set(subject_id: int, grade: int, quarter: int):
+    # Practice-only questions for this quarter
+    base = (
+        Question.query.filter_by(subject_id=subject_id, grade=grade, quarter=quarter)
+        .filter(~Question.control_works.any())
+        .all()
+    )
 
-    if current_count < (target_count * 0.75):
-        return None, current_count
+    if len(base) < 15:
+        # We still might be able to build 20 with review, but likely not
+        return None, len(base)
 
-    # 2. Plan ratios
-    review_needed = int(target_count * 0.25) if quarter > 1 else 0
-    current_needed = target_count - review_needed
-    
-    medium_needed = int(current_needed * 0.5)
-    hard_needed = int(current_needed * 0.25)
-    
-    selected_ids = []
+    # Review pool from previous quarters (practice-only)
+    review_pool = []
+    if quarter > 1:
+        review_pool = (
+            Question.query.filter(
+                Question.subject_id == subject_id,
+                Question.grade == grade,
+                Question.quarter < quarter,
+            )
+            .filter(~Question.control_works.any())
+            .all()
+        )
 
-    def get_random_ids(filters, count):
-        if count <= 0: return []
-        q = db.session.query(Question.id).filter(*filters)
-        return [row[0] for row in q.order_by(func.random()).limit(count).all()]
+    review_qs = _safe_sample(review_pool, 5)
+    used_ids = {q.id for q in review_qs}
 
-    # 3. Select from current quarter by difficulty
-    # Medium
-    selected_ids.extend(get_random_ids(current_q_filter + [Question.difficulty == 2], medium_needed))
-    # Hard
-    selected_ids.extend(get_random_ids(current_q_filter + [Question.difficulty >= 3], hard_needed))
-    
-    # 4. Fill remaining needed for current quarter
-    still_need_current = current_needed - len(selected_ids)
-    if still_need_current > 0:
-        fill_filters = current_q_filter + [~Question.id.in_(selected_ids if selected_ids else [-1])]
-        selected_ids.extend(get_random_ids(fill_filters, still_need_current))
+    base_medium = [q for q in base if (q.difficulty or 2) == 2 and q.id not in used_ids]
+    base_hard = [q for q in base if (q.difficulty or 2) >= 3 and q.id not in used_ids]
+    base_other = [q for q in base if q.id not in used_ids and q not in base_medium and q not in base_hard]
 
-    # 5. Select from review pool (previous quarters)
-    if review_needed > 0:
-        review_filter = [
-            Question.subject_id == subject_id,
-            Question.grade == grade,
-            Question.quarter < quarter,
-            ~Question.control_works.any()
-        ]
-        selected_ids.extend(get_random_ids(review_filter, review_needed))
+    selected = []
+    selected.extend(review_qs)
+    selected.extend(_safe_sample(base_medium, 10))
+    used_ids.update(q.id for q in selected)
 
-    # 6. Final top-up if still not enough (e.g. review pool was empty)
-    final_needed = target_count - len(selected_ids)
-    if final_needed > 0:
-        final_fill_filters = [
-            Question.subject_id == subject_id,
-            Question.grade == grade,
-            ~Question.control_works.any(),
-            ~Question.id.in_(selected_ids if selected_ids else [-1])
-        ]
-        selected_ids.extend(get_random_ids(final_fill_filters, final_needed))
+    hard_pick = _safe_sample([q for q in base_hard if q.id not in used_ids], 5)
+    selected.extend(hard_pick)
+    used_ids.update(q.id for q in selected)
 
-    # 7. Fetch full question objects and Return
-    results = Question.query.filter(Question.id.in_(selected_ids)).all()
-    # Ensure exact count for session safety
-    random.shuffle(results)
-    return results[:target_count], current_count
+    # Fill any missing slots from remaining base
+    if len(selected) < 20:
+        remaining = [q for q in base_other + base_medium + base_hard if q.id not in used_ids]
+        selected.extend(_safe_sample(remaining, 20 - len(selected)))
+
+    if len(selected) < 20:
+        # If still short, try to top up from review pool
+        more_review = [q for q in review_pool if q.id not in used_ids]
+        selected.extend(_safe_sample(more_review, 20 - len(selected)))
+
+    if len(selected) < 20:
+        return None, len(base)
+
+    random.shuffle(selected)
+    return selected, len(base)
 
 def calculate_grade(score, total=20):
     percentage = (score / total) * 100
@@ -143,20 +152,14 @@ def start():
         session['quarter'] = int(request.form['quarter'])
         session['subject_id'] = subject_id
         session['start_time'] = datetime.now().timestamp()
-        
-        # Store time limit for regular tests too
-        subject = Subject.query.get(subject_id)
-        session['cw_time_limit'] = subject.time_limit if subject else 30
-        
         session.permanent = True
         
         subject = Subject.query.get(session['subject_id'])
         # Store protection status in session for frontend use
         session['is_protected'] = subject.is_protected if subject else False
         
-        target_count = subject.question_count if subject else 20
         selected_questions, base_count = _build_balanced_practice_set(
-            session['subject_id'], session['grade'], session['quarter'], target_count
+            session['subject_id'], session['grade'], session['quarter']
         )
 
         if not selected_questions:
@@ -173,7 +176,7 @@ def start():
         
         return redirect(url_for('student.test'))
     
-    subjects = Subject.query.filter_by(is_visible=True).all()
+    subjects = Subject.query.all()
     # Translate subject names for display
     # Need access to get_locale context or just rely on jinja? 
     # In route logic we might not have `g` or request context fully bound with babel selector if logic is separate?
@@ -221,14 +224,13 @@ def control_start():
         grade = int(request.form['grade'])
         quarter = int(request.form['quarter'])
         
-        cws = ControlWork.query.join(Subject).filter(ControlWork.grade==grade, ControlWork.quarter==quarter, ControlWork.is_active==True, Subject.is_visible==True).all()
+        cws = ControlWork.query.filter_by(grade=grade, quarter=quarter, is_active=True).all()
         if not cws:
             flash(_('Siz tanlagan sinf va chorak uchun faol nazorat ishi topilmadi.'), 'danger')
             return redirect(url_for('student.control_start'))
             
         cw = cws[0] # Take the first active control work that matches
         control_work_id = cw.id
-        target_count = cw.subject.question_count if cw.subject else 20
             
         # Security: check if they are resuming their active test
         if session.get('student_name') == name and \
@@ -269,10 +271,10 @@ def control_start():
                     Question.grade == cw.grade,
                     Question.quarter < cw.quarter,
                 )
+                .filter(Question.control_works.any())
                 .all()
             )
-            review_needed = int(target_count * 0.25)
-            review_sample = _safe_sample(prev_control_questions, review_needed)
+            review_sample = _safe_sample(prev_control_questions, 5)
 
         used_ids = {q.id for q in review_sample}
         current_pool = [q for q in base_questions if q.id not in used_ids]
@@ -280,19 +282,15 @@ def control_start():
         current_hard = [q for q in current_pool if (q.difficulty or 2) >= 3]
         current_other = [q for q in current_pool if q not in current_medium and q not in current_hard]
 
-        current_needed = target_count - len(review_sample)
-        medium_needed = int(current_needed * 0.5)
-        hard_needed = int(current_needed * 0.25)
-
         selected_questions.extend(review_sample)
-        selected_questions.extend(_safe_sample(current_medium, medium_needed))
+        selected_questions.extend(_safe_sample(current_medium, 10))
         used_ids.update(q.id for q in selected_questions)
-        selected_questions.extend(_safe_sample([q for q in current_hard if q.id not in used_ids], hard_needed))
+        selected_questions.extend(_safe_sample([q for q in current_hard if q.id not in used_ids], 5))
         used_ids.update(q.id for q in selected_questions)
 
-        if len(selected_questions) < target_count:
+        if len(selected_questions) < 20:
             remaining = [q for q in current_other + current_medium + current_hard if q.id not in used_ids]
-            selected_questions.extend(_safe_sample(remaining, target_count - len(selected_questions)))
+            selected_questions.extend(_safe_sample(remaining, 20 - len(selected_questions)))
             
         # Ensure the final selection is shuffled so review questions are mixed in
         random.shuffle(selected_questions)
@@ -321,7 +319,7 @@ def control_start():
             'subject': subject_name
         }
         
-    control_works = ControlWork.query.join(Subject).filter(ControlWork.is_active==True, Subject.is_visible==True).order_by(ControlWork.created_at.desc()).all()
+    control_works = ControlWork.query.filter_by(is_active=True).order_by(ControlWork.created_at.desc()).all()
     
     return render_template('student_control_start.html', control_works=control_works, active_test_info=active_test_info)
 
@@ -342,37 +340,17 @@ def test():
     lang = str(get_locale())
     
     if lang == 'ru':
-        if not question.question_text_ru:
-            # Lazy translation
-            from .admin import auto_translate
-            question.question_text_ru = auto_translate(question.question_text, 'ru')
-            question.option_a_ru = auto_translate(question.option_a, 'ru')
-            question.option_b_ru = auto_translate(question.option_b, 'ru')
-            question.option_c_ru = auto_translate(question.option_c, 'ru')
-            question.option_d_ru = auto_translate(question.option_d, 'ru')
-            db.session.commit()
-
-        question_text = question.question_text_ru
-        option_a = question.option_a_ru
-        option_b = question.option_b_ru
-        option_c = question.option_c_ru
-        option_d = question.option_d_ru
+        question_text = question.question_text_ru or question.question_text
+        option_a = question.option_a_ru or question.option_a
+        option_b = question.option_b_ru or question.option_b
+        option_c = question.option_c_ru or question.option_c
+        option_d = question.option_d_ru or question.option_d
     elif lang == 'en':
-        if not question.question_text_en:
-            # Lazy translation
-            from .admin import auto_translate
-            question.question_text_en = auto_translate(question.question_text, 'en')
-            question.option_a_en = auto_translate(question.option_a, 'en')
-            question.option_b_en = auto_translate(question.option_b, 'en')
-            question.option_c_en = auto_translate(question.option_c, 'en')
-            question.option_d_en = auto_translate(question.option_d, 'en')
-            db.session.commit()
-
-        question_text = question.question_text_en
-        option_a = question.option_a_en
-        option_b = question.option_b_en
-        option_c = question.option_c_en
-        option_d = question.option_d_en
+        question_text = question.question_text_en or question.question_text
+        option_a = question.option_a_en or question.option_a
+        option_b = question.option_b_en or question.option_b
+        option_c = question.option_c_en or question.option_c
+        option_d = question.option_d_en or question.option_d
     else:
         question_text = question.question_text
         option_a = question.option_a
@@ -464,14 +442,21 @@ def report_violation():
     session.permanent = True
     return jsonify({'success': True})
 
-@student_bp.route('/clear_violation', methods=['POST'])
-def clear_violation():
+@student_bp.route('/verify_unlock', methods=['POST'])
+def verify_unlock():
     if 'question_ids' not in session:
         return jsonify({'error': 'Session expired'}), 400
     
-    session['is_blocked'] = False
-    session.permanent = True
-    return jsonify({'success': True})
+    data = request.json
+    password = data.get('password')
+    
+    # Use the same password as in the template: 'jahonschool'
+    if password == 'jahonschool':
+        session['is_blocked'] = False
+        session.permanent = True
+        return jsonify({'success': True})
+    else:
+        return jsonify({'success': False, 'message': 'Invalid password'}), 401
 
 @student_bp.route('/answer', methods=['POST'])
 def answer():
@@ -648,19 +633,15 @@ def result():
     db.session.add(result)
     db.session.commit()
     
-    subject = Subject.query.get(session['subject_id'])
-    
-    # Cleanup session but keep lang - MOVED AFTER subject access
+    # Cleanup session but keep lang
     keys_to_keep = ['lang']
     for key in list(session.keys()):
         if key not in keys_to_keep:
             session.pop(key, None)
-    show_results = subject.show_results if subject else True
-
+    
     return render_template('student_result.html', 
                          score=score, 
                          total=total, 
                          percentage=percentage,
                          grade_text=grade_text,
-                         results=results,
-                         show_results=show_results)
+                         results=results)
