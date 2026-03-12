@@ -274,49 +274,68 @@ def dashboard():
 
     # Analytics: Top 5 Difficult Questions (Limit to last 500 results for performance)
     difficult_questions_data = []
-    recent_analytics_results = TestResult.query.order_by(TestResult.test_date.desc()).limit(500).all()
-    
-    if recent_analytics_results:
-        question_stats = {} # {question_id: {'wrong': 0, 'total': 0}}
-        all_q_ids_set = set()
+    try:
+        recent_analytics_results = TestResult.query.order_by(TestResult.test_date.desc()).limit(500).all()
         
-        for r in recent_analytics_results:
-            try:
-                answers = json.loads(r.answers_json or '{}')
-                for q_id, user_ans in answers.items():
-                    q_id_int = int(q_id)
-                    if q_id_int not in question_stats:
-                        question_stats[q_id_int] = {'wrong': 0, 'total': 0}
-                    question_stats[q_id_int]['total'] += 1
-                    all_q_ids_set.add(q_id_int)
-            except: continue
-
-        if all_q_ids_set:
-            questions_db = {q.id: q for q in Question.query.filter(Question.id.in_(list(all_q_ids_set))).all()}
+        if recent_analytics_results:
+            question_stats = {} # {question_id: {'wrong': 0, 'total': 0}}
+            all_q_ids_set = set()
             
             for r in recent_analytics_results:
                 try:
                     answers = json.loads(r.answers_json or '{}')
+                    if not isinstance(answers, dict): continue
                     for q_id, user_ans in answers.items():
-                        q_id_int = int(q_id)
-                        q_obj = questions_db.get(q_id_int)
-                        if q_obj and user_ans != q_obj.correct_answer:
-                            question_stats[q_id_int]['wrong'] += 1
+                        try:
+                            q_id_int = int(q_id)
+                            if q_id_int not in question_stats:
+                                question_stats[q_id_int] = {'wrong': 0, 'total': 0}
+                            question_stats[q_id_int]['total'] += 1
+                            all_q_ids_set.add(q_id_int)
+                        except (ValueError, TypeError): continue
                 except: continue
 
-            for q_id, stats in question_stats.items():
-                if stats['total'] > 3: # Lower threshold for limited sample
-                    stats['fail_rate'] = (stats['wrong'] / stats['total']) * 100
-                    q_obj = questions_db.get(q_id)
-                    if q_obj:
-                        difficult_questions_data.append({
-                            'text': q_obj.question_text[:100] + '...',
-                            'fail_rate': stats['fail_rate'],
-                            'wrong_count': stats['wrong'],
-                            'total_count': stats['total'],
-                            'subject': q_obj.subject.name
-                        })
-            difficult_questions_data = sorted(difficult_questions_data, key=lambda x: x['fail_rate'], reverse=True)[:5]
+            if all_q_ids_set:
+                # Chunk IDs to avoid SQLite limit (usually 999 variables)
+                all_q_ids = list(all_q_ids_set)
+                questions_db = {}
+                chunk_size = 500
+                for i in range(0, len(all_q_ids), chunk_size):
+                    chunk = all_q_ids[i:i + chunk_size]
+                    qs = Question.query.filter(Question.id.in_(chunk)).all()
+                    for q in qs:
+                        questions_db[q.id] = q
+                
+                for r in recent_analytics_results:
+                    try:
+                        answers = json.loads(r.answers_json or '{}')
+                        if not isinstance(answers, dict): continue
+                        for q_id, user_ans in answers.items():
+                            try:
+                                q_id_int = int(q_id)
+                                q_obj = questions_db.get(q_id_int)
+                                if q_obj and user_ans != q_obj.correct_answer:
+                                    question_stats[q_id_int]['wrong'] += 1
+                            except: continue
+                    except: continue
+
+                for q_id, stats in question_stats.items():
+                    if stats['total'] > 3: # Lower threshold for limited sample
+                        stats['fail_rate'] = (stats['wrong'] / stats['total']) * 100
+                        q_obj = questions_db.get(q_id)
+                        if q_obj:
+                            difficult_questions_data.append({
+                                'text': q_obj.question_text[:100] + '...',
+                                'fail_rate': stats['fail_rate'],
+                                'wrong_count': stats['wrong'],
+                                'total_count': stats['total'],
+                                'subject': q_obj.subject.name if q_obj.subject else _('Noma\'lum')
+                            })
+                difficult_questions_data = sorted(difficult_questions_data, key=lambda x: x['fail_rate'], reverse=True)[:5]
+    except Exception as e:
+        # Prevent analytics errors from crashing the dashboard
+        print(f"Analytics error: {e}")
+        difficult_questions_data = []
 
     return render_template('admin_dashboard.html',
                          total_questions=total_questions,
