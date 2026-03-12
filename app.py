@@ -1,4 +1,5 @@
 from flask import Flask, Response, session
+from flask import send_from_directory
 from datetime import date, timedelta
 from extensions import db, babel
 from routes.main import main_bp
@@ -39,6 +40,11 @@ def create_app():
     app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(student_bp)
+    
+    
+    @app.route('/google123456789.html')
+    def google_verification():
+        return send_from_directory('.', 'google123456789.html')
 
     @app.get("/robots.txt")
     def robots_txt():
