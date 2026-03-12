@@ -18,9 +18,14 @@ admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         if 'admin_id' not in session:
+            if is_ajax:
+                return jsonify({'success': False, 'error': _('Tizimga kirish talab qilinadi')}), 401
             return redirect(url_for('admin.login'))
         if session.get('admin_role') != 'admin':
+            if is_ajax:
+                return jsonify({'success': False, 'error': _('Bu amalni bajarish uchun admin huquqi kerak')}), 403
             flash(_('Bu amalni bajarish uchun admin huquqi kerak'), 'danger')
             return redirect(url_for('admin.dashboard'))
         return f(*args, **kwargs)

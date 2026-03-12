@@ -5,30 +5,21 @@
     <div class="d-flex g-0 h-100">
         <!-- Sidebar: Conversation List -->
         <div class="chat-sidebar border-end bg-light d-flex flex-column h-100" style="width:20%;min-width:220px;">
-            <div class="p-4 border-bottom bg-white d-flex align-items-center justify-content-between">
-                <div>
+            <div class="p-3 border-bottom bg-white">
+                <div class="d-flex align-items-center justify-content-between mb-2">
                     <h5 class="fw-bold mb-0 text-gradient d-flex align-items-center">
                         <i class="fas fa-comments me-2"></i> {{ _('Muloqotlar') }}
                     </h5>
-                    <small class="text-muted">{{ conversations|length }} {{ _('ta faol chat') }}</small>
+                    <small class="text-muted">{{ conversations|length }} {{ _('ta chat') }}</small>
                 </div>
                 {% if session.admin_role == 'admin' %}
-                <div class="dropdown">
-                    <button class="btn btn-light btn-sm rounded-circle" type="button" data-bs-toggle="dropdown">
-                        <i class="fas fa-tasks"></i>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary btn-sm rounded-pill flex-grow-1" onclick="toggleSelectionMode()" id="selectModeBtn">
+                        <i class="fas fa-check-square me-1"></i> {{ _('Tanlash') }}
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow border-0">
-                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="toggleSelectionMode()">
-                                <i class="fas fa-check-square me-2"></i> {{ _('Tanlash') }}
-                            </a></li>
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-                        <li><a class="dropdown-item text-danger" href="javascript:void(0)"
-                                onclick="clearAllConversations()">
-                                <i class="fas fa-trash-alt me-2"></i> {{ _('Hammasini o\'chirish') }}
-                            </a></li>
-                    </ul>
+                    <button class="btn btn-outline-danger btn-sm rounded-pill flex-grow-1" onclick="clearAllConversations()">
+                        <i class="fas fa-trash-alt me-1"></i> {{ _('Hammasini o\'chirish') }}
+                    </button>
                 </div>
                 {% endif %}
             </div>
@@ -390,6 +381,7 @@
         isSelectionMode = !isSelectionMode;
         const toolbar = document.getElementById('bulkActionsToolbar');
         const selectionBoxes = document.querySelectorAll('.selection-box');
+        const selectBtn = document.getElementById('selectModeBtn');
 
         if (isSelectionMode) {
             toolbar.classList.remove('d-none');
@@ -398,10 +390,12 @@
             selectedUuids.clear();
             document.querySelectorAll('.conv-checkbox').forEach(cb => cb.checked = false);
             document.getElementById('selectAllConversations').checked = false;
+            if (selectBtn) { selectBtn.classList.replace('btn-outline-primary', 'btn-primary'); selectBtn.innerHTML = '<i class="fas fa-times me-1"></i> {{ _("Bekor qilish") }}'; }
         } else {
             toolbar.classList.add('d-none');
             toolbar.classList.remove('d-flex');
             selectionBoxes.forEach(box => box.classList.add('d-none'));
+            if (selectBtn) { selectBtn.classList.replace('btn-primary', 'btn-outline-primary'); selectBtn.innerHTML = '<i class="fas fa-check-square me-1"></i> {{ _("Tanlash") }}'; }
         }
     }
 
@@ -425,6 +419,9 @@
         }
         if (!confirm("{{ _('Tanlangan chatlarni o\'chirib tashlamoqchimisiz?') }}")) return;
 
+        const btn = document.querySelector('#bulkActionsToolbar .btn-danger');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> {{ _("O\'chirish...") }}'; }
+
         fetch("{{ url_for('admin.bulk_delete_feedback') }}", {
             method: 'POST',
             headers: {
@@ -444,8 +441,13 @@
                         updateConversations();
                     }
                 } else {
-                    alert(data.error || 'Server error');
+                    alert(data.error || 'Server xatosi');
+                    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash me-1"></i> {{ _("O\'chirish") }}'; }
                 }
+            })
+            .catch(err => {
+                alert('Xatolik: ' + err.message);
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash me-1"></i> {{ _("O\'chirish") }}'; }
             });
     }
 
@@ -461,9 +463,10 @@
                 if (data.success) {
                     window.location.href = "{{ url_for('admin.feedbacks') }}";
                 } else {
-                    alert(data.error || 'Server error');
+                    alert(data.error || 'Server xatosi');
                 }
-            });
+            })
+            .catch(err => alert('Xatolik: ' + err.message));
     }
 
     function pollMessages() {
@@ -518,15 +521,13 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    const container = document.getElementById('chatMessages');
-                    if (container) container.innerHTML = '';
-                    updateConversations();
-                    // If we want to show a message or redirect? 
-                    // For now just clearing container is enough.
+                    // Navigate back to feedbacks list since conversation is now deleted
+                    window.location.href = "{{ url_for('admin.feedbacks') }}";
                 } else {
-                    alert(data.error || 'Server error');
+                    alert(data.error || 'Server xatosi');
                 }
-            });
+            })
+            .catch(err => alert('Xatolik: ' + err.message));
     }
 
     document.addEventListener('DOMContentLoaded', function () {
