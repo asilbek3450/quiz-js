@@ -139,43 +139,72 @@ def respond_feedback(user_uuid):
     
     return redirect(url_for('admin.feedbacks', user_uuid=user_uuid))
 
-@admin_bp.route('/feedback/clear/<user_uuid>', methods=['POST'])
+@admin_bp.route('/feedback/clear/<user_uuid>', methods=['POST', 'DELETE'])
 @admin_required
 def clear_feedback(user_uuid):
+    """Delete all feedback messages for a user (single conversation). Supports AJAX/JSON, DELETE, and regular POST."""
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json
     try:
         Feedback.query.filter_by(user_uuid=user_uuid).delete()
         db.session.commit()
-        return jsonify({'success': True, 'message': _('Chat muvaffaqiyatli tozalandi')})
+        if is_ajax or request.method == 'DELETE':
+            return jsonify({'success': True, 'message': _('Chat muvaffaqiyatli tozalandi')})
+        flash(_('Chat muvaffaqiyatli tozalandi'), 'success')
+        return redirect(url_for('admin.feedbacks'))
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        if is_ajax or request.method == 'DELETE':
+            return jsonify({'success': False, 'error': str(e)}), 500
+        flash(_('Chatni o‘chirishda xatolik: {}').format(str(e)), 'danger')
+        return redirect(url_for('admin.feedbacks', user_uuid=user_uuid))
 
-@admin_bp.route('/api/feedback/bulk-delete', methods=['POST'])
+@admin_bp.route('/api/feedback/bulk-delete', methods=['POST', 'DELETE'])
 @admin_required
 def bulk_delete_feedback():
-    data = request.get_json() or {}
-    user_uuids = data.get('user_uuids', [])
+    """Bulk delete conversations. Works with JSON payload or form-data (user_uuids)."""
+    data = request.get_json(silent=True) or {}
+    user_uuids = data.get('user_uuids')
     if not user_uuids:
-        return jsonify({'success': False, 'error': _('Hech qanday chat tanlanmadi')}), 400
+        user_uuids = request.form.getlist('user_uuids')
+    if not user_uuids:
+        error_msg = _('Hech qanday chat tanlanmadi')
+        if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.method == 'DELETE':
+            return jsonify({'success': False, 'error': error_msg}), 400
+        flash(error_msg, 'warning')
+        return redirect(url_for('admin.feedbacks'))
     
     try:
         Feedback.query.filter(Feedback.user_uuid.in_(user_uuids)).delete(synchronize_session=False)
         db.session.commit()
-        return jsonify({'success': True, 'message': _('Tanlangan chatlar muvaffaqiyatli o\'chirildi')})
+        if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.method == 'DELETE':
+            return jsonify({'success': True, 'message': _('Tanlangan chatlar muvaffaqiyatli o\'chirildi')})
+        flash(_('Tanlangan chatlar muvaffaqiyatli o\'chirildi'), 'success')
+        return redirect(url_for('admin.feedbacks'))
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.method == 'DELETE':
+            return jsonify({'success': False, 'error': str(e)}), 500
+        flash(_('Chatlarni o‘chirishda xatolik: {}').format(str(e)), 'danger')
+        return redirect(url_for('admin.feedbacks'))
 
-@admin_bp.route('/api/feedback/clear-all', methods=['POST'])
+@admin_bp.route('/api/feedback/clear-all', methods=['POST', 'DELETE'])
 @admin_required
 def clear_all_feedback():
+    """Delete every feedback conversation. Supports JSON/DELETE and form POST."""
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json
     try:
         Feedback.query.delete()
         db.session.commit()
-        return jsonify({'success': True, 'message': _('Barcha chatlar muvaffaqiyatli tozalandi')})
+        if is_ajax or request.method == 'DELETE':
+            return jsonify({'success': True, 'message': _('Barcha chatlar muvaffaqiyatli tozalandi')})
+        flash(_('Barcha chatlar muvaffaqiyatli tozalandi'), 'success')
+        return redirect(url_for('admin.feedbacks'))
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        if is_ajax or request.method == 'DELETE':
+            return jsonify({'success': False, 'error': str(e)}), 500
+        flash(_('Barcha chatlarni o‘chirishda xatolik: {}').format(str(e)), 'danger')
+        return redirect(url_for('admin.feedbacks'))
 
 @admin_bp.route('/profile', methods=['GET', 'POST'])
 def profile():

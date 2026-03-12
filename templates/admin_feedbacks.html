@@ -14,12 +14,14 @@
                 </div>
                 {% if session.admin_role == 'admin' %}
                 <div class="d-flex gap-2">
-                    <button class="btn btn-outline-primary btn-sm rounded-pill flex-grow-1" onclick="toggleSelectionMode()" id="selectModeBtn">
+                    <button type="button" class="btn btn-outline-primary btn-sm rounded-pill flex-grow-1" onclick="toggleSelectionMode()" id="selectModeBtn">
                         <i class="fas fa-check-square me-1"></i> {{ _('Tanlash') }}
                     </button>
-                    <button class="btn btn-outline-danger btn-sm rounded-pill flex-grow-1" onclick="clearAllConversations()">
-                        <i class="fas fa-trash-alt me-1"></i> {{ _('Hammasini o\'chirish') }}
-                    </button>
+                    <form method="post" action="{{ url_for('admin.clear_all_feedback') }}" class="flex-grow-1" onsubmit="return confirm('{{ _('Barcha chatlarni butunlay tozalab tashlamoqchimisiz? Bu amalni ortga qaytarib bolmaydi!') }}')">
+                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill w-100">
+                            <i class="fas fa-trash-alt me-1"></i> {{ _('Hammasini o\'chirish') }}
+                        </button>
+                    </form>
                 </div>
                 {% endif %}
             </div>
@@ -33,10 +35,10 @@
                     <small class="fw-bold">{{ _('Hammasi') }}</small>
                 </div>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-danger btn-sm rounded-pill px-3" onclick="deleteSelected()">
+                    <button type="button" class="btn btn-danger btn-sm rounded-pill px-3" onclick="deleteSelected()">
                         <i class="fas fa-trash me-1"></i> {{ _('O\'chirish') }}
                     </button>
-                    <button class="btn btn-light btn-sm rounded-pill px-3" onclick="toggleSelectionMode()">
+                    <button type="button" class="btn btn-light btn-sm rounded-pill px-3" onclick="toggleSelectionMode()">
                         {{ _('Bekor qilish') }}
                     </button>
                 </div>
@@ -46,7 +48,7 @@
                 {% for conv in conversations %}
                 <div class="d-flex align-items-center border-bottom conversation-item-wrapper">
                     <div class="selection-box ps-3 d-none">
-                        <input type="checkbox" class="form-check-input conv-checkbox" value="{{ conv.user_uuid }}">
+                        <input type="checkbox" class="form-check-input conv-checkbox" value="{{ conv.user_uuid }}" onchange="toggleUuid('{{ conv.user_uuid }}', this.checked)">
                     </div>
                     <a href="{{ url_for('admin.feedbacks', user_uuid=conv.user_uuid) }}"
                         class="list-group-item list-group-item-action p-3 border-0 d-flex align-items-center gap-3 transition-all flex-grow-1 {{ 'active-conv' if active_uuid == conv.user_uuid }}">
@@ -105,9 +107,13 @@
                         <i class="fas fa-ellipsis-v"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0">
-                        <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="clearChat()"><i
-                                    class="fas fa-trash-alt me-2"></i> {{
-                                _('Tozalash') }}</a></li>
+                        <li>
+                            <form method="post" action="{{ url_for('admin.clear_feedback', user_uuid=active_uuid) }}" onsubmit="return confirm('{{ _('Haqiqatan ham ushbu chatni tozalab tashlamoqchimisiz? Barcha xabarlar ochib ketadi.') }}')">
+                                <button type="submit" class="dropdown-item text-danger w-100 text-start">
+                                    <i class="fas fa-trash-alt me-2"></i> {{ _('Tozalash') }}
+                                </button>
+                            </form>
+                        </li>
                     </ul>
                 </div>
                 {% endif %}
@@ -382,6 +388,7 @@
         const toolbar = document.getElementById('bulkActionsToolbar');
         const selectionBoxes = document.querySelectorAll('.selection-box');
         const selectBtn = document.getElementById('selectModeBtn');
+        const selectAllCb = document.getElementById('selectAllConversations');
 
         if (isSelectionMode) {
             toolbar.classList.remove('d-none');
@@ -389,13 +396,22 @@
             selectionBoxes.forEach(box => box.classList.remove('d-none'));
             selectedUuids.clear();
             document.querySelectorAll('.conv-checkbox').forEach(cb => cb.checked = false);
-            document.getElementById('selectAllConversations').checked = false;
-            if (selectBtn) { selectBtn.classList.replace('btn-outline-primary', 'btn-primary'); selectBtn.innerHTML = '<i class="fas fa-times me-1"></i> {{ _("Bekor qilish") }}'; }
+            if (selectAllCb) selectAllCb.checked = false;
+            if (selectBtn) {
+                selectBtn.classList.remove('btn-outline-primary');
+                selectBtn.classList.add('btn-primary');
+                selectBtn.innerHTML = '<i class="fas fa-times me-1"></i> Bekor qilish';
+            }
         } else {
             toolbar.classList.add('d-none');
             toolbar.classList.remove('d-flex');
             selectionBoxes.forEach(box => box.classList.add('d-none'));
-            if (selectBtn) { selectBtn.classList.replace('btn-primary', 'btn-outline-primary'); selectBtn.innerHTML = '<i class="fas fa-check-square me-1"></i> {{ _("Tanlash") }}'; }
+            selectedUuids.clear();
+            if (selectBtn) {
+                selectBtn.classList.remove('btn-primary');
+                selectBtn.classList.add('btn-outline-primary');
+                selectBtn.innerHTML = '<i class="fas fa-check-square me-1"></i> Tanlash';
+            }
         }
     }
 
@@ -538,6 +554,17 @@
             setInterval(pollMessages, 5000);
         }
         setInterval(updateConversations, 12000);
+
+        const conversationsList = document.querySelector('.conversations-list');
+        if (conversationsList) {
+            // Keep selected UUIDs in sync when checkboxes change
+            conversationsList.addEventListener('change', function (e) {
+                if (!isSelectionMode) return;
+                if (e.target.classList.contains('conv-checkbox')) {
+                    toggleUuid(e.target.value, e.target.checked);
+                }
+            });
+        }
 
         // Click handler for selection mode
         document.querySelector('.conversations-list').addEventListener('click', function (e) {
