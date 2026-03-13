@@ -155,8 +155,12 @@ def start():
         session.permanent = True
         
         subject = Subject.query.get(session['subject_id'])
+        if not subject or not subject.is_visible:
+            flash(_('Bu fan hozirda yopiq.'), 'danger')
+            return redirect(url_for('student.start'))
+            
         # Store protection status in session for frontend use
-        session['is_protected'] = subject.is_protected if subject else False
+        session['is_protected'] = subject.is_protected
         
         selected_questions, base_count = _build_balanced_practice_set(
             session['subject_id'], session['grade'], session['quarter']
@@ -176,7 +180,7 @@ def start():
         
         return redirect(url_for('student.test'))
     
-    subjects = Subject.query.all()
+    subjects = Subject.query.filter_by(is_visible=True).all()
     # Translate subject names for display
     # Need access to get_locale context or just rely on jinja? 
     # In route logic we might not have `g` or request context fully bound with babel selector if logic is separate?
@@ -224,7 +228,12 @@ def control_start():
         grade = int(request.form['grade'])
         quarter = int(request.form['quarter'])
         
-        cws = ControlWork.query.filter_by(grade=grade, quarter=quarter, is_active=True).all()
+        cws = ControlWork.query.join(Subject).filter(
+            ControlWork.grade == grade,
+            ControlWork.quarter == quarter,
+            ControlWork.is_active == True,
+            Subject.is_visible == True
+        ).all()
         if not cws:
             flash(_('Siz tanlagan sinf va chorak uchun faol nazorat ishi topilmadi.'), 'danger')
             return redirect(url_for('student.control_start'))
@@ -319,7 +328,10 @@ def control_start():
             'subject': subject_name
         }
         
-    control_works = ControlWork.query.filter_by(is_active=True).order_by(ControlWork.created_at.desc()).all()
+    control_works = ControlWork.query.join(Subject).filter(
+        ControlWork.is_active == True,
+        Subject.is_visible == True
+    ).order_by(ControlWork.created_at.desc()).all()
     
     return render_template('student_control_start.html', control_works=control_works, active_test_info=active_test_info)
 
@@ -633,6 +645,9 @@ def result():
     db.session.add(result)
     db.session.commit()
     
+    subject = Subject.query.get(session['subject_id'])
+    show_detailed_results = subject.show_results if subject else True
+    
     # Cleanup session but keep lang
     keys_to_keep = ['lang']
     for key in list(session.keys()):
@@ -644,4 +659,5 @@ def result():
                          total=total, 
                          percentage=percentage,
                          grade_text=grade_text,
-                         results=results)
+                         results=results,
+                         show_results=show_detailed_results)
