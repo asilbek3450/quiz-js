@@ -26,6 +26,11 @@
                 <div class="d-flex justify-content-between align-items-start mb-4">
                     <div class="question-text text-dark user-select-none flex-grow-1">
                         <div class="lh-base fw-bold fs-5">{{ question_text | markdown | safe }}</div>
+                        {% if question_image_url %}
+                        <div class="question-image-wrap mt-4">
+                            <img src="{{ question_image_url }}" alt="{{ _('Savol rasmi') }}" class="question-image img-fluid rounded-4 shadow-sm">
+                        </div>
+                        {% endif %}
                     </div>
                     <button type="button" id="mark-btn" onclick="toggleMark('{{ question.id }}')"
                         class="btn {{ 'btn-warning' if question.id in marked_questions else 'btn-outline-warning' }} ms-3 shadow-sm animate-scale-in"
@@ -200,6 +205,20 @@
     .option-label {
         border-color: #e2e8f0;
         transition: all 0.2s ease;
+        background: white;
+    }
+
+    .question-image-wrap {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 24px;
+        padding: 14px;
+    }
+
+    .question-image {
+        width: 100%;
+        max-height: 420px;
+        object-fit: contain;
         background: white;
     }
 

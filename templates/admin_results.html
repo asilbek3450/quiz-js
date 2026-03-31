@@ -104,7 +104,7 @@
                     {{ _('Jami') }}: {{ total_count }} {{ _('ta natija') }}
                 </h5>
                 <div>
-                    <a href="{{ url_for('admin.export_results', subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), filter_date=request.args.get('filter_date'), sort_by=request.args.get('sort_by')) }}"
+                    <a href="{{ url_for('admin.export_results', subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), control_work_id=request.args.get('control_work_id'), filter_date=request.args.get('filter_date'), sort_by=request.args.get('sort_by')) }}"
                         class="btn btn-success me-2">
                         <i class="fas fa-file-excel me-2"></i> {{ _('Excelga yuklash') }}
                     </a>
@@ -164,25 +164,13 @@
                             </td>
                             <td>
                                 <div class="progress" style="height: 25px;">
-                                    <div class="progress-bar 
-                                        {% if result.percentage >= 90 %}bg-success
-                                        {% elif result.percentage >= 70 %}bg-info
-                                        {% elif result.percentage >= 50 %}bg-warning
-                                        {% else %}bg-danger{% endif %}" style="width: {{ result.percentage }}%">
+                                    <div class="progress-bar {{ result.grade_info.progress_class }}" style="width: {{ result.percentage }}%">
                                         {{ result.percentage|int }}%
                                     </div>
                                 </div>
                             </td>
                             <td>
-                                {% if result.percentage >= 90 %}
-                                <span class="badge bg-success">{{ result.grade_text }}</span>
-                                {% elif result.percentage >= 70 %}
-                                <span class="badge bg-info">{{ result.grade_text }}</span>
-                                {% elif result.percentage >= 50 %}
-                                <span class="badge bg-warning text-dark">{{ result.grade_text }}</span>
-                                {% else %}
-                                <span class="badge bg-danger">{{ result.grade_text }}</span>
-                                {% endif %}
+                                <span class="badge {{ result.grade_info.badge_class }}">{{ result.display_grade_text }}</span>
                             </td>
                             <td>
                                 <small>{{ result.test_date.strftime('%d.%m.%Y %H:%M') }}</small>
@@ -206,7 +194,7 @@
                 <ul class="pagination justify-content-center">
                     <li class="page-item {{ 'disabled' if not pagination.has_prev }}">
                         <a class="page-link"
-                            href="{{ url_for('admin.results', page=pagination.prev_num, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), filter_date=request.args.get('filter_date'), sort_by=request.args.get('sort_by')) }}">
+                            href="{{ url_for('admin.results', page=pagination.prev_num, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), control_work_id=request.args.get('control_work_id'), filter_date=request.args.get('filter_date'), sort_by=request.args.get('sort_by')) }}">
                             <i class="fas fa-chevron-left"></i>
                         </a>
                     </li>
@@ -215,7 +203,7 @@
                     {% if p %}
                     <li class="page-item {{ 'active' if p == pagination.page }}">
                         <a class="page-link"
-                            href="{{ url_for('admin.results', page=p, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), filter_date=request.args.get('filter_date'), sort_by=request.args.get('sort_by')) }}">{{
+                            href="{{ url_for('admin.results', page=p, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), control_work_id=request.args.get('control_work_id'), filter_date=request.args.get('filter_date'), sort_by=request.args.get('sort_by')) }}">{{
                             p }}</a>
                     </li>
                     {% else %}
@@ -225,7 +213,7 @@
 
                     <li class="page-item {{ 'disabled' if not pagination.has_next }}">
                         <a class="page-link"
-                            href="{{ url_for('admin.results', page=pagination.next_num, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), filter_date=request.args.get('filter_date'), sort_by=request.args.get('sort_by')) }}">
+                            href="{{ url_for('admin.results', page=pagination.next_num, subject_id=request.args.get('subject_id'), grade=request.args.get('grade'), quarter=request.args.get('quarter'), control_work_id=request.args.get('control_work_id'), filter_date=request.args.get('filter_date'), sort_by=request.args.get('sort_by')) }}">
                             <i class="fas fa-chevron-right"></i>
                         </a>
                     </li>

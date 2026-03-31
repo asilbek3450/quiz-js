@@ -3,6 +3,20 @@ from flask_babel import gettext as _
 from werkzeug.security import check_password_hash
 from extensions import db
 from models import Admin, Subject, Question, TestResult, ControlWork, Feedback
+from feature_store import (
+    attach_question_media,
+    delete_question_image_file,
+    get_grade_info,
+    get_question_image_relative_path,
+    get_question_image_url,
+    get_subject_grade_settings,
+    remove_question_image,
+    remove_subject_grade_settings,
+    save_question_image_upload,
+    set_question_image,
+    set_subject_grade_settings,
+    validate_grade_settings,
+)
 from deep_translator import GoogleTranslator
 from datetime import datetime
 import json
@@ -309,12 +323,19 @@ def logout():
 @admin_bp.route('/dashboard')
 def dashboard():
     total_questions = Question.query.count()
-    total_results = TestResult.query.count()
     subjects = Subject.query.all()
     recent_results = TestResult.query.order_by(TestResult.test_date.desc()).limit(10).all()
+    result_stats = TestResult.query.with_entities(TestResult.subject_id, TestResult.percentage).all()
+    total_results = len(result_stats)
 
-    # Calculate Pass Rate (Score >= 70%) efficiently
-    passing_results_count = TestResult.query.filter(TestResult.percentage >= 70).count()
+    for result in recent_results:
+        result.grade_info = get_grade_info(result.percentage, result.subject_id)
+
+    # Passing means "qoniqarli" or higher for the given subject.
+    passing_results_count = sum(
+        1 for subject_id, percentage in result_stats
+        if get_grade_info(percentage, subject_id)['level'] != 'fail'
+    )
     pass_rate = (passing_results_count / total_results * 100) if total_results > 0 else 0
 
     # Subject Analytics using aggregation
@@ -434,6 +455,8 @@ def questions():
 
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     questions = pagination.items
+    for question in questions:
+        attach_question_media(question)
 
     # Efficiently get statistics using aggregation
     stats_raw = db.session.query(
@@ -461,6 +484,9 @@ def questions():
 @admin_bp.route('/question/add', methods=['GET', 'POST'])
 def question_add():
     if request.method == 'POST':
+        uploaded_image = request.files.get('question_image')
+        saved_image_path = None
+        question_id = None
         try:
             subject_id = int(request.form.get('subject_id', 0))
             grade = int(request.form.get('grade', 0))
@@ -503,53 +529,105 @@ def question_add():
                 correct_answer=correct
             )
             db.session.add(question)
+            db.session.flush()
+            question_id = question.id
+
+            if uploaded_image and uploaded_image.filename:
+                saved_image_path = save_question_image_upload(uploaded_image)
+                set_question_image(question_id, saved_image_path)
+
             db.session.commit()
             flash(_('Savol muvaffaqiyatli qo\'shildi va tarjima qilindi'), 'success')
             return redirect(url_for('admin.questions'))
         except Exception as e:
             db.session.rollback()
+            if question_id and saved_image_path:
+                remove_question_image(question_id)
+                delete_question_image_file(saved_image_path)
             flash(_('Xatolik yuz berdi: {}').format(str(e)), 'danger')
             return redirect(url_for('admin.question_add'))
 
     subjects = Subject.query.all()
-    return render_template('admin_question_form.html', subjects=subjects, question=None)
+    return render_template('admin_question_form.html', subjects=subjects, question=None, question_image_url=None)
 
 @admin_bp.route('/question/edit/<int:id>', methods=['GET', 'POST'])
 def question_edit(id):
     question = Question.query.get_or_404(id)
+    attach_question_media(question)
 
     if request.method == 'POST':
-        question.subject_id = int(request.form['subject_id'])
-        question.grade = int(request.form['grade'])
-        question.quarter = int(request.form['quarter'])
+        uploaded_image = request.files.get('question_image')
+        remove_existing_image = request.form.get('remove_image') == '1'
+        previous_image_path = get_question_image_relative_path(question.id)
+        saved_image_path = None
+        image_store_updated = False
 
-        q_text = request.form['question_text']
-        question.question_text = q_text
-        question.question_text_ru = auto_translate(q_text, 'ru')
-        question.question_text_en = auto_translate(q_text, 'en')
+        try:
+            question.subject_id = int(request.form['subject_id'])
+            question.grade = int(request.form['grade'])
+            question.quarter = int(request.form['quarter'])
 
-        question.option_a = request.form['option_a']
-        question.option_a_ru = auto_translate(question.option_a, 'ru')
-        question.option_a_en = auto_translate(question.option_a, 'en')
+            q_text = request.form['question_text']
+            question.question_text = q_text
+            question.question_text_ru = auto_translate(q_text, 'ru')
+            question.question_text_en = auto_translate(q_text, 'en')
 
-        question.option_b = request.form['option_b']
-        question.option_b_ru = auto_translate(question.option_b, 'ru')
-        question.option_b_en = auto_translate(question.option_b, 'en')
+            question.option_a = request.form['option_a']
+            question.option_a_ru = auto_translate(question.option_a, 'ru')
+            question.option_a_en = auto_translate(question.option_a, 'en')
 
-        question.option_c = request.form['option_c']
-        question.option_c_ru = auto_translate(question.option_c, 'ru')
-        question.option_c_en = auto_translate(question.option_c, 'en')
+            question.option_b = request.form['option_b']
+            question.option_b_ru = auto_translate(question.option_b, 'ru')
+            question.option_b_en = auto_translate(question.option_b, 'en')
 
-        question.option_d = request.form['option_d']
-        question.option_d_ru = auto_translate(question.option_d, 'ru')
-        question.option_d_en = auto_translate(question.option_d, 'en')
+            question.option_c = request.form['option_c']
+            question.option_c_ru = auto_translate(question.option_c, 'ru')
+            question.option_c_en = auto_translate(question.option_c, 'en')
 
-        question.correct_answer = request.form['correct_answer'].upper()
+            question.option_d = request.form['option_d']
+            question.option_d_ru = auto_translate(question.option_d, 'ru')
+            question.option_d_en = auto_translate(question.option_d, 'en')
 
-        db.session.commit()
-        flash(_('Savol muvaffaqiyatli o\'zgartirildi'), 'success')
+            question.correct_answer = request.form['correct_answer'].upper()
+
+            if uploaded_image and uploaded_image.filename:
+                saved_image_path = save_question_image_upload(uploaded_image)
+                set_question_image(question.id, saved_image_path)
+                image_store_updated = True
+            elif remove_existing_image and previous_image_path:
+                remove_question_image(question.id)
+                image_store_updated = True
+
+            db.session.commit()
+
+            try:
+                if saved_image_path and previous_image_path:
+                    delete_question_image_file(previous_image_path)
+                elif remove_existing_image and previous_image_path:
+                    delete_question_image_file(previous_image_path)
+            except Exception as cleanup_error:
+                print(f"Question image cleanup warning: {cleanup_error}")
+
+            flash(_('Savol muvaffaqiyatli o\'zgartirildi'), 'success')
+            return redirect(url_for('admin.questions'))
+        except Exception as e:
+            db.session.rollback()
+            if saved_image_path:
+                delete_question_image_file(saved_image_path)
+            if image_store_updated:
+                if previous_image_path:
+                    set_question_image(question.id, previous_image_path)
+                else:
+                    remove_question_image(question.id)
+            flash(_('Xatolik yuz berdi: {}').format(str(e)), 'danger')
+            return redirect(url_for('admin.question_edit', id=id))
     subjects = Subject.query.all()
-    return render_template('admin_question_form.html', subjects=subjects, question=question)
+    return render_template(
+        'admin_question_form.html',
+        subjects=subjects,
+        question=question,
+        question_image_url=question.image_url,
+    )
 
 @admin_bp.route('/questions/translate_missing', methods=['POST'])
 def translate_missing_questions():
@@ -564,8 +642,15 @@ def translate_missing_questions():
 @admin_required
 def question_delete(id):
     question = Question.query.get_or_404(id)
+    existing_image_path = get_question_image_relative_path(question.id)
     db.session.delete(question)
     db.session.commit()
+
+    try:
+        removed_image_path = remove_question_image(question.id)
+        delete_question_image_file(removed_image_path or existing_image_path)
+    except Exception as cleanup_error:
+        print(f"Question image cleanup warning: {cleanup_error}")
     
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return {'success': True}
@@ -735,6 +820,7 @@ def export_results():
     subject_id = request.args.get('subject_id', type=int)
     grade = request.args.get('grade', type=int)
     quarter = request.args.get('quarter', type=int)
+    control_work_id = request.args.get('control_work_id', type=int)
     filter_date = request.args.get('filter_date')
     sort_by = request.args.get('sort_by', 'newest')
 
@@ -745,6 +831,8 @@ def export_results():
         query = query.filter_by(grade=grade)
     if quarter:
         query = query.filter_by(quarter=quarter)
+    if control_work_id:
+        query = query.filter_by(control_work_id=control_work_id)
 
     if filter_date:
         try:
@@ -766,6 +854,7 @@ def export_results():
 
     data = []
     for r in results:
+        grade_info = get_grade_info(r.percentage, r.subject_id)
         data.append({
             _('Ism Familiya'): r.full_name,
             _('Fan'): r.subject.name if r.subject else '',
@@ -774,7 +863,7 @@ def export_results():
             _('Ball'): r.score,
             _('Jami savollar'): r.total_questions,
             _('Foiz'): f"{int(r.percentage)}%",
-            _('Baho'): r.grade_text,
+            _('Baho'): grade_info['label'],
             _('Sana'): r.test_date.strftime('%Y-%m-%d %H:%M')
         })
 
@@ -830,14 +919,13 @@ def results():
     else: # newest
         query = query.order_by(TestResult.test_date.desc())
 
-    # Calculate stats before pagination (on the full filtered query)
-    total_count = query.count()
-
-    # Clone query for stats to avoid messing up the main query
-    # Note: efficient way is to use with_entities on the base query if possible,
-    # but here query is already built with filters.
-
-    excellent_count = query.filter(TestResult.percentage >= 90).count()
+    # Calculate stats before pagination on the filtered result set.
+    filtered_stats = query.with_entities(TestResult.subject_id, TestResult.percentage).all()
+    total_count = len(filtered_stats)
+    excellent_count = sum(
+        1 for subject_id, percentage in filtered_stats
+        if get_grade_info(percentage, subject_id)['level'] == 'excellent'
+    )
 
     stats_tuple = query.with_entities(
         func.avg(TestResult.percentage),
@@ -852,6 +940,9 @@ def results():
     per_page = 100
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     results = pagination.items
+    for result in results:
+        result.grade_info = get_grade_info(result.percentage, result.subject_id)
+        result.display_grade_text = result.grade_info['label']
 
     subjects = Subject.query.all()
     control_works_list = ControlWork.query.order_by(ControlWork.created_at.desc()).all()
@@ -903,11 +994,14 @@ def results_delete_by_date():
 @admin_bp.route('/subjects')
 def subjects():
     subjects = Subject.query.all()
+    for subject in subjects:
+        subject.grade_settings = get_subject_grade_settings(subject.id)
     return render_template('admin_subjects.html', subjects=subjects)
 
 @admin_bp.route('/subject/add', methods=['GET', 'POST'])
 def subject_add():
     if request.method == 'POST':
+        subject_id = None
         try:
             name = request.form.get('name', '').strip()
             grades = request.form.get('grades', '').strip()
@@ -916,9 +1010,18 @@ def subject_add():
             time_limit = int(request.form.get('time_limit', 30)) # Added time_limit
             show_results = 'show_results' in request.form
             is_visible = 'is_visible' in request.form
+            excellent_min = int(request.form.get('excellent_min', 85))
+            good_min = int(request.form.get('good_min', 70))
+            satisfactory_min = int(request.form.get('satisfactory_min', 65))
+            fail_max = int(request.form.get('fail_max', satisfactory_min - 1))
 
             if not name or not grades:
                 flash(_('Nom va sinflarni kiriting'), 'warning')
+                return redirect(url_for('admin.subject_add'))
+
+            validation_error = validate_grade_settings(excellent_min, good_min, satisfactory_min, fail_max)
+            if validation_error:
+                flash(validation_error, 'warning')
                 return redirect(url_for('admin.subject_add'))
 
             subject = Subject(
@@ -933,39 +1036,70 @@ def subject_add():
                 is_visible=is_visible
             )
             db.session.add(subject)
+            db.session.flush()
+            subject_id = subject.id
+            set_subject_grade_settings(subject_id, excellent_min, good_min, satisfactory_min, fail_max)
             db.session.commit()
             flash(_('Fan muvaffaqiyatli qo\'shildi va tarjima qilindi'), 'success')
             return redirect(url_for('admin.subjects'))
         except Exception as e:
             db.session.rollback()
+            if subject_id:
+                remove_subject_grade_settings(subject_id)
             flash(_('Xatolik yuz berdi: {}').format(str(e)), 'danger')
             return redirect(url_for('admin.subject_add'))
 
-    return render_template('admin_subject_form.html', subject=None)
+    return render_template(
+        'admin_subject_form.html',
+        subject=None,
+        grading_settings=get_subject_grade_settings(None),
+    )
 
 @admin_bp.route('/subject/edit/<int:id>', methods=['GET', 'POST'])
 def subject_edit(id):
     subject = Subject.query.get_or_404(id)
+    grading_settings = get_subject_grade_settings(subject.id)
 
     if request.method == 'POST':
-        subject.name = request.form['name']
-        # Re-translating only if user wants? Or auto always?
-        # App.py did it always
-        subject.name_ru = auto_translate(subject.name, 'ru')
-        subject.name_en = auto_translate(subject.name, 'en')
+        try:
+            excellent_min = int(request.form.get('excellent_min', 85))
+            good_min = int(request.form.get('good_min', 70))
+            satisfactory_min = int(request.form.get('satisfactory_min', 65))
+            fail_max = int(request.form.get('fail_max', satisfactory_min - 1))
 
-        subject.grades = request.form['grades']
-        subject.is_protected = 'is_protected' in request.form
-        subject.question_count = int(request.form.get('question_count', 20))
-        subject.time_limit = int(request.form.get('time_limit', 30))
-        subject.show_results = 'show_results' in request.form
-        subject.is_visible = 'is_visible' in request.form
+            validation_error = validate_grade_settings(excellent_min, good_min, satisfactory_min, fail_max)
+            if validation_error:
+                flash(validation_error, 'warning')
+                return redirect(url_for('admin.subject_edit', id=id))
 
-        db.session.commit()
-        flash(_('Fan muvaffaqiyatli o\'zgartirildi'), 'success')
-        return redirect(url_for('admin.subjects'))
+            subject.name = request.form['name']
+            subject.name_ru = auto_translate(subject.name, 'ru')
+            subject.name_en = auto_translate(subject.name, 'en')
 
-    return render_template('admin_subject_form.html', subject=subject)
+            subject.grades = request.form['grades']
+            subject.is_protected = 'is_protected' in request.form
+            subject.question_count = int(request.form.get('question_count', 20))
+            subject.time_limit = int(request.form.get('time_limit', 30))
+            subject.show_results = 'show_results' in request.form
+            subject.is_visible = 'is_visible' in request.form
+
+            set_subject_grade_settings(subject.id, excellent_min, good_min, satisfactory_min, fail_max)
+            db.session.commit()
+            flash(_('Fan muvaffaqiyatli o\'zgartirildi'), 'success')
+            return redirect(url_for('admin.subjects'))
+        except Exception as e:
+            db.session.rollback()
+            set_subject_grade_settings(
+                subject.id,
+                grading_settings['excellent_min'],
+                grading_settings['good_min'],
+                grading_settings['satisfactory_min'],
+                grading_settings['fail_max'],
+            )
+            flash(_('Xatolik yuz berdi: {}').format(str(e)), 'danger')
+            return redirect(url_for('admin.subject_edit', id=id))
+
+    return render_template('admin_subject_form.html', subject=subject, grading_settings=grading_settings)
 
 @admin_bp.route('/subject/delete/<int:id>')
 @admin_required
@@ -977,6 +1111,10 @@ def subject_delete(id):
 
     db.session.delete(subject)
     db.session.commit()
+    try:
+        remove_subject_grade_settings(id)
+    except Exception as cleanup_error:
+        print(f"Subject grading cleanup warning: {cleanup_error}")
     flash(_('Fan o\'chirildi'), 'success')
     return redirect(url_for('admin.subjects'))
 
@@ -1101,6 +1239,7 @@ def api_get_questions():
         data.append({
             'id': q.id,
             'text': q.question_text,
+            'image_url': get_question_image_url(q.id),
             'a': q.option_a,
             'b': q.option_b,
             'c': q.option_c,

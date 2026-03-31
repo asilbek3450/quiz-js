@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="row justify-content-center animate-fade-in-up">
-    <div class="col-md-6 col-lg-5">
+    <div class="col-md-10 col-lg-10 col-xl-9">
         <div class="card border-0 shadow-lg">
             <div class="card-header bg-white border-0 pt-4 pb-0 text-center">
                 <div class="icon-circle bg-light text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
@@ -79,6 +79,53 @@
                                 <option value="80" {% if subject and subject.time_limit==80 %}selected{% endif %}>80
                                 </option>
                             </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="p-3 bg-light rounded border">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div>
+                                    <div class="fw-bold">{{ _('Baholash chegaralari') }}</div>
+                                    <small class="text-muted">{{ _('Har bir fan uchun baho foizlarini qo\'lda boshqaring') }}</small>
+                                </div>
+                                <span class="badge bg-white text-dark border">{{ _('Foizda') }}</span>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label for="excellent_min" class="form-label fw-bold small text-uppercase text-success">{{ _('A\'lo uchun min.') }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-end-0"><i class="fas fa-trophy text-success"></i></span>
+                                        <input type="number" min="0" max="100" class="form-control border-start-0 ps-0" id="excellent_min" name="excellent_min"
+                                            value="{{ grading_settings.excellent_min }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="good_min" class="form-label fw-bold small text-uppercase text-info">{{ _('Yaxshi uchun min.') }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-end-0"><i class="fas fa-thumbs-up text-info"></i></span>
+                                        <input type="number" min="0" max="100" class="form-control border-start-0 ps-0" id="good_min" name="good_min"
+                                            value="{{ grading_settings.good_min }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="satisfactory_min" class="form-label fw-bold small text-uppercase text-warning">{{ _('Qoniqarli uchun min.') }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-end-0"><i class="fas fa-check-circle text-warning"></i></span>
+                                        <input type="number" min="0" max="100" class="form-control border-start-0 ps-0" id="satisfactory_min" name="satisfactory_min"
+                                            value="{{ grading_settings.satisfactory_min }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="fail_max" class="form-label fw-bold small text-uppercase text-danger">{{ _('Qoniqarsiz gacha') }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-end-0"><i class="fas fa-xmark-circle text-danger"></i></span>
+                                        <input type="number" min="0" max="100" class="form-control border-start-0 ps-0" id="fail_max" name="fail_max"
+                                            value="{{ grading_settings.fail_max }}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-text mt-3">{{ _('Qoniqarsiz va Qoniqarli oralig\'i uzluksiz bo\'lishi uchun ularning qiymatlari avtomatik moslashtiriladi.') }}</div>
                         </div>
                     </div>
 
@@ -171,4 +218,28 @@
         }
     }
 </style>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const satisfactoryInput = document.getElementById('satisfactory_min');
+        const failInput = document.getElementById('fail_max');
+
+        if (!satisfactoryInput || !failInput) return;
+
+        satisfactoryInput.addEventListener('input', function () {
+            if (document.activeElement !== satisfactoryInput) return;
+            const value = parseInt(satisfactoryInput.value, 10);
+            if (!Number.isNaN(value)) {
+                failInput.value = Math.max(0, value - 1);
+            }
+        });
+
+        failInput.addEventListener('input', function () {
+            if (document.activeElement !== failInput) return;
+            const value = parseInt(failInput.value, 10);
+            if (!Number.isNaN(value)) {
+                satisfactoryInput.value = Math.min(100, value + 1);
+            }
+        });
+    });
+</script>
 {% endblock %}

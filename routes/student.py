@@ -4,6 +4,7 @@ from flask_babel import gettext as _, get_locale
 from extensions import db
 from models import Subject, Question, TestResult, ControlWork, Feedback
 from datetime import datetime, timedelta
+from feature_store import attach_question_media, get_grade_info, get_question_image_url
 import random
 import json
 
@@ -118,16 +119,9 @@ def _build_balanced_practice_set(subject_id: int, grade: int, quarter: int):
     random.shuffle(selected)
     return selected, len(base)
 
-def calculate_grade(score, total=20):
-    percentage = (score / total) * 100
-    if percentage >= 85:
-        return _("A'lo (5)")
-    elif percentage >= 70:
-        return _("Yaxshi (4)")
-    elif percentage >= 65:
-        return _("Qoniqarli (3)")
-    else:
-        return _("Qoniqarsiz (2)")
+def calculate_grade(score, total=20, subject_id=None):
+    percentage = (score / total) * 100 if total else 0
+    return get_grade_info(percentage, subject_id)
 
 @student_bp.route('/start', methods=['GET', 'POST'])
 def start():
@@ -347,6 +341,7 @@ def test():
         return redirect(url_for('student.result'))
     
     question = Question.query.get(question_ids[current])
+    attach_question_media(question)
     answers = session.get('answers', {})
     
     lang = str(get_locale())
@@ -430,6 +425,7 @@ def test():
                          is_protected=is_protected,
                          is_blocked=is_blocked,
                          marked_questions=marked_questions,
+                         question_image_url=question.image_url,
                          time_remaining_ms=time_remaining_ms)
 
 @student_bp.route('/report_violation', methods=['POST'])
@@ -555,6 +551,7 @@ def result():
     score = 0
     results = []
     lang = str(get_locale())
+    subject_id = session['subject_id']
     
     for qid in question_ids:
         question = Question.query.get(qid)
@@ -605,6 +602,7 @@ def result():
         
         results.append({
             'question': q_text_display,
+            'image_url': get_question_image_url(qid),
             'user_answer': visual_user_answer, 
             'correct_answer': visual_correct_answer, 
             'is_correct': is_correct
@@ -623,7 +621,8 @@ def result():
         secs = duration_seconds % 60
         duration_text = f"{mins:02d}:{secs:02d}"
     
-    grade_text = calculate_grade(score, total)
+    grade_info = calculate_grade(score, total, subject_id)
+    grade_text = grade_info['label']
     
     full_name = f"{session['student_name']} {session['student_surname']}"
     tashkent_time = datetime.utcnow() + timedelta(hours=5)
@@ -633,7 +632,7 @@ def result():
         grade=session['grade'],
         class_number=session['class_number'],
         quarter=session['quarter'],
-        subject_id=session['subject_id'],
+        subject_id=subject_id,
         score=score,
         total_questions=total,
         percentage=percentage,
@@ -645,7 +644,7 @@ def result():
     db.session.add(result)
     db.session.commit()
     
-    subject = Subject.query.get(session['subject_id'])
+    subject = Subject.query.get(subject_id)
     show_detailed_results = subject.show_results if subject else True
     
     # Cleanup session but keep lang
@@ -658,6 +657,7 @@ def result():
                          score=score, 
                          total=total, 
                          percentage=percentage,
+                         grade_info=grade_info,
                          grade_text=grade_text,
                          results=results,
                          show_results=show_detailed_results)

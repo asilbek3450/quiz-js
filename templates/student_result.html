@@ -193,15 +193,15 @@
 {% block content %}
 <div class="result-container">
     <div class="result-header">
-        {% if percentage >= 90 %}
+        {% if grade_info.level == 'excellent' %}
         <div class="result-icon icon-excellent">
             <i class="fas fa-trophy"></i>
         </div>
-        {% elif percentage >= 70 %}
+        {% elif grade_info.level == 'good' %}
         <div class="result-icon icon-good">
             <i class="fas fa-smile"></i>
         </div>
-        {% elif percentage >= 50 %}
+        {% elif grade_info.level == 'satisfactory' %}
         <div class="result-icon icon-satisfactory">
             <i class="fas fa-meh"></i>
         </div>
@@ -229,15 +229,7 @@
             </div>
         </div>
 
-        {% if percentage >= 90 %}
-        <span class="grade-badge grade-excellent">{{ grade_text }}</span>
-        {% elif percentage >= 70 %}
-        <span class="grade-badge grade-good">{{ grade_text }}</span>
-        {% elif percentage >= 50 %}
-        <span class="grade-badge grade-satisfactory">{{ grade_text }}</span>
-        {% else %}
-        <span class="grade-badge grade-fail">{{ grade_text }}</span>
-        {% endif %}
+        <span class="grade-badge {{ grade_info.text_class }}">{{ grade_text }}</span>
     </div>
 
     {% if show_results %}
@@ -258,6 +250,11 @@
                 {{ _('Savol') }} {{ loop.index }}
             </div>
             <div class="question-text">{{ result.question }}</div>
+            {% if result.image_url %}
+            <div class="mb-3">
+                <img src="{{ result.image_url }}" alt="{{ _('Savol rasmi') }}" class="img-fluid rounded-4 shadow-sm" style="max-height: 320px; object-fit: contain; background: white;">
+            </div>
+            {% endif %}
             <div class="answer-info">
                 {% if result.user_answer %}
                 <span class="answer-badge {% if result.is_correct %}badge-correct{% else %}badge-incorrect{% endif %}">

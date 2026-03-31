@@ -142,7 +142,7 @@
         // Default selected questions for edit mode
         const selectedQuestionIds = [
             {% if control_work %}
-            {% for q in control_work.questions %}{ { q.id } }, {% endfor %}
+            {% for q in control_work.questions %}{{ q.id }}, {% endfor %}
     {% endif %}
         ];
 
@@ -182,6 +182,11 @@
                             <label class="form-check-label d-block cursor-pointer mb-2" for="q_${q.id}">
                                 <strong>ID: #${q.id}</strong> - ${q.text}
                             </label>
+                            ${q.image_url ? `
+                                <div class="mb-2">
+                                    <img src="${q.image_url}" alt="Question image" class="img-fluid rounded-3 border" style="max-height: 140px; object-fit: contain; background: #fff;">
+                                </div>
+                            ` : ''}
                             <div class="d-flex gap-2 flex-wrap">
                                 <span class="badge ${q.correct == 'A' ? 'bg-success' : 'bg-light text-dark'}">A) ${q.a}</span>
                                 <span class="badge ${q.correct == 'B' ? 'bg-success' : 'bg-light text-dark'}">B) ${q.b}</span>
