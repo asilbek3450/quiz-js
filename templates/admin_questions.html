@@ -3,6 +3,16 @@
 {% block title %}{{ _('Savollar boshqaruvi') }} - Admin{% endblock %}
 
 {% block extra_js %}
+<script>
+    // Render any LaTeX formulas stored in question texts / options
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.MathJax) {
+            MathJax.typesetPromise().catch(function (e) {
+                console.warn('MathJax render error:', e.message);
+            });
+        }
+    });
+</script>
 {% endblock %}
 
 {% block content %}
