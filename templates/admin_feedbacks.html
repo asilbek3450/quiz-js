@@ -68,8 +68,7 @@
                         <div class="flex-grow-1 overflow-hidden">
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <h6 class="fw-bold mb-0 text-truncate student-id">ID: {{ conv.user_uuid[:8] }}</h6>
-                                <small class="text-muted" style="font-size: 0.65rem;">{{
-                                    conv.created_at.strftime('%H:%M') }}</small>
+                                <small class="text-muted" style="font-size: 0.65rem;">{{ conv.created_at | tashkent('%H:%M') }}</small>
                             </div>
                             <p class="small text-muted mb-0 text-truncate last-msg">{{ conv.text or conv.message or conv.admin_response }}</p>
                         </div>
@@ -130,7 +129,7 @@
                             <div class="message-bubble admin-bubble px-3 py-2 rounded-4 shadow-sm text-white bg-primary">
                                 <div class="message-content">{{ text }}</div>
                                 <div class="message-meta text-end mt-1">
-                                    <small class="text-white-50">{{ msg.created_at.strftime('%H:%M, %d-%m') }}</small>
+                                    <small class="text-white-50">{{ msg.created_at | tashkent('%H:%M, %d-%m') }}</small>
                                 </div>
                             </div>
                         </div>
@@ -141,7 +140,7 @@
                             <div class="message-bubble bg-light px-3 py-2 rounded-4 shadow-sm">
                                 <div class="message-content">{{ text }}</div>
                                 <div class="message-meta text-end mt-1">
-                                    <small class="text-muted">{{ msg.created_at.strftime('%H:%M, %d-%m') }}</small>
+                                    <small class="text-muted">{{ msg.created_at | tashkent('%H:%M, %d-%m') }}</small>
                                 </div>
                             </div>
                         </div>

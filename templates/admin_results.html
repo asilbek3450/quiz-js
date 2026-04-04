@@ -173,7 +173,7 @@
                                 <span class="badge {{ result.grade_info.badge_class }}">{{ result.display_grade_text }}</span>
                             </td>
                             <td>
-                                <small>{{ result.test_date.strftime('%d.%m.%Y %H:%M') }}</small>
+                                <small>{{ result.test_date | tashkent('%d.%m.%Y %H:%M') }}</small>
                             </td>
                             <td>
                                 {% if session.admin_role == 'admin' %}

@@ -18,7 +18,19 @@ from feature_store import (
     validate_grade_settings,
 )
 from deep_translator import GoogleTranslator
-from datetime import datetime
+from datetime import datetime, timedelta
+
+
+def tashkent_now():
+    """Hozirgi Toshkent vaqtini qaytaradi (UTC+5)."""
+    return datetime.utcnow() + timedelta(hours=5)
+
+
+def to_tashkent(dt):
+    """DateTime ni Toshkent vaqtiga o'tkazadi (eski UTC yozuvlar uchun ham)."""
+    if dt is None:
+        return dt
+    return dt + timedelta(hours=5)
 import json
 from sqlalchemy import func
 from functools import wraps
@@ -113,7 +125,7 @@ def api_conversations():
     return jsonify([{
         'user_uuid': c.user_uuid,
         'message': (c.text or c.message or c.admin_response or ''),
-        'created_at': c.created_at.strftime('%H:%M'),
+        'created_at': to_tashkent(c.created_at).strftime('%H:%M'),
         'unread_count': unread_map.get(c.user_uuid, 0)
     } for c in conversations])
 
@@ -137,7 +149,7 @@ def api_messages(user_uuid):
         'id': m.id,
         'sender': m.sender or 'student',
         'text': (m.text or m.message or m.admin_response or ''),
-        'created_at': m.created_at.strftime('%H:%M, %d-%m'),
+        'created_at': to_tashkent(m.created_at).strftime('%H:%M, %d-%m'),
     } for m in messages if (m.text or m.message or m.admin_response)])
 
 @admin_bp.route('/feedback/respond/<user_uuid>', methods=['POST'])
@@ -158,7 +170,7 @@ def respond_feedback(user_uuid):
             sender='admin',
             text=response_text,
             is_read=True,
-            created_at=datetime.utcnow(),
+            created_at=tashkent_now(),
         )
         db.session.add(msg)
         db.session.commit()
@@ -864,7 +876,7 @@ def export_results():
             _('Jami savollar'): r.total_questions,
             _('Foiz'): f"{int(r.percentage)}%",
             _('Baho'): grade_info['label'],
-            _('Sana'): r.test_date.strftime('%Y-%m-%d %H:%M')
+            _('Sana'): to_tashkent(r.test_date).strftime('%Y-%m-%d %H:%M')
         })
 
     df = pd.DataFrame(data)
@@ -875,7 +887,7 @@ def export_results():
 
     output.seek(0)
 
-    filename = f"results_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
+    filename = f"results_{tashkent_now().strftime('%Y%m%d_%H%M')}.xlsx"
     return send_file(
         output,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

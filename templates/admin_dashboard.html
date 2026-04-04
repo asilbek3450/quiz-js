@@ -260,8 +260,7 @@
                                     </span>
                                 </td>
                                 <td class="text-muted small">
-                                    <i class="far fa-calendar-alt me-1"></i> {{ result.test_date.strftime('%Y-%m-%d
-                                    %H:%M') }}
+                                    <i class="far fa-calendar-alt me-1"></i> {{ result.test_date | tashkent('%Y-%m-%d %H:%M') }}
                                 </td>
                             </tr>
                             {% else %}

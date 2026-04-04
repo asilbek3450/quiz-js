@@ -4,6 +4,18 @@ from flask_babel import gettext as _, get_locale
 from extensions import db
 from models import Subject, Question, TestResult, ControlWork, Feedback
 from datetime import datetime, timedelta
+
+
+def tashkent_now():
+    """Hozirgi Toshkent vaqtini qaytaradi (UTC+5)."""
+    return datetime.utcnow() + timedelta(hours=5)
+
+
+def to_tashkent(dt):
+    """DateTime ni Toshkent vaqtiga o'tkazadi (eski UTC yozuvlar uchun ham)."""
+    if dt is None:
+        return dt
+    return dt + timedelta(hours=5)
 from feature_store import attach_question_media, get_grade_info, get_question_image_url
 import random
 import json
@@ -26,7 +38,7 @@ def submit_feedback():
         message=message,  # legacy
         sender='student',
         text=message,
-        created_at=datetime.utcnow(),
+        created_at=tashkent_now(),
         is_read=False,
     )
     db.session.add(fb)
@@ -47,7 +59,7 @@ def get_my_feedbacks(user_uuid):
             'id': f.id,
             'sender': f.sender or 'student',
             'text': f.text or (f.message if (f.sender or 'student') == 'student' else f.admin_response) or '',
-            'created_at': f.created_at.strftime('%H:%M, %d-%m'),
+            'created_at': to_tashkent(f.created_at).strftime('%H:%M, %d-%m'),
         }
         for f in feedbacks
         if (f.text or f.message or f.admin_response)
@@ -625,7 +637,7 @@ def result():
     grade_text = grade_info['label']
     
     full_name = f"{session['student_name']} {session['student_surname']}"
-    tashkent_time = datetime.utcnow() + timedelta(hours=5)
+    tashkent_time = tashkent_now()
     
     result = TestResult(
         full_name=full_name,

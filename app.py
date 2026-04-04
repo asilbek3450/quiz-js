@@ -36,6 +36,18 @@ def create_app():
             return ""
         return markdown.markdown(text, extensions=['fenced_code'])
 
+    from datetime import timedelta as _td
+
+    @app.template_filter('tashkent')
+    def tashkent_filter(dt, fmt='%H:%M, %d-%m'):
+        """DateTime ni Toshkent vaqtiga (UTC+5) o'tkazib formatlaydi.
+        Ishlatish: {{ obj.created_at | tashkent }}
+                   {{ obj.created_at | tashkent('%d.%m.%Y %H:%M') }}
+        """
+        if dt is None:
+            return ''
+        return (dt + _td(hours=5)).strftime(fmt)
+
     # Register Blueprints
     app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp)

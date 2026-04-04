@@ -1,4 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timedelta
+
+
+def tashkent_now():
+    """Hozirgi Toshkent vaqtini qaytaradi (UTC+5)."""
+    return datetime.utcnow() + timedelta(hours=5)
 from extensions import db
 
 # Association table for control work questions
@@ -17,7 +22,7 @@ class ControlWork(db.Model):
     quarter = db.Column(db.Integer, nullable=False)
     time_limit = db.Column(db.Integer, default=40)  # minutes
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=tashkent_now)
 
     subject = db.relationship('Subject', backref='control_works')
     questions = db.relationship(
@@ -89,7 +94,7 @@ class TestResult(db.Model):
     total_questions = db.Column(db.Integer, default=20)
     percentage = db.Column(db.Float, nullable=False)
     grade_text = db.Column(db.String(20), nullable=False)
-    test_date = db.Column(db.DateTime, default=datetime.utcnow)
+    test_date = db.Column(db.DateTime, default=tashkent_now)
     answers_json = db.Column(db.Text)  # JSON format
     control_work_id = db.Column(db.Integer, db.ForeignKey('control_work.id'), nullable=True)
 
@@ -108,5 +113,5 @@ class Feedback(db.Model):
     sender = db.Column(db.String(10), default='student')  # 'student' | 'admin'
     text = db.Column(db.Text)
     is_read = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=tashkent_now)
     responded_at = db.Column(db.DateTime)
