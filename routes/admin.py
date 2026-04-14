@@ -317,6 +317,7 @@ def login():
         if admin and check_password_hash(admin.password_hash, password):
             session['admin_id'] = admin.id
             session['admin_name'] = admin.full_name
+            session['admin_user'] = admin.username
             session['admin_role'] = admin.role or 'teacher'
             flash(_('Xush kelibsiz {}!').format(admin.full_name), 'success')
             return redirect(url_for('admin.dashboard'))

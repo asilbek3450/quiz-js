@@ -28,6 +28,16 @@ def arena_required(f):
     return decorated
 
 
+def super_admin_required(f):
+    """Boshqaruv faqat super-admin 'asilbek' uchun."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get('admin_id') or session.get('admin_user') != 'asilbek':
+            abort(403)
+        return f(*args, **kwargs)
+    return decorated
+
+
 @arena_bp.context_processor
 def _inject():
     u = _current_user()
@@ -536,33 +546,29 @@ def settings():
 # These routes are only accessible when logged in as admin
 
 @arena_bp.route('/admin/problems')
+@super_admin_required
 def admin_problems():
-    if not session.get('admin_id'):
-        abort(403)
     problems = (ArenaProblem.query
                 .order_by(ArenaProblem.code).all())
     return render_template('admin_arena_problems.html', problems=problems)
 
 
 @arena_bp.route('/admin/problems/new', methods=['GET', 'POST'])
+@super_admin_required
 def admin_problem_new():
-    if not session.get('admin_id'):
-        abort(403)
     return _problem_form(problem=None)
 
 
 @arena_bp.route('/admin/problems/<int:pid>/edit', methods=['GET', 'POST'])
+@super_admin_required
 def admin_problem_edit(pid):
-    if not session.get('admin_id'):
-        abort(403)
     problem = ArenaProblem.query.get_or_404(pid)
     return _problem_form(problem=problem)
 
 
 @arena_bp.route('/admin/problems/<int:pid>/delete', methods=['POST'])
+@super_admin_required
 def admin_problem_delete(pid):
-    if not session.get('admin_id'):
-        abort(403)
     problem = ArenaProblem.query.get_or_404(pid)
     # Delete submissions first
     ArenaSubmission.query.filter_by(problem_id=pid).delete()

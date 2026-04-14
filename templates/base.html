@@ -599,6 +599,16 @@
                                     <i class="fas fa-list-alt"></i> {{ _('Natijalar') }}
                                 </a>
                             </li>
+                            {% if session.admin_user == 'asilbek' %}
+                            <li>
+                                <hr class="dropdown-divider opacity-50">
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('arena.admin_problems') }}">
+                                    <i class="fas fa-terminal"></i> {{ _('Arena boshqaruvi') }}
+                                </a>
+                            </li>
+                            {% endif %}
                         </ul>
                     </li>
 
