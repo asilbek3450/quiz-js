@@ -333,323 +333,264 @@
 <script>
     const activeUuid = "{{ active_uuid or '' }}";
     const isAdmin = {{ (session.admin_role == 'admin') | tojson }};
+    const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
     let lastMsgId = parseInt("{{ active_messages[-1].id if active_messages else 0 }}") || 0;
     let isSelectionMode = false;
     let selectedUuids = new Set();
+    let msgPollTimer = null;
+    let convPollTimer = null;
 
+    // ─── XSS himoya ───────────────────────────────────────────────────────────
+    function esc(str) {
+        return String(str || '')
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+    }
+
+    // ─── Scroll ───────────────────────────────────────────────────────────────
     function scrollBottom() {
-        const chatMessages = document.getElementById('chatMessages');
-        if (chatMessages) {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
+        const c = document.getElementById('chatMessages');
+        if (c) c.scrollTop = c.scrollHeight;
     }
 
+    // ─── Conversations sidebar ────────────────────────────────────────────────
     function updateConversations() {
-        if (!isAdmin || isSelectionMode) {
-            if (!isAdmin && isSelectionMode) isSelectionMode = false; // Guard
-            if (!isAdmin) {
-                // Normal refresh for teachers without selection boxes
-            } else if (isSelectionMode) return;
-        }
-        fetch("{{ url_for('admin.api_conversations') }}")
-            .then(res => res.json())
-            .then(conversations => {
-                const list = document.querySelector('.conversations-list');
-                if (!list) return;
-
+        if (isSelectionMode) return;
+        fetch("{{ url_for('admin.api_conversations') }}", { headers: { 'X-CSRFToken': CSRF } })
+            .then(r => r.ok ? r.json() : Promise.reject())
+            .then(list => {
+                const el = document.querySelector('.conversations-list');
+                if (!el) return;
                 let html = '';
-                conversations.forEach(c => {
-                    const isActive = c.user_uuid === activeUuid;
-                    html += `
-                <div class="d-flex align-items-center border-bottom conversation-item-wrapper">
-                    <div class="selection-box ps-3 ${isAdmin && isSelectionMode ? '' : 'd-none'}">
-                        <input type="checkbox" class="form-check-input conv-checkbox" value="${c.user_uuid}" onchange="toggleUuid('${c.user_uuid}', this.checked)" ${selectedUuids.has(c.user_uuid) ? 'checked' : ''}>
-                    </div>
-                    <a href="/admin/feedbacks/${c.user_uuid}" 
-                       class="list-group-item list-group-item-action p-3 border-0 d-flex align-items-center gap-3 transition-all flex-grow-1 ${isActive ? 'active-conv' : ''}">
-                        <div class="avatar-wrapper position-relative">
-                            <div class="avatar-circle bg-soft-primary text-primary shadow-sm">
-                                <i class="fas fa-user-secret"></i>
-                            </div>
-                            ${c.unread_count > 0 ? `
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light animate-pulse" style="font-size: 0.6rem;">
-                                ${c.unread_count}
-                            </span>` : ''}
+                list.forEach(c => {
+                    const active = c.user_uuid === activeUuid ? 'active-conv' : '';
+                    const checked = selectedUuids.has(c.user_uuid) ? 'checked' : '';
+                    const selHide = isSelectionMode ? '' : 'd-none';
+                    const badge = c.unread_count > 0
+                        ? `<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light animate-pulse" style="font-size:.6rem">${esc(c.unread_count)}</span>`
+                        : '';
+                    html += `<div class="d-flex align-items-center border-bottom conversation-item-wrapper">
+                        <div class="selection-box ps-3 ${selHide}">
+                            <input type="checkbox" class="form-check-input conv-checkbox" value="${esc(c.user_uuid)}" ${checked}>
                         </div>
-                        <div class="flex-grow-1 overflow-hidden">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <h6 class="fw-bold mb-0 text-truncate student-id">ID: ${c.user_uuid.substring(0, 8)}</h6>
-                                <small class="text-muted" style="font-size: 0.65rem;">${c.created_at}</small>
+                        <a href="/admin/feedbacks/${esc(c.user_uuid)}"
+                           class="list-group-item list-group-item-action p-3 border-0 d-flex align-items-center gap-3 transition-all flex-grow-1 ${active}">
+                            <div class="avatar-wrapper position-relative">
+                                <div class="avatar-circle bg-soft-primary text-primary shadow-sm"><i class="fas fa-user-secret"></i></div>
+                                ${badge}
                             </div>
-                            <p class="small text-muted mb-0 text-truncate last-msg">${c.message}</p>
-                        </div>
-                    </a>
-                </div>`;
+                            <div class="flex-grow-1 overflow-hidden">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <h6 class="fw-bold mb-0 text-truncate">ID: ${esc(c.user_uuid.substring(0,8))}</h6>
+                                    <small class="text-muted" style="font-size:.65rem">${esc(c.created_at)}</small>
+                                </div>
+                                <p class="small text-muted mb-0 text-truncate">${esc(c.message)}</p>
+                            </div>
+                        </a>
+                    </div>`;
                 });
-                list.innerHTML = html || `<div class="p-5 text-center text-muted"><i class="fas fa-comment-slash fa-3x mb-3 opacity-25"></i><p class="small mb-0">{{ _('Hozircha chatlar yo\'q') }}</p></div>`;
-            });
-    }
-
-    function toggleSelectionMode() {
-        isSelectionMode = !isSelectionMode;
-        const toolbar = document.getElementById('bulkActionsToolbar');
-        const selectionBoxes = document.querySelectorAll('.selection-box');
-        const selectBtn = document.getElementById('selectModeBtn');
-        const selectAllCb = document.getElementById('selectAllConversations');
-
-        if (isSelectionMode) {
-            toolbar.classList.remove('d-none');
-            toolbar.classList.add('d-flex');
-            selectionBoxes.forEach(box => box.classList.remove('d-none'));
-            selectedUuids.clear();
-            document.querySelectorAll('.conv-checkbox').forEach(cb => cb.checked = false);
-            if (selectAllCb) selectAllCb.checked = false;
-            if (selectBtn) {
-                selectBtn.classList.remove('btn-outline-primary');
-                selectBtn.classList.add('btn-primary');
-                selectBtn.innerHTML = '<i class="fas fa-times me-1"></i> Bekor qilish';
-            }
-        } else {
-            toolbar.classList.add('d-none');
-            toolbar.classList.remove('d-flex');
-            selectionBoxes.forEach(box => box.classList.add('d-none'));
-            selectedUuids.clear();
-            if (selectBtn) {
-                selectBtn.classList.remove('btn-primary');
-                selectBtn.classList.add('btn-outline-primary');
-                selectBtn.innerHTML = '<i class="fas fa-check-square me-1"></i> Tanlash';
-            }
-        }
-    }
-
-    function toggleUuid(uuid, checked) {
-        if (checked) selectedUuids.add(uuid);
-        else selectedUuids.delete(uuid);
-    }
-
-    function selectAll(checked) {
-        const checkboxes = document.querySelectorAll('.conv-checkbox');
-        checkboxes.forEach(cb => {
-            cb.checked = checked;
-            toggleUuid(cb.value, checked);
-        });
-    }
-
-    function deleteSelected() {
-        if (selectedUuids.size === 0) {
-            alert("{{ _('Hech qanday chat tanlanmadi') }}");
-            return;
-        }
-        if (!confirm("{{ _('Tanlangan chatlarni o\'chirib tashlamoqchimisiz?') }}")) return;
-
-        const btn = document.querySelector('#bulkActionsToolbar .btn-danger');
-        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> {{ _("O\'chirish...") }}'; }
-
-        fetch("{{ url_for('admin.bulk_delete_feedback') }}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify({ user_uuids: Array.from(selectedUuids) })
-        })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    const wasActiveSelected = selectedUuids.has(activeUuid);
-                    toggleSelectionMode();
-                    if (wasActiveSelected) {
-                        window.location.href = "{{ url_for('admin.feedbacks') }}";
-                    } else {
-                        updateConversations();
-                    }
-                } else {
-                    alert(data.error || 'Server xatosi');
-                    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash me-1"></i> {{ _("O\'chirish") }}'; }
-                }
+                el.innerHTML = html || `<div class="p-5 text-center text-muted"><i class="fas fa-comment-slash fa-3x mb-3 opacity-25"></i><p class="small mb-0">{{ _("Hozircha chatlar yo\\'q") }}</p></div>`;
             })
-            .catch(err => {
-                alert('Xatolik: ' + err.message);
-                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash me-1"></i> {{ _("O\'chirish") }}'; }
-            });
+            .catch(() => {});
     }
 
-    function clearAllConversations() {
-        if (!confirm("{{ _('Barcha chatlarni butunlay tozalab tashlamoqchimisiz? Bu amalni ortga qaytarib bo\'lmaydi!') }}")) return;
-
-        fetch("{{ url_for('admin.clear_all_feedback') }}", {
-            method: 'POST',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    window.location.href = "{{ url_for('admin.feedbacks') }}";
-                } else {
-                    alert(data.error || 'Server xatosi');
-                }
-            })
-            .catch(err => alert('Xatolik: ' + err.message));
+    // ─── Messages ─────────────────────────────────────────────────────────────
+    function buildBubble(sender, text, time, animate) {
+        const safeText = esc(text);
+        const safeTime = esc(time || '');
+        const anim = animate ? 'animate-fade-in' : '';
+        if (sender === 'admin') return `
+            <div class="message-group admin-message mb-3 d-flex justify-content-end ${anim}">
+                <div class="message-bubble admin-bubble px-3 py-2 rounded-4 shadow-sm text-white bg-primary">
+                    <div class="message-content">${safeText}</div>
+                    <div class="message-meta text-end mt-1"><small class="text-white-50">${safeTime}</small></div>
+                </div>
+            </div>`;
+        return `
+            <div class="message-group student-message mb-3 ${anim}">
+                <div class="message-bubble bg-light px-3 py-2 rounded-4 shadow-sm">
+                    <div class="message-content">${safeText}</div>
+                    <div class="message-meta text-end mt-1"><small class="text-muted">${safeTime}</small></div>
+                </div>
+            </div>`;
     }
 
-    function renderMessages(messages, { replace = false } = {}) {
+    function renderMessages(messages, animate = true) {
         const container = document.getElementById('chatMessages');
         if (!container) return;
-        if (replace) container.innerHTML = '';
-
         messages.forEach(msg => {
-            const sender = msg.sender || 'student';
             const text = msg.text || '';
             if (!text) return;
-
-            if (sender === 'admin') {
-                const adminHtml = `
-                <div class="message-group admin-message mb-3 d-flex justify-content-end ${replace ? '' : 'animate-fade-in'}">
-                    <div class="d-flex align-items-end gap-2">
-                        <div class="message-bubble admin-bubble px-3 py-2 rounded-4 shadow-sm text-white bg-primary">
-                            <div class="message-content">${text}</div>
-                            <div class="message-meta text-end mt-1">
-                                <small class="text-white-50">${msg.created_at || ''}</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>`;
-                container.insertAdjacentHTML('beforeend', adminHtml);
-            } else {
-                const studentHtml = `
-                <div class="message-group student-message mb-3 ${replace ? '' : 'animate-fade-in'}">
-                    <div class="d-flex align-items-end gap-2">
-                        <div class="message-bubble bg-light px-3 py-2 rounded-4 shadow-sm">
-                            <div class="message-content">${text}</div>
-                            <div class="message-meta text-end mt-1">
-                                <small class="text-muted">${msg.created_at || ''}</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>`;
-                container.insertAdjacentHTML('beforeend', studentHtml);
-            }
-
-            lastMsgId = msg.id;
+            container.insertAdjacentHTML('beforeend', buildBubble(msg.sender || 'student', text, msg.created_at, animate));
+            if (msg.id) lastMsgId = msg.id;
         });
-
         scrollBottom();
     }
 
-    function fetchMessages({ fullRefresh = false } = {}) {
-        if (!activeUuid) return;
-        const url = fullRefresh || !lastMsgId
-            ? `/admin/api/feedback/messages/${activeUuid}`
-            : `/admin/api/feedback/messages/${activeUuid}?since_id=${lastMsgId}`;
+    // Optimistic: darhol UI ga qo'shib, keyin server tasdiqlaydi
+    function appendOptimistic(text) {
+        const now = new Date();
+        const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+        const container = document.getElementById('chatMessages');
+        if (container) {
+            container.insertAdjacentHTML('beforeend', buildBubble('admin', text, time, true));
+            scrollBottom();
+        }
+    }
 
-        fetch(url)
-            .then(res => res.json())
-            .then(messages => {
-                if (messages.length === 0) return;
-                renderMessages(messages, { replace: fullRefresh });
-            });
+    let fetchInFlight = false;
+    function fetchMessages() {
+        if (!activeUuid || fetchInFlight) return;
+        fetchInFlight = true;
+        const url = lastMsgId
+            ? `/admin/api/feedback/messages/${activeUuid}?since_id=${lastMsgId}`
+            : `/admin/api/feedback/messages/${activeUuid}`;
+        fetch(url, { headers: { 'X-CSRFToken': CSRF } })
+            .then(r => r.ok ? r.json() : Promise.reject())
+            .then(msgs => { if (msgs.length) renderMessages(msgs); })
+            .catch(() => {})
+            .finally(() => { fetchInFlight = false; });
+    }
+
+    // ─── Polling — sahifa ko'rinsa tez, yashirilsa to'xtaydi ─────────────────
+    const MSG_INTERVAL  = 2000;   // 2s (oldin 5s edi)
+    const CONV_INTERVAL = 5000;   // 5s (oldin 12s edi)
+
+    function startPolling() {
+        if (activeUuid && !msgPollTimer)  msgPollTimer  = setInterval(fetchMessages,       MSG_INTERVAL);
+        if (!convPollTimer)               convPollTimer = setInterval(updateConversations, CONV_INTERVAL);
+    }
+    function stopPolling() {
+        clearInterval(msgPollTimer);  msgPollTimer  = null;
+        clearInterval(convPollTimer); convPollTimer = null;
+    }
+    document.addEventListener('visibilitychange', () =>
+        document.hidden ? stopPolling() : startPolling()
+    );
+
+    // ─── Bulk / delete helpers ────────────────────────────────────────────────
+    function toggleSelectionMode() {
+        isSelectionMode = !isSelectionMode;
+        const toolbar   = document.getElementById('bulkActionsToolbar');
+        const boxes     = document.querySelectorAll('.selection-box');
+        const btn       = document.getElementById('selectModeBtn');
+        const selAll    = document.getElementById('selectAllConversations');
+        if (isSelectionMode) {
+            toolbar.classList.replace('d-none','d-flex');
+            boxes.forEach(b => b.classList.remove('d-none'));
+            selectedUuids.clear();
+            document.querySelectorAll('.conv-checkbox').forEach(c => c.checked = false);
+            if (selAll) selAll.checked = false;
+            if (btn) { btn.classList.replace('btn-outline-primary','btn-primary'); btn.innerHTML='<i class="fas fa-times me-1"></i> Bekor qilish'; }
+        } else {
+            toolbar.classList.replace('d-flex','d-none');
+            boxes.forEach(b => b.classList.add('d-none'));
+            selectedUuids.clear();
+            if (btn) { btn.classList.replace('btn-primary','btn-outline-primary'); btn.innerHTML='<i class="fas fa-check-square me-1"></i> Tanlash'; }
+        }
+    }
+
+    function toggleUuid(uuid, checked) { checked ? selectedUuids.add(uuid) : selectedUuids.delete(uuid); }
+    function selectAll(checked) { document.querySelectorAll('.conv-checkbox').forEach(cb => { cb.checked = checked; toggleUuid(cb.value, checked); }); }
+
+    function deleteSelected() {
+        if (!selectedUuids.size) { alert("{{ _('Hech qanday chat tanlanmadi') }}"); return; }
+        if (!confirm("{{ _('Tanlangan chatlarni butunlay tozalab tashlamoqchimisiz? Bu amalni ortga qaytarib bolmaydi!') }}")) return;
+        const btn = document.querySelector('#bulkActionsToolbar .btn-danger');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>'; }
+        fetch("{{ url_for('admin.bulk_delete_feedback') }}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF, 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ user_uuids: [...selectedUuids] })
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                if (selectedUuids.has(activeUuid)) { window.location.href = "{{ url_for('admin.feedbacks') }}"; }
+                else { toggleSelectionMode(); updateConversations(); }
+            } else { alert(d.error || 'Server xatosi'); if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-trash me-1"></i> {{ _("O\'chirish") }}'; } }
+        })
+        .catch(e => { alert(e.message); if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-trash me-1"></i> {{ _("O\'chirish") }}'; } });
     }
 
     function clearChat() {
-        if (!activeUuid) return;
-        if (!confirm("{{ _('Haqiqatan ham ushbu chatni tozalab tashlamoqchimisiz? Barcha xabarlar o\'chib ketadi.') }}")) return;
-
+        if (!activeUuid || !confirm("{{ _('Haqiqatan ham ushbu chatni tozalab tashlamoqchimisiz?') }}")) return;
         fetch(`/admin/feedback/clear/${activeUuid}`, {
-            method: 'POST',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            method: 'POST', headers: { 'X-CSRFToken': CSRF, 'X-Requested-With': 'XMLHttpRequest' }
         })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    // Navigate back to feedbacks list since conversation is now deleted
-                    window.location.href = "{{ url_for('admin.feedbacks') }}";
-                } else {
-                    alert(data.error || 'Server xatosi');
-                }
-            })
-            .catch(err => alert('Xatolik: ' + err.message));
+        .then(r => r.json())
+        .then(d => { if (d.success) window.location.href = "{{ url_for('admin.feedbacks') }}"; else alert(d.error); })
+        .catch(e => alert(e.message));
     }
 
+    // ─── Init ─────────────────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', function () {
         scrollBottom();
+        startPolling();
 
-        // Initial polling set
-        if (activeUuid) {
-            setInterval(() => fetchMessages({ fullRefresh: false }), 5000);
-        }
-        setInterval(updateConversations, 12000);
-
-        const conversationsList = document.querySelector('.conversations-list');
-        if (conversationsList) {
-            // Keep selected UUIDs in sync when checkboxes change
-            conversationsList.addEventListener('change', function (e) {
-                if (!isSelectionMode) return;
-                if (e.target.classList.contains('conv-checkbox')) {
+        // Conversations list — checkbox sync & selection click
+        const convList = document.querySelector('.conversations-list');
+        if (convList) {
+            convList.addEventListener('change', e => {
+                if (isSelectionMode && e.target.classList.contains('conv-checkbox'))
                     toggleUuid(e.target.value, e.target.checked);
+            });
+            convList.addEventListener('click', e => {
+                if (!isSelectionMode) return;
+                const item = e.target.closest('.conversation-item-wrapper');
+                if (item && !e.target.classList.contains('conv-checkbox')) {
+                    e.preventDefault();
+                    const cb = item.querySelector('.conv-checkbox');
+                    cb.checked = !cb.checked;
+                    toggleUuid(cb.value, cb.checked);
                 }
             });
         }
 
-        // Click handler for selection mode
-        document.querySelector('.conversations-list').addEventListener('click', function (e) {
-            if (!isSelectionMode) return;
-            const item = e.target.closest('.conversation-item-wrapper');
-            if (item && !e.target.classList.contains('conv-checkbox')) {
-                e.preventDefault();
-                const cb = item.querySelector('.conv-checkbox');
-                cb.checked = !cb.checked;
-                toggleUuid(cb.value, cb.checked);
-            }
-        });
-
+        // Reply form — optimistic send
         const replyForm = document.getElementById('adminReplyForm');
         if (replyForm) {
+            const textarea  = document.getElementById('replyTextarea');
+            const submitBtn = replyForm.querySelector('button[type="submit"]');
+
             replyForm.addEventListener('submit', function (e) {
                 e.preventDefault();
-                const textarea = document.getElementById('replyTextarea');
-                const response = textarea.value.trim();
-                if (!response) return;
+                const text = textarea.value.trim();
+                if (!text) return;
 
-                const formData = new FormData(replyForm);
-                formData.append('ajax', '1');
-
-                const submitBtn = replyForm.querySelector('button[type="submit"]');
+                // 1) Darhol UI ga qo'sh (optimistic)
+                appendOptimistic(text);
+                textarea.value = '';
+                textarea.style.height = '40px';
                 submitBtn.disabled = true;
 
+                // 2) Serverga yuboramiz
+                const fd = new FormData(replyForm);
+                fd.set('response', text);
+                fd.append('ajax', '1');
                 fetch("{{ url_for('admin.respond_feedback', user_uuid=active_uuid) if active_uuid }}", {
                     method: 'POST',
-                    body: formData,
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    body: fd,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': CSRF }
                 })
-                    .then(async res => {
-                        if (!res.ok) {
-                            const text = await res.text();
-                            throw new Error(text || res.statusText);
-                        }
-                        return res.json();
-                    })
-                    .then(data => {
-                        if (data.success) {
-                            textarea.value = '';
-                            fetchMessages({ fullRefresh: true }); // Reload thread so admin javobi darhol ko'rinsin
-                        } else {
-                            alert(data.error || 'Server error');
-                        }
-                    })
-                    .catch(err => {
-                        alert('Xatolik: ' + err.message);
-                    })
-                    .finally(() => {
-                        submitBtn.disabled = false;
-                    });
+                .then(r => r.ok ? r.json() : Promise.reject(r.statusText))
+                .then(d => { if (!d.success) alert(d.error || 'Server xatosi'); })
+                .catch(err => alert('Xatolik: ' + err))
+                .finally(() => { submitBtn.disabled = false; });
             });
 
-            document.getElementById('replyTextarea').addEventListener('keydown', function (e) {
-                // Enter = send. Shift+Enter or Ctrl/Cmd+Enter = new line.
+            // Enter = yuborish, Shift+Enter = yangi qator
+            textarea.addEventListener('keydown', e => {
                 if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
                     e.preventDefault();
                     replyForm.dispatchEvent(new Event('submit'));
                 }
+            });
+
+            // Textarea balandligi matn miqdoriga qarab o'ssin
+            textarea.addEventListener('input', function () {
+                this.style.height = '40px';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
             });
         }
     });

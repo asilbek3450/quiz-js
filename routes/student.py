@@ -1,4 +1,5 @@
 # pyright: reportAttributeAccessIssue=false, reportOptionalMemberAccess=false, reportOptionalSubscript=false, reportCallIssue=false
+import os
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_babel import gettext as _, get_locale
 from extensions import db
@@ -33,6 +34,9 @@ def submit_feedback():
     if not user_uuid or not message:
         return jsonify({'success': False, 'error': _('Xabar yoki foydalanuvchi ID topilmadi')}), 400
 
+    # Store UUID in session so get_my_feedbacks IDOR check passes
+    session['feedback_uuid'] = user_uuid
+
     fb = Feedback(
         user_uuid=user_uuid,
         message=message,  # legacy
@@ -44,16 +48,20 @@ def submit_feedback():
     db.session.add(fb)
     db.session.commit()
 
-    return jsonify({'success': True, 'message': _('Xabaringiz yuborildi')})
+    return jsonify({'success': True, 'message': _('Xabaringiz yuborildi'), 'id': fb.id})
 
 
 @student_bp.route('/my_feedbacks/<user_uuid>')
 def get_my_feedbacks(user_uuid):
-    feedbacks = (
-        Feedback.query.filter_by(user_uuid=user_uuid)
-        .order_by(Feedback.created_at.asc())
-        .all()
-    )
+    # IDOR himoya: faqat o'z UUID'i bilan so'rov qilish mumkin
+    if user_uuid != session.get('feedback_uuid'):
+        from flask import abort
+        abort(403)
+    since_id = request.args.get('since_id', 0, type=int)
+    query = Feedback.query.filter_by(user_uuid=user_uuid).order_by(Feedback.created_at.asc())
+    if since_id:
+        query = query.filter(Feedback.id > since_id)
+    feedbacks = query.all()
     return jsonify([
         {
             'id': f.id,
@@ -157,7 +165,7 @@ def start():
         session['class_number'] = request.form['class_number']
         session['quarter'] = int(request.form['quarter'])
         session['subject_id'] = subject_id
-        session['start_time'] = datetime.now().timestamp()
+        session['start_time'] = tashkent_now().timestamp()
         session.permanent = True
         
         subject = Subject.query.get(session['subject_id'])
@@ -263,7 +271,7 @@ def control_start():
         session['quarter'] = cw.quarter
         session['subject_id'] = cw.subject_id
         session['control_work_id'] = cw.id
-        session['start_time'] = datetime.now().timestamp()
+        session['start_time'] = tashkent_now().timestamp()
         session['cw_time_limit'] = cw.time_limit # minutes
         session.permanent = True
         
@@ -416,7 +424,7 @@ def test():
     if cw_time_limit:
         start_time_timestamp = session.get('start_time')
         if start_time_timestamp:
-            elapsed_seconds = datetime.now().timestamp() - start_time_timestamp
+            elapsed_seconds = tashkent_now().timestamp() - start_time_timestamp
             total_time_seconds = cw_time_limit * 60
             remaining_seconds = total_time_seconds - elapsed_seconds
             
@@ -454,13 +462,21 @@ def report_violation():
     details = session.get('violation_details', [])
     details.append({
         'type': violation_type,
-        'timestamp': datetime.now().isoformat(),
+        'timestamp': tashkent_now().isoformat(),
         'question_index': session.get('current_question', 0) + 1
     })
     session['violation_details'] = details
     
     session.permanent = True
     return jsonify({'success': True})
+
+@student_bp.route('/clear_violation', methods=['POST'])
+def clear_violation():
+    session.pop('is_blocked', None)
+    session.pop('violation_count', None)
+    session.pop('violation_details', None)
+    return jsonify({'success': True})
+
 
 @student_bp.route('/verify_unlock', methods=['POST'])
 def verify_unlock():
@@ -470,13 +486,13 @@ def verify_unlock():
     data = request.json
     password = data.get('password')
     
-    # Use the same password as in the template: 'jahonschool'
-    if password == 'jahonschool':
+    unlock_password = os.environ.get('UNLOCK_PASSWORD', 'jahonschool')
+    if password == unlock_password:
         session['is_blocked'] = False
         session.permanent = True
         return jsonify({'success': True})
     else:
-        return jsonify({'success': False, 'message': 'Invalid password'}), 401
+        return jsonify({'success': False, 'message': _('Parol noto\'g\'ri')}), 401
 
 @student_bp.route('/answer', methods=['POST'])
 def answer():
@@ -565,8 +581,13 @@ def result():
     lang = str(get_locale())
     subject_id = session['subject_id']
     
+    # N+1 oldini olish: barcha savollarni bitta query bilan olamiz
+    questions_map = {q.id: q for q in Question.query.filter(Question.id.in_(question_ids)).all()}
+
     for qid in question_ids:
-        question = Question.query.get(qid)
+        question = questions_map.get(qid)
+        if not question:
+            continue
         user_answer = answers.get(str(qid), '').strip().lower()
         correct_answer = str(question.correct_answer).strip().lower()
         
@@ -624,11 +645,10 @@ def result():
     percentage = (score / total) * 100
     
     start_time = session.get('start_time')
-    current_time = datetime.now()
     duration_text = "00:00"
-    
+
     if start_time:
-        duration_seconds = int(current_time.timestamp() - start_time)
+        duration_seconds = int(tashkent_now().timestamp() - start_time)
         mins = duration_seconds // 60
         secs = duration_seconds % 60
         duration_text = f"{mins:02d}:{secs:02d}"

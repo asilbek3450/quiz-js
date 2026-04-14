@@ -1,0 +1,158 @@
+{% extends "arena/base.html" %}
+{% block title %}Arena — Bosh sahifa{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">Bosh sahifa</li>{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<div style="background: linear-gradient(135deg, rgba(88,166,255,.08), rgba(188,140,255,.08));
+            border: 1px solid var(--ar-border); border-radius: 16px; padding: 32px 28px; margin-bottom: 24px;">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+    <div>
+      <h1 style="font-size:1.8rem; font-weight:800; margin:0;">
+        <span style="color:var(--ar-primary)">Arena</span> — Masalalar platformasi
+      </h1>
+      <p style="color:var(--ar-muted); margin: 8px 0 0; font-size:.95rem;">
+        Masalalarni yeching, reyting oling, eng yaxshilar qatoriga kiring.
+      </p>
+    </div>
+    {% if not arena_user %}
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('arena.register') }}" class="ar-btn ar-btn-primary">
+        <i class="fas fa-user-plus"></i> Ro'yxatdan o'tish
+      </a>
+      <a href="{{ url_for('arena.login') }}" class="ar-btn ar-btn-outline">Kirish</a>
+    </div>
+    {% else %}
+    <a href="{{ url_for('arena.problems') }}" class="ar-btn ar-btn-primary">
+      <i class="fas fa-code"></i> Masalalarga o'tish
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Stats row -->
+<div class="row g-3 mb-4">
+  {% for icon, val, lbl, col in [
+    ('fas fa-code', total_problems, 'Masalalar', 'var(--ar-primary)'),
+    ('fas fa-users', total_users, 'Ishtirokchilar', 'var(--ar-purple)'),
+    ('fas fa-paper-plane', total_subs, 'Urinishlar', 'var(--ar-yellow)'),
+    ('fas fa-check-circle', total_ac, 'Qabul qilingan', 'var(--ar-green)'),
+  ] %}
+  <div class="col-6 col-md-3">
+    <div class="ar-stat">
+      <div style="font-size:1.5rem; color:{{ col }}; margin-bottom:6px;"><i class="{{ icon }}"></i></div>
+      <div class="val">{{ val }}</div>
+      <div class="lbl">{{ lbl }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="row g-3">
+  <!-- Top users -->
+  <div class="col-lg-5">
+    <div class="ar-card h-100">
+      <div class="ar-card-header">
+        <i class="fas fa-trophy" style="color:var(--ar-yellow)"></i> Top ishtirokchilar
+      </div>
+      <div class="ar-card-body p-0">
+        {% if top_users %}
+        <table class="ar-table">
+          <thead><tr>
+            <th>#</th>
+            <th>Foydalanuvchi</th>
+            <th style="text-align:center">Hal</th>
+            <th style="text-align:right">Reyting</th>
+          </tr></thead>
+          <tbody>
+          {% for u in top_users %}
+          <tr>
+            <td style="font-weight:700; color:{% if loop.index==1 %}var(--ar-yellow){% elif loop.index==2 %}#b0b8c1{% elif loop.index==3 %}var(--ar-orange){% else %}var(--ar-muted){% endif %}">
+              {% if loop.index <= 3 %}<i class="fas fa-medal"></i>{% else %}{{ loop.index }}{% endif %}
+            </td>
+            <td>
+              <a href="{{ url_for('arena.profile', username=u.username) }}"
+                 style="color:var(--ar-text); text-decoration:none; font-weight:600;">
+                <span style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#58a6ff,#bc8cff);
+                             display:inline-flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#fff;margin-right:8px;">
+                  {{ u.username[0].upper() }}</span>
+                {{ u.username }}
+              </a>
+            </td>
+            <td style="text-align:center">
+              <span class="ar-badge badge-ac">{{ u.problems_solved }}</span>
+            </td>
+            <td style="text-align:right; font-weight:700; color:var(--ar-yellow)">{{ u.rating }}</td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div style="padding:32px; text-align:center; color:var(--ar-muted);">
+          <i class="fas fa-users fa-2x" style="opacity:.3;margin-bottom:8px;"></i><br>
+          Hali ishtirokchilar yo'q
+        </div>
+        {% endif %}
+        <div style="padding:12px 16px; border-top:1px solid var(--ar-border);">
+          <a href="{{ url_for('arena.users') }}" style="color:var(--ar-primary); font-size:.82rem; text-decoration:none;">
+            Barcha ishtirokchilar <i class="fas fa-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent AC -->
+  <div class="col-lg-7">
+    <div class="ar-card h-100">
+      <div class="ar-card-header">
+        <i class="fas fa-bolt" style="color:var(--ar-green)"></i> So'nggi qabul qilinganlar
+      </div>
+      <div class="ar-card-body p-0">
+        {% if recent_ac %}
+        <table class="ar-table">
+          <thead><tr>
+            <th>Foydalanuvchi</th>
+            <th>Masala</th>
+            <th>Murakkablik</th>
+            <th style="text-align:right">Vaqt</th>
+          </tr></thead>
+          <tbody>
+          {% for s in recent_ac %}
+          <tr>
+            <td>
+              <a href="{{ url_for('arena.profile', username=s.user.username) }}"
+                 style="color:var(--ar-primary); text-decoration:none; font-weight:600;">
+                {{ s.user.username }}
+              </a>
+            </td>
+            <td>
+              <a href="{{ url_for('arena.problem_detail', pid=s.problem.id) }}"
+                 style="color:var(--ar-text); text-decoration:none;">
+                <span style="color:var(--ar-muted); font-size:.78rem;">{{ s.problem.code }}</span>
+                {{ s.problem.title }}
+              </a>
+            </td>
+            <td>
+              <span class="ar-badge badge-{{ s.problem.difficulty }}">
+                {% if s.problem.difficulty == 'easy' %}Oson{% elif s.problem.difficulty == 'medium' %}O'rta{% else %}Qiyin{% endif %}
+              </span>
+            </td>
+            <td style="text-align:right; color:var(--ar-muted); font-size:.78rem;">
+              {{ s.submitted_at.strftime('%H:%M, %d-%m') }}
+            </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div style="padding:32px; text-align:center; color:var(--ar-muted);">
+          <i class="fas fa-check-circle fa-2x" style="opacity:.3;margin-bottom:8px;"></i><br>
+          Hali urinishlar yo'q
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

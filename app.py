@@ -1,24 +1,46 @@
+import os
+import secrets
 from flask import Flask, Response, session
 from flask import send_from_directory
 from datetime import date, timedelta
-from extensions import db, babel
+from extensions import db, babel, csrf
 from routes.main import main_bp
 from routes.admin import admin_bp
 from routes.student import student_bp
+from routes.arena import arena_bp
 import markdown
-from models import Admin, Subject, Question, TestResult, ControlWork, Feedback
+from models import (Admin, Subject, Question, TestResult, ControlWork,
+                    Feedback, ArenaUser, ArenaProblem, ArenaSubmission)
 
 def create_app():
     app = Flask(__name__, template_folder="templates")
-    app.config['SECRET_KEY'] = 'your-secret-key-here-change-in-production'
+
+    # --- Security: secret key from environment, never hardcoded ---
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(32))
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test_platform.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=60)
+    # Secure session cookies
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production'
+    # WTF CSRF
+    app.config['WTF_CSRF_TIME_LIMIT'] = 3600
     # Public base URL for sitemap/OG tags (PythonAnywhere domain)
     app.config.setdefault("PUBLIC_BASE_URL", "https://jahonschool.pythonanywhere.com")
 
     db.init_app(app)
-    
+    csrf.init_app(app)
+
+    # --- Security headers on every response ---
+    @app.after_request
+    def set_security_headers(resp):
+        resp.headers['X-Frame-Options'] = 'DENY'
+        resp.headers['X-Content-Type-Options'] = 'nosniff'
+        resp.headers['X-XSS-Protection'] = '1; mode=block'
+        resp.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        return resp
+
     def get_locale():
         if 'lang' in session:
             return session['lang']
@@ -36,8 +58,6 @@ def create_app():
             return ""
         return markdown.markdown(text, extensions=['fenced_code'])
 
-    from datetime import timedelta as _td
-
     @app.template_filter('tashkent')
     def tashkent_filter(dt, fmt='%H:%M, %d-%m'):
         """DateTime ni Toshkent vaqtiga (UTC+5) o'tkazib formatlaydi.
@@ -46,12 +66,13 @@ def create_app():
         """
         if dt is None:
             return ''
-        return (dt + _td(hours=5)).strftime(fmt)
+        return (dt + timedelta(hours=5)).strftime(fmt)
 
     # Register Blueprints
     app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(student_bp)
+    app.register_blueprint(arena_bp)
     
     
     @app.route('/googleef6572d0f05659ed.html')
@@ -264,9 +285,11 @@ def create_app():
         # Init default admin/subjects if empty
         if not Admin.query.first():
             from werkzeug.security import generate_password_hash
+            default_username = os.environ.get('ADMIN_USERNAME', 'asilbek')
+            default_password = os.environ.get('ADMIN_PASSWORD', 'jahonschool')
             admin = Admin(
-                username='asilbek',
-                password_hash=generate_password_hash('jahonschool'),
+                username=default_username,
+                password_hash=generate_password_hash(default_password),
                 full_name='Administrator',
                 role='admin'
             )
@@ -286,6 +309,31 @@ def create_app():
             db.session.add(informatika)
             db.session.add(python)
             db.session.commit()
+
+        # ── Arena migrations (idempotent) ─────────────────────────────────────
+        # arena_users
+        if inspector.has_table('arena_users'):
+            au_cols = [c['name'] for c in inspector.get_columns('arena_users')]
+            for col, ddl in [('bio', 'TEXT DEFAULT ""'),
+                              ('rating', 'INTEGER DEFAULT 0'),
+                              ('problems_solved', 'INTEGER DEFAULT 0'),
+                              ('last_seen', 'DATETIME')]:
+                if col not in au_cols:
+                    with db.engine.connect() as conn:
+                        conn.execute(db.text(f'ALTER TABLE arena_users ADD COLUMN {col} {ddl}'))
+                        conn.commit()
+
+        # arena_submissions — code execution columns
+        if inspector.has_table('arena_submissions'):
+            as_cols = [c['name'] for c in inspector.get_columns('arena_submissions')]
+            for col, ddl in [('code',      'TEXT DEFAULT ""'),
+                              ('language',  'VARCHAR(20) DEFAULT "python"'),
+                              ('time_used', 'FLOAT DEFAULT 0.0'),
+                              ('error_msg', 'TEXT DEFAULT ""')]:
+                if col not in as_cols:
+                    with db.engine.connect() as conn:
+                        conn.execute(db.text(f'ALTER TABLE arena_submissions ADD COLUMN {col} {ddl}'))
+                        conn.commit()
 
     return app
 

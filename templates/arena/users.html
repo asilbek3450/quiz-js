@@ -1,0 +1,111 @@
+{% extends "arena/base.html" %}
+{% block title %}Foydalanuvchilar{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">Foydalanuvchilar</li>{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+  <h2 style="font-size:1.2rem; font-weight:700; margin:0;">
+    <i class="fas fa-trophy" style="color:var(--ar-yellow)"></i> Reyting jadvali
+  </h2>
+  <form method="GET" class="d-flex gap-2">
+    <input class="ar-input" type="text" name="q" value="{{ search }}"
+           placeholder="Qidirish..." style="width:200px; padding:7px 12px;">
+    <button type="submit" class="ar-btn ar-btn-primary ar-btn-sm"><i class="fas fa-search"></i></button>
+  </form>
+</div>
+
+<div class="ar-card">
+  <table class="ar-table">
+    <thead><tr>
+      <th style="width:60px; text-align:center">O'rin</th>
+      <th>Foydalanuvchi</th>
+      <th style="text-align:center; width:90px">Hal qildi</th>
+      <th style="text-align:right; width:90px">Reyting</th>
+      <th style="text-align:right; width:130px">Ro'yxat sanasi</th>
+    </tr></thead>
+    <tbody>
+    {% set offset = (users.page - 1) * users.per_page %}
+    {% for u in users.items %}
+    {% set rank = offset + loop.index %}
+    <tr>
+      <td style="text-align:center;">
+        {% if rank == 1 %}
+          <span style="font-size:1.2rem; color:#ffd700"><i class="fas fa-medal"></i></span>
+        {% elif rank == 2 %}
+          <span style="font-size:1.1rem; color:#c0c0c0"><i class="fas fa-medal"></i></span>
+        {% elif rank == 3 %}
+          <span style="font-size:1rem; color:#cd7f32"><i class="fas fa-medal"></i></span>
+        {% else %}
+          <span style="color:var(--ar-muted); font-weight:600;">{{ rank }}</span>
+        {% endif %}
+      </td>
+      <td>
+        <div class="d-flex align-items-center gap-2">
+          <div style="width:36px;height:36px;border-radius:50%;
+                      background:linear-gradient(135deg,
+                        {% if rank==1 %}#ffd700,#ff8c00
+                        {% elif rank==2 %}#8b949e,#6e7681
+                        {% else %}#58a6ff,#bc8cff{% endif %});
+                      display:inline-flex;align-items:center;justify-content:center;
+                      font-size:.9rem;font-weight:700;color:#fff;flex-shrink:0;">
+            {{ u.username[0].upper() }}
+          </div>
+          <div>
+            <a href="{{ url_for('arena.profile', username=u.username) }}"
+               style="color:var(--ar-text); text-decoration:none; font-weight:600; font-size:.9rem;">
+              {{ u.username }}
+            </a>
+            <div style="font-size:.72rem; color:var(--ar-muted);">{{ u.full_name }}</div>
+          </div>
+          {% if arena_user and arena_user.id == u.id %}
+          <span class="ar-badge" style="background:rgba(88,166,255,.15);color:var(--ar-primary);border:1px solid rgba(88,166,255,.3);font-size:.65rem;">Men</span>
+          {% endif %}
+        </div>
+      </td>
+      <td style="text-align:center;">
+        <span class="ar-badge badge-ac" style="font-size:.8rem; padding:4px 10px;">
+          {{ u.problems_solved }}
+        </span>
+      </td>
+      <td style="text-align:right; font-weight:700; color:var(--ar-yellow); font-size:.95rem;">
+        {{ u.rating }}
+      </td>
+      <td style="text-align:right; color:var(--ar-muted); font-size:.78rem;">
+        {{ u.created_at.strftime('%d.%m.%Y') }}
+      </td>
+    </tr>
+    {% else %}
+    <tr>
+      <td colspan="5" style="text-align:center; padding:48px; color:var(--ar-muted);">
+        <i class="fas fa-users fa-3x" style="opacity:.2; display:block; margin-bottom:12px;"></i>
+        Foydalanuvchilar topilmadi
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if users.pages > 1 %}
+<div class="d-flex justify-content-center mt-4">
+  <div class="ar-pagination">
+    <a href="{{ url_for('arena.users', page=users.prev_num, q=search) }}"
+       class="ar-page-btn {% if not users.has_prev %}disabled{% endif %}">
+      <i class="fas fa-chevron-left"></i>
+    </a>
+    {% for pg in users.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+      {% if pg %}
+        <a href="{{ url_for('arena.users', page=pg, q=search) }}"
+           class="ar-page-btn {% if pg == users.page %}active{% endif %}">{{ pg }}</a>
+      {% else %}
+        <span class="ar-page-btn" style="pointer-events:none;">…</span>
+      {% endif %}
+    {% endfor %}
+    <a href="{{ url_for('arena.users', page=users.next_num, q=search) }}"
+       class="ar-page-btn {% if not users.has_next %}disabled{% endif %}">
+      <i class="fas fa-chevron-right"></i>
+    </a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

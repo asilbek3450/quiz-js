@@ -1,0 +1,60 @@
+{% extends "arena/base.html" %}
+{% block title %}Kirish{% endblock %}
+{% block breadcrumb %}
+  <li class="breadcrumb-item active">Kirish</li>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:420px; margin:0 auto; padding-top:20px;">
+  <div class="ar-card">
+    <div class="ar-card-header justify-content-center" style="padding:24px 24px 0; border:none;">
+      <div style="text-align:center; width:100%;">
+        <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#58a6ff,#bc8cff);
+                    display:inline-flex;align-items:center;justify-content:center;font-size:1.4rem;color:#fff;margin-bottom:12px;">
+          <i class="fas fa-sign-in-alt"></i>
+        </div>
+        <h2 style="font-size:1.3rem;font-weight:700;margin:0 0 4px;">Arena'ga kirish</h2>
+        <p style="color:var(--ar-muted); font-size:.85rem; margin:0;">Hisobingizga kiring</p>
+      </div>
+    </div>
+
+    <div class="ar-card-body" style="padding:24px;">
+      {% if error %}
+      <div class="ar-alert ar-alert-danger">
+        <i class="fas fa-exclamation-circle"></i> {{ error }}
+      </div>
+      {% endif %}
+
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div style="margin-bottom:16px;">
+          <label class="ar-label">Username</label>
+          <div style="position:relative;">
+            <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ar-muted);">@</span>
+            <input class="ar-input" type="text" name="username"
+                   value="{{ request.form.get('username','') }}"
+                   placeholder="foydalanuvchi_nomi" required
+                   style="padding-left:28px;" autofocus>
+          </div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <label class="ar-label">Parol</label>
+          <input class="ar-input" type="password" name="password"
+                 placeholder="Parolingiz" required>
+        </div>
+
+        <button type="submit" class="ar-btn ar-btn-primary w-100" style="justify-content:center; padding:12px;">
+          <i class="fas fa-sign-in-alt"></i> Kirish
+        </button>
+      </form>
+
+      <div style="text-align:center; margin-top:18px; font-size:.84rem; color:var(--ar-muted);">
+        Hisobingiz yo'qmi?
+        <a href="{{ url_for('arena.register') }}" style="color:var(--ar-primary); text-decoration:none; font-weight:600;">Ro'yxatdan o'ting</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

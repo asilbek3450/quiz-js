@@ -28,7 +28,7 @@
                         <div class="lh-base fw-bold fs-5 math-render" id="question-text-render">{{ question_text | markdown | safe }}</div>
                         {% if question_image_url %}
                         <div class="question-image-wrap mt-4">
-                            <img src="{{ question_image_url }}" alt="{{ _('Savol rasmi') }}" class="question-image img-fluid rounded-4 shadow-sm">
+                            <img src="{{ question_image_url }}" alt="{{ _('Savol rasmi') }}" class="question-image img-fluid rounded-4 shadow-sm" loading="lazy">
                         </div>
                         {% endif %}
                     </div>
@@ -467,6 +467,12 @@
             }
         }
 
+        // CSRF token barcha fetch so'rovlari uchun
+        const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        function csrfHeaders(extra) {
+            return Object.assign({ 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN }, extra);
+        }
+
         const IS_BLOCKED_INIT = {{ 'true' if is_blocked else 'false' }};
         let violationTimerInterval = null;
 
@@ -505,7 +511,7 @@
             // Report to server with type
             fetch('/student/report_violation', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: csrfHeaders(),
                 body: JSON.stringify({ type: type })
             });
         }
@@ -513,7 +519,7 @@
         function clearViolationOnServer() {
             fetch('/student/clear_violation', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+                headers: csrfHeaders()
             })
                 .then(res => res.json())
                 .then(data => {
@@ -566,16 +572,16 @@
         document.onkeydown = function (e) {
             if (!protectionEnabled) return true;
             // F12, Ctrl+Shift+I/J/C, Ctrl+U
-            if (e.keyCode == 123) return false;
-            if (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) return false;
-            if (e.ctrlKey && e.keyCode == 85) return false;
+            if (e.key === 'F12') return false;
+            if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) return false;
+            if (e.ctrlKey && e.key === 'u') return false;
         }
 
         // Standard Logic
         function submitAnswer(questionId, answer) {
             fetch('/student/answer', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: csrfHeaders(),
                 body: JSON.stringify({ question_id: questionId, answer: answer })
             });
         }
@@ -587,7 +593,7 @@
 
             fetch('/student/mark_question', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: csrfHeaders(),
                 body: JSON.stringify({ question_id: parseInt(questionId), marked: newMarked })
             }).then(() => {
                 // Update UI visually

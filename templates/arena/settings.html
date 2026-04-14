@@ -1,0 +1,78 @@
+{% extends "arena/base.html" %}
+{% block title %}Sozlamalar{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">Sozlamalar</li>{% endblock %}
+
+{% block content %}
+<div style="max-width:560px; margin:0 auto;">
+  <h2 style="font-size:1.2rem; font-weight:700; margin:0 0 20px;">Profil sozlamalari</h2>
+
+  {% if error %}
+  <div class="ar-alert ar-alert-danger"><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
+  {% endif %}
+  {% if success %}
+  <div class="ar-alert ar-alert-success"><i class="fas fa-check-circle"></i> {{ success }}</div>
+  {% endif %}
+
+  <!-- Profile info -->
+  <div class="ar-card mb-3">
+    <div class="ar-card-header"><i class="fas fa-user" style="color:var(--ar-primary)"></i> Shaxsiy ma'lumotlar</div>
+    <div class="ar-card-body">
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="profile">
+
+        <div style="margin-bottom:14px;">
+          <label class="ar-label">Username (o'zgartirib bo'lmaydi)</label>
+          <input class="ar-input" type="text" value="{{ u.username }}" disabled
+                 style="opacity:.5; cursor:not-allowed;">
+        </div>
+        <div style="margin-bottom:14px;">
+          <label class="ar-label">Ism-familiya <span style="color:var(--ar-red)">*</span></label>
+          <input class="ar-input" type="text" name="full_name" value="{{ u.full_name }}" required>
+        </div>
+        <div style="margin-bottom:14px;">
+          <label class="ar-label">Yosh</label>
+          <input class="ar-input" type="number" name="age" value="{{ u.age or '' }}" min="5" max="100">
+        </div>
+        <div style="margin-bottom:18px;">
+          <label class="ar-label">Bio (500 ta belgigacha)</label>
+          <textarea class="ar-input" name="bio" rows="3"
+                    placeholder="O'zingiz haqingizda qisqa ma'lumot..."
+                    style="resize:vertical;">{{ u.bio or '' }}</textarea>
+        </div>
+        <button type="submit" class="ar-btn ar-btn-primary">
+          <i class="fas fa-save"></i> Saqlash
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Change password -->
+  <div class="ar-card">
+    <div class="ar-card-header"><i class="fas fa-lock" style="color:var(--ar-yellow)"></i> Parolni o'zgartirish</div>
+    <div class="ar-card-body">
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="password">
+
+        <div style="margin-bottom:14px;">
+          <label class="ar-label">Joriy parol</label>
+          <input class="ar-input" type="password" name="current_password" required placeholder="Hozirgi parolingiz">
+        </div>
+        <div style="margin-bottom:14px;">
+          <label class="ar-label">Yangi parol</label>
+          <input class="ar-input" type="password" name="new_password" required
+                 placeholder="Kamida 6 ta belgi" minlength="6">
+        </div>
+        <div style="margin-bottom:18px;">
+          <label class="ar-label">Yangi parolni tasdiqlang</label>
+          <input class="ar-input" type="password" name="confirm_password" required placeholder="Qaytaring">
+        </div>
+        <button type="submit" class="ar-btn ar-btn-outline">
+          <i class="fas fa-key"></i> Parolni o'zgartirish
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

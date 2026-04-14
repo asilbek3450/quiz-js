@@ -1,0 +1,422 @@
+{% extends "arena/base.html" %}
+{% block title %}Masalalar{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">Masalalar</li>{% endblock %}
+
+{% block extra_head %}
+<style>
+  .filter-bar { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; align-items:center; }
+  .ar-filter-input {
+    background: var(--ar-card);
+    border: 1px solid var(--ar-border);
+    border-radius: 8px;
+    color: var(--ar-text);
+    padding: 8px 12px;
+    font-family: 'Outfit', sans-serif;
+    font-size: .85rem;
+    outline: none;
+    transition: border-color .15s;
+    cursor: pointer;
+  }
+  .ar-filter-input:focus { border-color: var(--ar-primary); box-shadow: 0 0 0 3px rgba(88,166,255,.12); }
+  .ar-filter-input::placeholder { color: var(--ar-muted); }
+  .ar-filter-input option { background: var(--ar-card); color: var(--ar-text); }
+
+  /* diff badge pills as toggle buttons */
+  .diff-pills { display:flex; gap:6px; }
+  .diff-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: .78rem; font-weight: 600;
+    border: 1px solid var(--ar-border);
+    background: transparent;
+    color: var(--ar-muted);
+    cursor: pointer;
+    transition: all .15s;
+    user-select: none;
+  }
+  .diff-pill[data-active="1"] { border-color: currentColor; }
+  .diff-pill[data-diff="easy"][data-active="1"]   { background: rgba(63,185,80,.15);  color: var(--ar-green);  border-color: rgba(63,185,80,.4); }
+  .diff-pill[data-diff="medium"][data-active="1"] { background: rgba(210,153,34,.15); color: var(--ar-yellow); border-color: rgba(210,153,34,.4); }
+  .diff-pill[data-diff="hard"][data-active="1"]   { background: rgba(248,81,73,.15);  color: var(--ar-red);    border-color: rgba(248,81,73,.4); }
+  .diff-pill:hover { border-color: var(--ar-primary); color: var(--ar-primary); }
+
+  /* status pills */
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: .78rem; font-weight: 600;
+    border: 1px solid var(--ar-border);
+    background: transparent;
+    color: var(--ar-muted);
+    cursor: pointer;
+    transition: all .15s;
+    user-select: none;
+  }
+  .status-pill[data-active="1"] { border-color: var(--ar-primary); background: rgba(88,166,255,.1); color: var(--ar-primary); }
+  .status-pill:hover { border-color: var(--ar-primary); color: var(--ar-primary); }
+
+  /* highlight matched text */
+  mark { background: rgba(88,166,255,.25); color: var(--ar-text); border-radius: 2px; padding: 0 1px; }
+
+  .ar-table tr.hidden { display: none; }
+
+  .empty-row td { text-align: center; padding: 48px; color: var(--ar-muted); }
+
+  /* search wrapper */
+  .search-wrap { position: relative; }
+  .search-wrap i { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--ar-muted); font-size:.8rem; pointer-events:none; }
+  .search-wrap input { padding-left: 30px !important; }
+
+  .count-badge {
+    background: rgba(88,166,255,.12);
+    border: 1px solid rgba(88,166,255,.25);
+    color: var(--ar-primary);
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-size: .75rem;
+    font-weight: 700;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Filter bar ────────────────────────────────────────────────────────── -->
+<div class="filter-bar">
+
+  <!-- Search -->
+  <div class="search-wrap">
+    <i class="fas fa-search"></i>
+    <input class="ar-filter-input" id="fSearch" type="text"
+           placeholder="Kod yoki sarlavha…" style="width:220px;"
+           value="{{ search }}" autocomplete="off">
+  </div>
+
+  <!-- Difficulty pills -->
+  <div class="diff-pills">
+    <button class="diff-pill" data-diff="easy"
+            data-active="{{ '1' if current_diff=='easy' else '0' }}">
+      <span style="width:7px;height:7px;border-radius:50%;background:var(--ar-green);display:inline-block;"></span>
+      Oson
+    </button>
+    <button class="diff-pill" data-diff="medium"
+            data-active="{{ '1' if current_diff=='medium' else '0' }}">
+      <span style="width:7px;height:7px;border-radius:50%;background:var(--ar-yellow);display:inline-block;"></span>
+      O'rta
+    </button>
+    <button class="diff-pill" data-diff="hard"
+            data-active="{{ '1' if current_diff=='hard' else '0' }}">
+      <span style="width:7px;height:7px;border-radius:50%;background:var(--ar-red);display:inline-block;"></span>
+      Qiyin
+    </button>
+  </div>
+
+  <!-- Category -->
+  {% if categories %}
+  <select class="ar-filter-input" id="fCat" style="width:160px;">
+    <option value="">Barcha toifalar</option>
+    {% for c in categories %}
+    <option value="{{ c }}" {% if current_cat==c %}selected{% endif %}>{{ c }}</option>
+    {% endfor %}
+  </select>
+  {% endif %}
+
+  <!-- Status (only logged in) -->
+  {% if arena_user %}
+  <div style="display:flex; gap:6px;">
+    <button class="status-pill" data-status="solved"
+            data-active="{{ '1' if current_status=='solved' else '0' }}">
+      <i class="fas fa-check" style="color:var(--ar-green);"></i> Yechilgan
+    </button>
+    <button class="status-pill" data-status="unsolved"
+            data-active="{{ '1' if current_status=='unsolved' else '0' }}">
+      <i class="fas fa-circle" style="color:var(--ar-muted);font-size:.5rem;"></i> Yechilmagan
+    </button>
+  </div>
+  {% endif %}
+
+  <!-- Reset -->
+  <button id="btnReset" class="ar-btn ar-btn-outline ar-btn-sm"
+          style="display:none; color:var(--ar-red); border-color:var(--ar-red);">
+    <i class="fas fa-times"></i> Tozalash
+  </button>
+</div>
+
+<!-- ── Counter row ───────────────────────────────────────────────────────── -->
+<div class="d-flex align-items-center gap-3 mb-3" style="font-size:.82rem; color:var(--ar-muted);">
+  <span>
+    <span id="visibleCount" class="count-badge">{{ problems|length }}</span>
+    / {{ problems|length }} ta masala
+  </span>
+  {% if arena_user %}
+  <span>
+    <i class="fas fa-check-circle" style="color:var(--ar-green);margin-right:3px;"></i>
+    <strong style="color:var(--ar-green);">{{ solved_ids|length }}</strong> ta yechilgan
+  </span>
+  {% endif %}
+</div>
+
+<!-- ── Table ─────────────────────────────────────────────────────────────── -->
+<div class="ar-card">
+  <table class="ar-table" id="problemTable">
+    <thead><tr>
+      <th style="width:90px">Kod</th>
+      <th>Sarlavha</th>
+      <th style="width:115px">Murakkablik</th>
+      <th style="width:95px; text-align:center">Qabul %</th>
+      <th style="width:80px; text-align:center">Urinish</th>
+      {% if arena_user %}<th style="width:65px; text-align:center">Holat</th>{% endif %}
+    </tr></thead>
+    <tbody id="problemBody">
+    {% for p in problems %}
+    <tr data-diff="{{ p.difficulty }}"
+        data-cat="{{ p.category|lower }}"
+        data-code="{{ p.code|lower }}"
+        data-title="{{ p.title|lower }}"
+        data-solved="{% if p.id in solved_ids %}solved{% elif p.id in attempted_ids %}attempted{% else %}none{% endif %}">
+
+      <td>
+        <a href="{{ url_for('arena.problem_detail', pid=p.id) }}"
+           class="code-link"
+           style="font-family:'Courier New',monospace; font-weight:700;
+                  color:{% if p.id in solved_ids %}var(--ar-green){% elif p.id in attempted_ids %}var(--ar-red){% else %}var(--ar-primary){% endif %};
+                  text-decoration:none;">
+          {{ p.code }}
+        </a>
+      </td>
+      <td>
+        <a href="{{ url_for('arena.problem_detail', pid=p.id) }}"
+           class="title-link"
+           style="color:var(--ar-text); text-decoration:none; font-weight:500;">
+          {{ p.title }}
+        </a>
+        {% if p.category %}
+        <span class="cat-tag" style="font-size:.7rem; color:var(--ar-muted); margin-left:6px;">[{{ p.category }}]</span>
+        {% endif %}
+      </td>
+      <td>
+        <span class="ar-badge badge-{{ p.difficulty }}">
+          {% if p.difficulty == 'easy' %}Oson{% elif p.difficulty == 'medium' %}O'rta{% else %}Qiyin{% endif %}
+        </span>
+      </td>
+      <td style="text-align:center;">
+        {% if p.submission_count %}
+          {% set pct = (p.accepted_count / p.submission_count * 100)|round(1) %}
+          <span style="color:{% if pct >= 60 %}var(--ar-green){% elif pct >= 30 %}var(--ar-yellow){% else %}var(--ar-red){% endif %}; font-weight:600; font-size:.83rem;">{{ pct }}%</span>
+        {% else %}
+          <span style="color:var(--ar-muted); font-size:.8rem;">—</span>
+        {% endif %}
+      </td>
+      <td style="text-align:center; color:var(--ar-muted); font-size:.83rem;">{{ p.submission_count }}</td>
+      {% if arena_user %}
+      <td style="text-align:center;">
+        {% if p.id in solved_ids %}
+          <span class="ar-badge badge-ac"><i class="fas fa-check"></i></span>
+        {% elif p.id in attempted_ids %}
+          <span class="ar-badge badge-wa"><i class="fas fa-times"></i></span>
+        {% else %}
+          <span style="color:var(--ar-muted); font-size:.8rem;">—</span>
+        {% endif %}
+      </td>
+      {% endif %}
+    </tr>
+    {% endfor %}
+
+    <!-- empty state (hidden by default, shown when 0 results) -->
+    <tr id="emptyRow" class="hidden">
+      <td colspan="{% if arena_user %}6{% else %}5{% endif %}" class="empty-row">
+        <i class="fas fa-search fa-2x" style="opacity:.2; display:block; margin-bottom:12px;"></i>
+        Hech qanday masala topilmadi
+      </td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Legend -->
+{% if arena_user %}
+<div class="d-flex gap-3 mt-3" style="font-size:.78rem; color:var(--ar-muted);">
+  <span><span class="ar-badge badge-ac" style="font-size:.7rem;"><i class="fas fa-check"></i></span> Yechilgan</span>
+  <span><span class="ar-badge badge-wa" style="font-size:.7rem;"><i class="fas fa-times"></i></span> Xato urinish</span>
+  <span>— Urinilmagan</span>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+  'use strict';
+
+  const body        = document.getElementById('problemBody');
+  const rows        = Array.from(body.querySelectorAll('tr[data-diff]'));
+  const emptyRow    = document.getElementById('emptyRow');
+  const countEl     = document.getElementById('visibleCount');
+  const searchInput = document.getElementById('fSearch');
+  const catSelect   = document.getElementById('fCat');
+  const btnReset    = document.getElementById('btnReset');
+  const diffPills   = Array.from(document.querySelectorAll('.diff-pill'));
+  const statusPills = Array.from(document.querySelectorAll('.status-pill'));
+
+  // ── State ──────────────────────────────────────────────────────────────────
+  let activeDiffs   = new Set(diffPills.filter(p => p.dataset.active==='1').map(p => p.dataset.diff));
+  let activeStatus  = statusPills.find(p => p.dataset.active==='1')?.dataset.status || '';
+  let activeCat     = catSelect ? catSelect.value : '';
+  let searchTerm    = (searchInput?.value || '').trim().toLowerCase();
+
+  // ── Pill click: difficulty ─────────────────────────────────────────────────
+  diffPills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      const diff = pill.dataset.diff;
+      if (activeDiffs.has(diff)) {
+        activeDiffs.delete(diff);
+        pill.dataset.active = '0';
+      } else {
+        activeDiffs.add(diff);
+        pill.dataset.active = '1';
+      }
+      applyFilters();
+    });
+  });
+
+  // ── Pill click: status ─────────────────────────────────────────────────────
+  statusPills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      const s = pill.dataset.status;
+      if (activeStatus === s) {
+        activeStatus = '';
+        pill.dataset.active = '0';
+      } else {
+        activeStatus = s;
+        statusPills.forEach(p => p.dataset.active = p.dataset.status === s ? '1' : '0');
+      }
+      applyFilters();
+    });
+  });
+
+  // ── Category select ────────────────────────────────────────────────────────
+  if (catSelect) {
+    catSelect.addEventListener('change', () => {
+      activeCat = catSelect.value;
+      applyFilters();
+    });
+  }
+
+  // ── Search: debounced input ────────────────────────────────────────────────
+  let searchTimer;
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        searchTerm = searchInput.value.trim().toLowerCase();
+        applyFilters();
+      }, 120);
+    });
+  }
+
+  // ── Reset button ───────────────────────────────────────────────────────────
+  if (btnReset) {
+    btnReset.addEventListener('click', () => {
+      searchTerm = '';
+      activeDiffs.clear();
+      activeStatus = '';
+      activeCat = '';
+
+      if (searchInput) searchInput.value = '';
+      if (catSelect)   catSelect.value   = '';
+      diffPills.forEach(p  => p.dataset.active  = '0');
+      statusPills.forEach(p => p.dataset.active = '0');
+
+      applyFilters();
+    });
+  }
+
+  // ── Core filter function ───────────────────────────────────────────────────
+  function applyFilters() {
+    const hasDiff   = activeDiffs.size > 0;
+    const hasStatus = activeStatus !== '';
+    const hasCat    = activeCat !== '';
+    const hasSearch = searchTerm !== '';
+    const anyActive = hasDiff || hasStatus || hasCat || hasSearch;
+
+    if (btnReset) btnReset.style.display = anyActive ? 'inline-flex' : 'none';
+
+    let visible = 0;
+
+    rows.forEach(row => {
+      const diff   = row.dataset.diff;
+      const cat    = row.dataset.cat;
+      const code   = row.dataset.code;
+      const title  = row.dataset.title;
+      const solved = row.dataset.solved;  // 'solved' | 'attempted' | 'none'
+
+      // diff filter
+      if (hasDiff && !activeDiffs.has(diff)) { hide(row); return; }
+
+      // category filter (case-insensitive)
+      if (hasCat && cat !== activeCat.toLowerCase()) { hide(row); return; }
+
+      // status filter
+      if (hasStatus) {
+        if (activeStatus === 'solved'   && solved !== 'solved')   { hide(row); return; }
+        if (activeStatus === 'unsolved' && solved === 'solved')   { hide(row); return; }
+      }
+
+      // search filter + highlight
+      if (hasSearch) {
+        const hit = code.includes(searchTerm) || title.includes(searchTerm);
+        if (!hit) { hide(row); return; }
+        highlight(row, searchTerm);
+      } else {
+        clearHighlight(row);
+      }
+
+      show(row);
+      visible++;
+    });
+
+    // Update count
+    if (countEl) countEl.textContent = visible;
+
+    // Empty state
+    if (emptyRow) emptyRow.classList.toggle('hidden', visible > 0);
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  function show(row) { row.classList.remove('hidden'); }
+  function hide(row) { row.classList.add('hidden'); clearHighlight(row); }
+
+  function highlight(row, term) {
+    ['.code-link', '.title-link'].forEach(sel => {
+      const el = row.querySelector(sel);
+      if (!el) return;
+      const orig = el.dataset.orig || el.textContent;
+      el.dataset.orig = orig;
+      const re = new RegExp('(' + escRe(term) + ')', 'gi');
+      el.innerHTML = orig.replace(re, '<mark>$1</mark>');
+    });
+  }
+
+  function clearHighlight(row) {
+    ['.code-link', '.title-link'].forEach(sel => {
+      const el = row.querySelector(sel);
+      if (el && el.dataset.orig) {
+        el.textContent = el.dataset.orig;
+      }
+    });
+  }
+
+  function escRe(s) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  // ── Initial run (if URL has params) ───────────────────────────────────────
+  if (activeDiffs.size || activeStatus || activeCat || searchTerm) {
+    applyFilters();
+  }
+}());
+</script>
+{% endblock %}

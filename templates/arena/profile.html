@@ -1,0 +1,160 @@
+{% extends "arena/base.html" %}
+{% block title %}{{ u.username }} — Profil{% endblock %}
+{% block breadcrumb %}
+  <li class="breadcrumb-item"><a href="{{ url_for('arena.users') }}">Foydalanuvchilar</a></li>
+  <li class="breadcrumb-item active">@{{ u.username }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+  <!-- Left: User card -->
+  <div class="col-lg-3">
+    <div class="ar-card text-center" style="padding:28px 20px;">
+      <div style="width:80px;height:80px;border-radius:50%;
+                  background:linear-gradient(135deg,#58a6ff,#bc8cff);
+                  display:inline-flex;align-items:center;justify-content:center;
+                  font-size:2rem;font-weight:800;color:#fff;margin-bottom:14px;">
+        {{ u.username[0].upper() }}
+      </div>
+      <h2 style="font-size:1.1rem; font-weight:700; margin:0;">{{ u.username }}</h2>
+      <p style="color:var(--ar-muted); font-size:.83rem; margin:4px 0 12px;">{{ u.full_name }}</p>
+
+      {% if u.age %}
+      <div style="font-size:.8rem; color:var(--ar-muted); margin-bottom:6px;">
+        <i class="fas fa-birthday-cake" style="margin-right:4px;"></i> {{ u.age }} yosh
+      </div>
+      {% endif %}
+
+      <div style="font-size:.8rem; color:var(--ar-muted); margin-bottom:14px;">
+        <i class="fas fa-calendar-alt" style="margin-right:4px;"></i>
+        {{ u.created_at.strftime('%d.%m.%Y') }} dan beri
+      </div>
+
+      {% if u.bio %}
+      <div style="font-size:.83rem; color:#c9d1d9; background:var(--ar-bg); border:1px solid var(--ar-border);
+                  border-radius:8px; padding:10px 12px; text-align:left; margin-bottom:12px; line-height:1.5;">
+        {{ u.bio }}
+      </div>
+      {% endif %}
+
+      {% if arena_user and arena_user.id == u.id %}
+      <a href="{{ url_for('arena.settings') }}" class="ar-btn ar-btn-outline ar-btn-sm w-100" style="justify-content:center; margin-top:8px;">
+        <i class="fas fa-cog"></i> Sozlamalar
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Right: Stats + solved map -->
+  <div class="col-lg-9">
+    <!-- Stat row -->
+    <div class="row g-2 mb-3">
+      {% for icon, val, lbl, col in [
+        ('fas fa-hashtag', '#' ~ rank, 'Reyting o\'rni', 'var(--ar-yellow)'),
+        ('fas fa-star', u.rating, 'Ball', 'var(--ar-yellow)'),
+        ('fas fa-check-circle', u.problems_solved, 'Hal qildi', 'var(--ar-green)'),
+      ] %}
+      <div class="col-4">
+        <div class="ar-stat">
+          <div style="font-size:1rem; color:{{ col }}; margin-bottom:4px;"><i class="{{ icon }}"></i></div>
+          <div class="val" style="font-size:1.5rem; color:{{ col }};">{{ val }}</div>
+          <div class="lbl">{{ lbl }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Difficulty breakdown -->
+    <div class="ar-card mb-3">
+      <div class="ar-card-header"><i class="fas fa-chart-bar" style="color:var(--ar-primary)"></i> Murakkablik bo'yicha</div>
+      <div class="ar-card-body">
+        <div class="row g-3 text-center">
+          {% for diff, lbl, col, total in [
+            ('easy',   'Oson',  'var(--ar-green)',  all_problems|selectattr('difficulty','eq','easy')|list|length),
+            ('medium', "O'rta", 'var(--ar-yellow)', all_problems|selectattr('difficulty','eq','medium')|list|length),
+            ('hard',   'Qiyin', 'var(--ar-red)',    all_problems|selectattr('difficulty','eq','hard')|list|length),
+          ] %}
+          <div class="col-4">
+            <div style="font-size:1.6rem; font-weight:800; color:{{ col }};">{{ stats[diff] }}</div>
+            <div style="font-size:.75rem; color:var(--ar-muted); margin-bottom:6px;">{{ lbl }} / {{ total }}</div>
+            <div class="ar-progress">
+              <div class="ar-progress-bar"
+                   style="width:{% if total %}{{ (stats[diff]/total*100)|round|int }}{% else %}0{% endif %}%;
+                          background:{{ col }};"></div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Solved map (robocontest style) -->
+    <div class="ar-card mb-3">
+      <div class="ar-card-header">
+        <i class="fas fa-th" style="color:var(--ar-primary)"></i> Yechilgan masalalar xaritasi
+        <span style="font-size:.75rem; color:var(--ar-muted); margin-left:8px;">
+          {{ solved_ids|length }} / {{ all_problems|length }}
+        </span>
+      </div>
+      <div class="ar-card-body">
+        {% if all_problems %}
+        <div style="display:flex; flex-wrap:wrap; gap:4px;">
+          {% for p in all_problems %}
+          <a href="{{ url_for('arena.problem_detail', pid=p.id) }}"
+             class="sm-cell {% if p.id in solved_ids %}sm-ac{% else %}sm-none{% endif %}"
+             title="{{ p.code }}: {{ p.title }} ({{ 'Yechilgan' if p.id in solved_ids else 'Yechilmagan' }})">
+            {{ p.code }}
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align:center; color:var(--ar-muted); padding:20px;">
+          Hali masalalar qo'shilmagan
+        </div>
+        {% endif %}
+
+        <!-- Legend -->
+        <div class="d-flex gap-3 mt-3" style="font-size:.75rem; color:var(--ar-muted);">
+          <span><span class="sm-cell sm-ac" style="width:24px;height:18px;font-size:.6rem;display:inline-flex;">AC</span> Yechilgan</span>
+          <span><span class="sm-cell sm-none" style="width:24px;height:18px;font-size:.6rem;display:inline-flex;">—</span> Yechilmagan</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent AC -->
+    {% if recent_ac %}
+    <div class="ar-card">
+      <div class="ar-card-header"><i class="fas fa-bolt" style="color:var(--ar-green)"></i> So'nggi yutuqlar</div>
+      <table class="ar-table">
+        <thead><tr>
+          <th>Masala</th>
+          <th>Murakkablik</th>
+          <th style="text-align:right">Vaqt</th>
+        </tr></thead>
+        <tbody>
+        {% for s in recent_ac %}
+        <tr>
+          <td>
+            <a href="{{ url_for('arena.problem_detail', pid=s.problem_id) }}"
+               style="color:var(--ar-text); text-decoration:none;">
+              <span style="font-family:'Courier New',monospace; color:var(--ar-muted); font-size:.78rem; margin-right:6px;">{{ s.problem.code }}</span>
+              {{ s.problem.title }}
+            </a>
+          </td>
+          <td>
+            <span class="ar-badge badge-{{ s.problem.difficulty }}">
+              {% if s.problem.difficulty == 'easy' %}Oson{% elif s.problem.difficulty == 'medium' %}O'rta{% else %}Qiyin{% endif %}
+            </span>
+          </td>
+          <td style="text-align:right; color:var(--ar-muted); font-size:.78rem;">
+            {{ s.submitted_at.strftime('%H:%M, %d-%m-%Y') }}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

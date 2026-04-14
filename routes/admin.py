@@ -33,6 +33,7 @@ def to_tashkent(dt):
     return dt + timedelta(hours=5)
 import json
 from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 from functools import wraps
 import secrets
 import string
@@ -285,11 +286,11 @@ def auto_translate(text, target):
     if not text or not target:
         return text
     try:
-        # Use a timeout and handle empty strings
         translator = GoogleTranslator(source='auto', target=target)
         return translator.translate(text)
     except Exception as e:
-        print(f"Translation error ({target}): {e}")
+        from flask import current_app
+        current_app.logger.warning("Tarjima xato (%s): %s", target, e)
         return text
 
 
@@ -326,9 +327,7 @@ def login():
 
 @admin_bp.route('/logout')
 def logout():
-    session.pop('admin_id', None)
-    session.pop('admin_name', None)
-    session.pop('admin_role', None)
+    session.clear()
     flash(_('Tizimdan chiqdingiz'), 'info')
     return redirect(url_for('main.index'))
 
@@ -358,8 +357,14 @@ def dashboard():
     
     res_counts_map = {sid: count for sid, count in subject_stats_raw}
     
+    # N+1 oldini olish: bitta aggregation query bilan barcha subject uchun question count
+    q_counts_raw = db.session.query(
+        Question.subject_id, func.count(Question.id)
+    ).group_by(Question.subject_id).all()
+    q_counts_map = {sid: cnt for sid, cnt in q_counts_raw}
+
     subject_names = [s.name for s in subjects]
-    question_counts = [Question.query.filter_by(subject_id=s.id).count() for s in subjects]
+    question_counts = [q_counts_map.get(s.id, 0) for s in subjects]
     result_counts = [res_counts_map.get(s.id, 0) for s in subjects]
 
     # Analytics: Top 5 Difficult Questions (Limit to last 500 results for performance)
@@ -383,7 +388,8 @@ def dashboard():
                             question_stats[q_id_int]['total'] += 1
                             all_q_ids_set.add(q_id_int)
                         except (ValueError, TypeError): continue
-                except: continue
+                except Exception:
+                    continue
 
             if all_q_ids_set:
                 # Chunk IDs to avoid SQLite limit (usually 999 variables)
@@ -406,8 +412,10 @@ def dashboard():
                                 q_obj = questions_db.get(q_id_int)
                                 if q_obj and user_ans != q_obj.correct_answer:
                                     question_stats[q_id_int]['wrong'] += 1
-                            except: continue
-                    except: continue
+                            except Exception:
+                                continue
+                    except Exception:
+                        continue
 
                 for q_id, stats in question_stats.items():
                     if stats['total'] > 3: # Lower threshold for limited sample
@@ -423,8 +431,8 @@ def dashboard():
                             })
                 difficult_questions_data = sorted(difficult_questions_data, key=lambda x: x['fail_rate'], reverse=True)[:5]
     except Exception as e:
-        # Prevent analytics errors from crashing the dashboard
-        print(f"Analytics error: {e}")
+        from flask import current_app
+        current_app.logger.warning("Dashboard analytics xato: %s", e)
         difficult_questions_data = []
 
     return render_template('admin_dashboard.html',
@@ -618,7 +626,8 @@ def question_edit(id):
                 elif remove_existing_image and previous_image_path:
                     delete_question_image_file(previous_image_path)
             except Exception as cleanup_error:
-                print(f"Question image cleanup warning: {cleanup_error}")
+                from flask import current_app
+                current_app.logger.warning("Savol rasm tozalash xato: %s", cleanup_error)
 
             flash(_('Savol muvaffaqiyatli o\'zgartirildi'), 'success')
             return redirect(url_for('admin.questions'))
@@ -644,12 +653,37 @@ def question_edit(id):
 @admin_bp.route('/questions/translate_missing', methods=['POST'])
 def translate_missing_questions():
     try:
-        subject_id = request.json.get('subject_id')
-        grade = request.json.get('grade')
-        quarter = request.json.get('quarter')
+        data = request.get_json(silent=True) or {}
+        subject_id = data.get('subject_id')
+        grade = data.get('grade')
+        quarter = data.get('quarter')
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 400
-        
+
+    q_filter = Question.query
+    if subject_id:
+        q_filter = q_filter.filter_by(subject_id=subject_id)
+    if grade:
+        q_filter = q_filter.filter_by(grade=grade)
+    if quarter:
+        q_filter = q_filter.filter_by(quarter=quarter)
+
+    questions = q_filter.filter(
+        (Question.question_text_ru == None) | (Question.question_text_ru == '')
+    ).all()
+
+    updated = 0
+    for q in questions:
+        try:
+            q.question_text_ru = auto_translate(q.question_text, 'ru')
+            q.question_text_en = auto_translate(q.question_text, 'en')
+            updated += 1
+        except Exception:
+            continue
+    db.session.commit()
+    return jsonify({'success': True, 'updated': updated})
+
+
 @admin_bp.route('/question/delete/<int:id>', methods=['GET'])
 @admin_required
 def question_delete(id):
@@ -662,8 +696,9 @@ def question_delete(id):
         removed_image_path = remove_question_image(question.id)
         delete_question_image_file(removed_image_path or existing_image_path)
     except Exception as cleanup_error:
-        print(f"Question image cleanup warning: {cleanup_error}")
-    
+        from flask import current_app
+        current_app.logger.warning("Savol rasm tozalash xato: %s", cleanup_error)
+
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return {'success': True}
         
@@ -764,10 +799,6 @@ def import_questions():
 
     return redirect(url_for('admin.questions'))
 
-    return redirect(url_for('admin.questions'))
-
-    return redirect(url_for('admin.questions'))
-
 @admin_bp.route('/download/template')
 def download_template():
     import pandas as pd
@@ -823,20 +854,16 @@ def download_template():
         download_name='savollar_namuna.xlsx'
     )
 
-@admin_bp.route('/export/results')
-def export_results():
-    import pandas as pd
-    from io import BytesIO
-    from flask import send_file
+def _build_results_query(args):
+    """export_results va results uchun umumiy filter/sort query builder."""
+    subject_id = args.get('subject_id', type=int)
+    grade = args.get('grade', type=int)
+    quarter = args.get('quarter', type=int)
+    control_work_id = args.get('control_work_id', type=int)
+    filter_date = args.get('filter_date')
+    sort_by = args.get('sort_by', 'newest')
 
-    subject_id = request.args.get('subject_id', type=int)
-    grade = request.args.get('grade', type=int)
-    quarter = request.args.get('quarter', type=int)
-    control_work_id = request.args.get('control_work_id', type=int)
-    filter_date = request.args.get('filter_date')
-    sort_by = request.args.get('sort_by', 'newest')
-
-    query = TestResult.query
+    query = TestResult.query.options(joinedload(TestResult.subject))
     if subject_id:
         query = query.filter_by(subject_id=subject_id)
     if grade:
@@ -845,22 +872,31 @@ def export_results():
         query = query.filter_by(quarter=quarter)
     if control_work_id:
         query = query.filter_by(control_work_id=control_work_id)
-
     if filter_date:
         try:
             target_date = datetime.strptime(filter_date, '%Y-%m-%d').date()
             start_dt = datetime.combine(target_date, datetime.min.time())
             end_dt = datetime.combine(target_date, datetime.max.time())
             query = query.filter(TestResult.test_date >= start_dt, TestResult.test_date <= end_dt)
-        except:
-            pass
-
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.warning("filter_date parse xato: %s", e)
     if sort_by == 'score_desc':
         query = query.order_by(TestResult.score.desc())
     elif sort_by == 'score_asc':
         query = query.order_by(TestResult.score.asc())
-    else: # newest
+    else:
         query = query.order_by(TestResult.test_date.desc())
+    return query
+
+
+@admin_bp.route('/export/results')
+def export_results():
+    import pandas as pd
+    from io import BytesIO
+    from flask import send_file
+
+    query = _build_results_query(request.args)
 
     results = query.all()
 
@@ -897,39 +933,7 @@ def export_results():
 
 @admin_bp.route('/results')
 def results():
-    subject_id = request.args.get('subject_id', type=int)
-    grade = request.args.get('grade', type=int)
-    quarter = request.args.get('quarter', type=int)
-    control_work_id = request.args.get('control_work_id', type=int)
-
-    filter_date = request.args.get('filter_date')
-    sort_by = request.args.get('sort_by', 'newest')
-
-    query = TestResult.query
-    if subject_id:
-        query = query.filter_by(subject_id=subject_id)
-    if grade:
-        query = query.filter_by(grade=grade)
-    if quarter:
-        query = query.filter_by(quarter=quarter)
-    if control_work_id:
-        query = query.filter_by(control_work_id=control_work_id)
-
-    if filter_date:
-        try:
-            target_date = datetime.strptime(filter_date, '%Y-%m-%d').date()
-            start_dt = datetime.combine(target_date, datetime.min.time())
-            end_dt = datetime.combine(target_date, datetime.max.time())
-            query = query.filter(TestResult.test_date >= start_dt, TestResult.test_date <= end_dt)
-        except:
-            pass
-
-    if sort_by == 'score_desc':
-        query = query.order_by(TestResult.score.desc())
-    elif sort_by == 'score_asc':
-        query = query.order_by(TestResult.score.asc())
-    else: # newest
-        query = query.order_by(TestResult.test_date.desc())
+    query = _build_results_query(request.args)
 
     # Calculate stats before pagination on the filtered result set.
     filtered_stats = query.with_entities(TestResult.subject_id, TestResult.percentage).all()
@@ -1126,7 +1130,8 @@ def subject_delete(id):
     try:
         remove_subject_grade_settings(id)
     except Exception as cleanup_error:
-        print(f"Subject grading cleanup warning: {cleanup_error}")
+        from flask import current_app
+        current_app.logger.warning("Fan baholash tozalash xato: %s", cleanup_error)
     flash(_('Fan o\'chirildi'), 'success')
     return redirect(url_for('admin.subjects'))
 

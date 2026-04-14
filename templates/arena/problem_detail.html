@@ -1,0 +1,621 @@
+{% extends "arena/base.html" %}
+{% block title %}{{ problem.code }} — {{ problem.title }}{% endblock %}
+{% block breadcrumb %}
+  <li class="breadcrumb-item"><a href="{{ url_for('arena.problems') }}">Masalalar</a></li>
+  <li class="breadcrumb-item active">{{ problem.code }}</li>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── Layout ─────────────────────────────────────────────────────────── */
+  .pd-wrap   { display:grid; grid-template-columns:1fr 480px; gap:14px; align-items:start; }
+  @media(max-width:1100px){ .pd-wrap { grid-template-columns:1fr; } }
+
+  /* ── Problem statement ──────────────────────────────────────────────── */
+  .problem-body h3 { font-size:.88rem; font-weight:700; color:var(--ar-primary); margin:18px 0 6px; }
+  .problem-body p  { color:#c9d1d9; font-size:.88rem; line-height:1.75; margin-bottom:8px; }
+  .example-box {
+    background: var(--ar-bg);
+    border: 1px solid var(--ar-border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .example-box .ex-head {
+    padding: 5px 12px;
+    background: rgba(255,255,255,.04);
+    border-bottom: 1px solid var(--ar-border);
+    font-size: .68rem; font-weight:700;
+    text-transform:uppercase; letter-spacing:.5px; color:var(--ar-muted);
+    display:flex; align-items:center; gap:6px;
+  }
+  .example-box pre {
+    margin:0; padding:10px 12px;
+    font-size:.83rem; color:var(--ar-text);
+    white-space:pre-wrap; word-break:break-word;
+  }
+
+  /* ── Editor panel ───────────────────────────────────────────────────── */
+  .editor-panel { position:sticky; top:76px; }
+  #codeEditor {
+    width:100%; box-sizing:border-box;
+    background:#0d1117;
+    color:#e6edf3;
+    border:1px solid var(--ar-border);
+    border-radius:0 0 8px 8px;
+    font-family:'Courier New',Consolas,monospace;
+    font-size:.85rem;
+    line-height:1.55;
+    padding:12px 14px;
+    resize:vertical;
+    min-height:280px;
+    outline:none;
+    tab-size:4;
+    transition:border-color .15s;
+  }
+  #codeEditor:focus { border-color:var(--ar-primary); }
+
+  .editor-toolbar {
+    background:rgba(255,255,255,.04);
+    border:1px solid var(--ar-border);
+    border-bottom:none;
+    border-radius:8px 8px 0 0;
+    padding:8px 12px;
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  }
+  .lang-badge {
+    display:inline-flex; align-items:center; gap:6px;
+    background:rgba(88,166,255,.12); border:1px solid rgba(88,166,255,.25);
+    border-radius:6px; padding:4px 10px; font-size:.78rem;
+    color:var(--ar-primary); font-weight:700;
+  }
+  #langSelect {
+    background:#161b22; border:1px solid var(--ar-border);
+    color:var(--ar-text); border-radius:5px; font-size:.8rem;
+    padding:4px 8px; cursor:pointer;
+  }
+
+  /* ── Action buttons ─────────────────────────────────────────────────── */
+  .action-row { display:flex; gap:8px; margin-top:10px; }
+  .btn-run {
+    flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    background:rgba(255,255,255,.07); border:1px solid var(--ar-border);
+    color:var(--ar-text); border-radius:7px;
+    padding:9px 14px; font-size:.85rem; font-weight:600; cursor:pointer;
+    transition:background .15s, border-color .15s;
+  }
+  .btn-run:hover { background:rgba(255,255,255,.12); border-color:var(--ar-muted); }
+  .btn-submit {
+    flex:2; display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    background:var(--ar-green); border:none;
+    color:#fff; border-radius:7px;
+    padding:9px 14px; font-size:.85rem; font-weight:700; cursor:pointer;
+    transition:opacity .15s;
+  }
+  .btn-submit:hover { opacity:.85; }
+  .btn-submit:disabled, .btn-run:disabled { opacity:.5; cursor:not-allowed; }
+
+  /* ── Output panel ───────────────────────────────────────────────────── */
+  #outputPanel {
+    margin-top:10px;
+    border:1px solid var(--ar-border);
+    border-radius:8px;
+    overflow:hidden;
+    display:none;
+  }
+  .out-header {
+    padding:7px 12px;
+    background:rgba(255,255,255,.04);
+    border-bottom:1px solid var(--ar-border);
+    display:flex; align-items:center; justify-content:between; gap:10px;
+    font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px;
+  }
+  .out-verdict {
+    display:inline-flex; align-items:center; gap:5px;
+    border-radius:5px; padding:3px 9px; font-size:.8rem; font-weight:800;
+  }
+  .vrd-AC  { background:rgba(63,185,80,.18); color:var(--ar-green); }
+  .vrd-WA  { background:rgba(248,81,73,.18);  color:var(--ar-red);  }
+  .vrd-TLE { background:rgba(210,153,34,.18); color:var(--ar-yellow); }
+  .vrd-RE  { background:rgba(248,81,73,.18);  color:var(--ar-red);  }
+  .vrd-CE  { background:rgba(248,81,73,.18);  color:var(--ar-red);  }
+  .vrd-running { background:rgba(88,166,255,.15); color:var(--ar-primary); }
+
+  .out-time { margin-left:auto; color:var(--ar-muted); font-size:.72rem; font-weight:400; }
+  .out-body  { padding:10px 12px; font-family:'Courier New',monospace; font-size:.82rem;
+               color:var(--ar-text); white-space:pre-wrap; word-break:break-word;
+               max-height:200px; overflow-y:auto; line-height:1.5; }
+  .out-error { padding:10px 12px; font-family:'Courier New',monospace; font-size:.8rem;
+               color:var(--ar-red); white-space:pre-wrap; word-break:break-word;
+               max-height:140px; overflow-y:auto; border-top:1px solid var(--ar-border); }
+
+  /* ── Submission history ─────────────────────────────────────────────── */
+  .sub-row {
+    display:grid;
+    grid-template-columns:58px 1fr 70px 70px;
+    gap:8px 12px; align-items:center;
+    padding:9px 14px;
+    border-bottom:1px solid rgba(48,54,61,.5);
+    font-size:.8rem;
+  }
+  .sub-row:last-child { border-bottom:none; }
+  .sub-code-preview {
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    font-family:'Courier New',monospace; font-size:.76rem; color:var(--ar-muted);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pd-wrap">
+  <!-- ── Left: Problem statement ─────────────────────────────────────────── -->
+  <div>
+    <div class="ar-card mb-3">
+      <div class="ar-card-header justify-content-between">
+        <div class="d-flex align-items-center gap-2">
+          <span style="font-family:'Courier New',monospace; color:var(--ar-muted); font-size:.83rem;">{{ problem.code }}</span>
+          <span class="ar-badge badge-{{ problem.difficulty }}">
+            {% if problem.difficulty == 'easy' %}Oson{% elif problem.difficulty == 'medium' %}O'rta{% else %}Qiyin{% endif %}
+          </span>
+          <span style="font-size:.75rem; color:var(--ar-muted);">{{ problem.category }}</span>
+        </div>
+        <div style="font-size:.75rem; color:var(--ar-muted);">
+          <i class="fas fa-clock"></i> {{ problem.time_limit }}s &nbsp;|&nbsp;
+          <i class="fas fa-memory"></i> {{ problem.memory_limit }} MB
+        </div>
+      </div>
+      <div class="ar-card-body">
+        <h2 style="font-size:1.15rem; font-weight:700; margin:0 0 14px;">{{ problem.title }}</h2>
+        <div class="problem-body">
+          <h3><i class="fas fa-align-left"></i> Masala matni</h3>
+          <p style="white-space:pre-wrap;">{{ problem.description }}</p>
+
+          {% if problem.input_format %}
+          <h3><i class="fas fa-arrow-right"></i> Kirish formati</h3>
+          <p>{{ problem.input_format }}</p>
+          {% endif %}
+
+          {% if problem.output_format %}
+          <h3><i class="fas fa-arrow-left"></i> Chiqish formati</h3>
+          <p>{{ problem.output_format }}</p>
+          {% endif %}
+
+          {% if problem.constraints %}
+          <h3><i class="fas fa-ruler"></i> Cheklovlar</h3>
+          <p style="font-family:'Courier New',monospace; font-size:.83rem;">{{ problem.constraints }}</p>
+          {% endif %}
+
+          {% if examples %}
+          <h3><i class="fas fa-list-ol"></i> Namunalar</h3>
+          {% for ex in examples %}
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <div class="example-box">
+                <div class="ex-head"><i class="fas fa-sign-in-alt"></i> Kirish {{ loop.index }}</div>
+                <pre>{{ ex.input or '(bo\'sh)' }}</pre>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="example-box">
+                <div class="ex-head"><i class="fas fa-sign-out-alt"></i> Chiqish {{ loop.index }}</div>
+                <pre>{{ ex.output or '(bo\'sh)' }}</pre>
+              </div>
+            </div>
+            {% if ex.explanation %}
+            <div class="col-12">
+              <div style="background:rgba(88,166,255,.07); border:1px solid rgba(88,166,255,.2); border-radius:8px; padding:9px 12px; font-size:.8rem; color:#c9d1d9;">
+                <strong style="color:var(--ar-primary);">Tushuntirish:</strong> {{ ex.explanation }}
+              </div>
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats mini card -->
+    <div class="ar-card mb-3">
+      <div class="ar-card-body" style="padding:12px 16px;">
+        <div class="d-flex justify-content-around text-center">
+          <div>
+            <div style="font-size:1.2rem; font-weight:800; color:var(--ar-text);">{{ problem.submission_count }}</div>
+            <div style="font-size:.7rem; color:var(--ar-muted);">Urinish</div>
+          </div>
+          <div style="width:1px; background:var(--ar-border);"></div>
+          <div>
+            <div style="font-size:1.2rem; font-weight:800; color:var(--ar-green);">{{ problem.accepted_count }}</div>
+            <div style="font-size:.7rem; color:var(--ar-muted);">Qabul</div>
+          </div>
+          <div style="width:1px; background:var(--ar-border);"></div>
+          <div>
+            <div style="font-size:1.2rem; font-weight:800; color:var(--ar-yellow);">
+              {% if problem.submission_count %}{{ (problem.accepted_count/problem.submission_count*100)|round|int }}%{% else %}—{% endif %}
+            </div>
+            <div style="font-size:.7rem; color:var(--ar-muted);">Qabul %</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prev / Next navigation -->
+    <div class="d-flex justify-content-between gap-2">
+      {% if prev_p %}
+      <a href="{{ url_for('arena.problem_detail', pid=prev_p.id) }}" class="ar-btn ar-btn-outline ar-btn-sm">
+        <i class="fas fa-arrow-left"></i> {{ prev_p.code }}
+      </a>
+      {% else %}<div></div>{% endif %}
+      {% if next_p %}
+      <a href="{{ url_for('arena.problem_detail', pid=next_p.id) }}" class="ar-btn ar-btn-outline ar-btn-sm">
+        {{ next_p.code }} <i class="fas fa-arrow-right"></i>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ── Right: Code editor + submissions ────────────────────────────────── -->
+  <div class="editor-panel">
+
+    {% if arena_user %}
+      {% if already_solved %}
+      <div class="ar-alert ar-alert-success mb-3" style="padding:10px 14px; font-size:.84rem;">
+        <i class="fas fa-check-circle"></i> Bu masalani muvaffaqiyatli yechdingiz!
+      </div>
+      {% endif %}
+
+      <!-- Code editor -->
+      <div class="ar-card mb-3">
+        <div class="editor-toolbar">
+          <span class="lang-badge"><i class="fab fa-python"></i> Python</span>
+          <select id="langSelect">
+            <option value="python" selected>Python 3</option>
+          </select>
+          <span style="margin-left:auto; font-size:.72rem; color:var(--ar-muted);">
+            <i class="fas fa-keyboard"></i> Tab = 4 bo'sh joy
+          </span>
+        </div>
+        <textarea id="codeEditor" spellcheck="false" autocomplete="off" autocorrect="off"
+                  placeholder="# Kodingizni shu yerga yozing...
+# Masalan:
+n = int(input())
+print(n * 2)
+"></textarea>
+      </div>
+
+      <!-- Run / Submit -->
+      <div class="action-row">
+        <button id="btnRun" class="btn-run" onclick="runCode()">
+          <i class="fas fa-play"></i> Sinab ko'rish
+        </button>
+        <button id="btnSubmit" class="btn-submit" onclick="submitCode()">
+          <i class="fas fa-paper-plane"></i> Yuborish
+        </button>
+      </div>
+
+      <!-- Output panel -->
+      <div id="outputPanel">
+        <div class="out-header">
+          <span id="outVerdict" class="out-verdict vrd-running">
+            <i class="fas fa-spinner fa-spin"></i> Bajarilmoqda...
+          </span>
+          <span id="outTime" class="out-time"></span>
+        </div>
+        <div id="outBody" class="out-body" style="display:none;"></div>
+        <div id="outError" class="out-error" style="display:none;"></div>
+      </div>
+
+      <!-- Custom stdin for "Run" -->
+      <div id="stdinWrap" style="margin-top:10px; display:none;">
+        <div style="font-size:.72rem; font-weight:700; color:var(--ar-muted); margin-bottom:5px; text-transform:uppercase; letter-spacing:.4px;">
+          <i class="fas fa-terminal" style="color:var(--ar-yellow);"></i> Test kirish (ixtiyoriy)
+        </div>
+        <textarea id="stdinField" rows="3"
+                  style="width:100%; background:#0d1117; border:1px solid var(--ar-border);
+                         color:var(--ar-green); border-radius:6px; padding:8px 10px;
+                         font-family:'Courier New',monospace; font-size:.82rem; resize:vertical;"
+                  placeholder="Masalan: 5"></textarea>
+      </div>
+      <div style="margin-top:6px;">
+        <button onclick="toggleStdin()" style="background:none; border:none; color:var(--ar-muted);
+                font-size:.75rem; cursor:pointer; padding:0;">
+          <i class="fas fa-chevron-down" id="stdinIcon"></i> O'z kirish ma'lumotimni kiritish
+        </button>
+      </div>
+
+    {% else %}
+      <div class="ar-card">
+        <div class="ar-card-body" style="text-align:center; padding:28px 20px;">
+          <i class="fas fa-code" style="font-size:2rem; color:var(--ar-muted); margin-bottom:12px; display:block;"></i>
+          <p style="color:var(--ar-muted); font-size:.87rem; margin-bottom:14px;">
+            Kod yuborish uchun tizimga kiring.
+          </p>
+          <a href="{{ url_for('arena.login', next=request.path) }}" class="ar-btn ar-btn-primary ar-btn-sm">
+            <i class="fas fa-sign-in-alt"></i> Kirish
+          </a>
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- My submissions -->
+    {% if my_subs %}
+    <div class="ar-card mt-3">
+      <div class="ar-card-header">
+        <i class="fas fa-history" style="color:var(--ar-muted)"></i> Mening urinishlarim
+      </div>
+      <div>
+        {% for s in my_subs %}
+        <div class="sub-row sub-row-link" onclick="viewCodeDetail({{ s.id }})">
+          <span class="ar-badge badge-{{ s.status.lower() }}">
+            {% if s.status == 'AC' %}<i class="fas fa-check"></i> AC
+            {% elif s.status == 'WA' %}<i class="fas fa-times"></i> WA
+            {% elif s.status == 'TLE' %}<i class="fas fa-clock"></i> TLE
+            {% elif s.status == 'RE' %}<i class="fas fa-bug"></i> RE
+            {% elif s.status == 'CE' %}<i class="fas fa-exclamation"></i> CE
+            {% else %}<i class="fas fa-hourglass"></i> PE{% endif %}
+          </span>
+          <span class="sub-code-preview" title="{{ s.code }}">
+            {{ (s.code or '')[:60] }}{% if (s.code or '')|length > 60 %}…{% endif %}
+          </span>
+          <span style="color:var(--ar-muted); font-size:.72rem; white-space:nowrap;">
+            {% if s.time_used %}{{ s.time_used }}s{% endif %}
+          </span>
+          <span style="color:var(--ar-muted); font-size:.72rem; white-space:nowrap; text-align:right;">
+            {{ s.submitted_at.strftime('%H:%M') }}
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Submission Code Modal -->
+<div id="subModal" class="ar-modal" style="display:none;">
+    <div class="ar-modal-content" style="max-width:800px;">
+        <div class="ar-modal-header">
+            <h3 id="modalTitle" style="margin:0; font-size:1.1rem; font-weight:700;"></h3>
+            <button onclick="closeModal()" style="background:none; border:none; color:var(--ar-muted); cursor:pointer; font-size:1.2rem;">&times;</button>
+        </div>
+        <div class="ar-modal-body">
+            <div id="modalMeta" style="margin-bottom:12px; font-size:.8rem; display:flex; gap:12px; color:var(--ar-muted);"></div>
+            <pre id="modalCode" style="margin:0; background:#0d1117; padding:12px; border:1px solid var(--ar-border); border-radius:6px; font-size:.85rem; color:#e6edf3; overflow-x:auto;"></pre>
+            <div id="modalError" style="margin-top:12px; padding:10px; background:rgba(248,81,73,.1); border:1px solid rgba(248,81,73,.2); border-radius:6px; color:var(--ar-red); font-size:.8rem; display:none; white-space:pre-wrap;"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+.ar-modal {
+    position: fixed; top:0; left:0; width:100%; height:100%;
+    background: rgba(0,0,0,.7); display:flex; align-items:center; justify-content:center;
+    z-index: 1000; padding:20px;
+}
+.ar-modal-content {
+    background: #161b22; border:1px solid var(--ar-border);
+    border-radius: 10px; width:100%; max-height:90vh; display:flex; flex-direction:column;
+    box-shadow: 0 12px 30px rgba(0,0,0,.5);
+}
+.ar-modal-header {
+    padding: 14px 20px; border-bottom: 1px solid var(--ar-border);
+    display:flex; justify-content:between; align-items:center;
+}
+.ar-modal-body {
+    padding: 20px; overflow-y:auto;
+}
+.sub-row-link { cursor:pointer; transition: background .1s; }
+.sub-row-link:hover { background: rgba(255,255,255,.03); }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+  'use strict';
+
+  const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
+  const PID  = {{ problem.id }};
+  let stdinVisible = false;
+
+  // ── Tab key in textarea ───────────────────────────────────────────────────
+  const editor = document.getElementById('codeEditor');
+  if (editor) {
+    editor.addEventListener('keydown', function (e) {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const s = this.selectionStart, end = this.selectionEnd;
+        this.value = this.value.slice(0, s) + '    ' + this.value.slice(end);
+        this.selectionStart = this.selectionEnd = s + 4;
+      }
+    });
+  }
+
+  // ── Toggle custom stdin ───────────────────────────────────────────────────
+  window.toggleStdin = function () {
+    stdinVisible = !stdinVisible;
+    document.getElementById('stdinWrap').style.display = stdinVisible ? 'block' : 'none';
+    document.getElementById('stdinIcon').className =
+      stdinVisible ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
+  };
+
+  // ── Show output panel ─────────────────────────────────────────────────────
+  function showOutput(verdict, output, error, time, isRun) {
+    const panel   = document.getElementById('outputPanel');
+    const vrdEl   = document.getElementById('outVerdict');
+    const bodyEl  = document.getElementById('outBody');
+    const errEl   = document.getElementById('outError');
+    const timeEl  = document.getElementById('outTime');
+
+    panel.style.display = 'block';
+
+    // Verdict label
+    const MAP = {
+      AC:  ['vrd-AC',  'fas fa-check-circle',     isRun ? 'Chiqish' : 'Accepted'],
+      WA:  ['vrd-WA',  'fas fa-times-circle',      'Wrong Answer'],
+      TLE: ['vrd-TLE', 'fas fa-clock',             'Time Limit'],
+      RE:  ['vrd-RE',  'fas fa-bug',               'Runtime Error'],
+      CE:  ['vrd-CE',  'fas fa-exclamation-circle','Compile Error'],
+    };
+    const [cls, icon, label] = MAP[verdict] || ['vrd-WA', 'fas fa-question', verdict];
+    vrdEl.className = `out-verdict ${cls}`;
+    vrdEl.innerHTML = `<i class="${icon}"></i> ${label}`;
+
+    timeEl.textContent = time ? `${time}s` : '';
+
+    if (output && output.trim()) {
+      bodyEl.style.display = 'block';
+      bodyEl.textContent = output;
+    } else {
+      bodyEl.style.display = 'none';
+    }
+
+    if (error && error.trim()) {
+      errEl.style.display = 'block';
+      errEl.textContent = error;
+    } else {
+      errEl.style.display = 'none';
+    }
+  }
+
+  function setLoading(loading) {
+    const btnRun    = document.getElementById('btnRun');
+    const btnSubmit = document.getElementById('btnSubmit');
+    if (!btnRun || !btnSubmit) return;
+    btnRun.disabled    = loading;
+    btnSubmit.disabled = loading;
+
+    if (loading) {
+      const panel  = document.getElementById('outputPanel');
+      const vrdEl  = document.getElementById('outVerdict');
+      panel.style.display = 'block';
+      vrdEl.className = 'out-verdict vrd-running';
+      vrdEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Bajarilmoqda...';
+      document.getElementById('outBody').style.display  = 'none';
+      document.getElementById('outError').style.display = 'none';
+      document.getElementById('outTime').textContent    = '';
+    }
+  }
+
+  // ── Run (test against custom stdin) ──────────────────────────────────────
+  window.runCode = async function () {
+    const code = editor?.value?.trim();
+    if (!code) { alert('Kod bo\'sh!'); return; }
+
+    const stdin = document.getElementById('stdinField')?.value || '';
+    setLoading(true);
+
+    try {
+      const res = await fetch(`/arena/problems/${PID}/run`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+        body: JSON.stringify({
+          code,
+          language: document.getElementById('langSelect')?.value || 'python',
+          stdin,
+        }),
+      });
+      const data = await res.json();
+      showOutput(data.verdict, data.output, data.error, data.time, true);
+    } catch (err) {
+      showOutput('CE', '', 'Server bilan bog\'lanishda xato: ' + err.message, 0, true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Submit (run against all test cases) ───────────────────────────────────
+  window.submitCode = async function () {
+    const code = editor?.value?.trim();
+    if (!code) { alert('Kod bo\'sh!'); return; }
+    setLoading(true);
+
+    try {
+      const res = await fetch(`/arena/problems/${PID}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+        body: JSON.stringify({
+          code,
+          language: document.getElementById('langSelect')?.value || 'python',
+        }),
+      });
+      const data = await res.json();
+
+      let extra = '';
+      if (data.failed_test) extra = `  (Test ${data.failed_test} da xato)`;
+      showOutput(data.verdict, data.output, data.error + extra, data.time, false);
+
+      // Reload submission history after a brief delay
+      if (['AC', 'WA', 'TLE', 'RE', 'CE'].includes(data.verdict)) {
+        setTimeout(() => location.reload(), data.verdict === 'AC' ? 1200 : 800);
+      }
+    } catch (err) {
+      showOutput('CE', '', 'Server bilan bog\'lanishda xato: ' + err.message, 0, false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Keyboard shortcut: Ctrl+Enter → Submit, Ctrl+Shift+Enter → Run ───────
+  document.addEventListener('keydown', function (e) {
+    if (!editor) return;
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      if (e.shiftKey) window.runCode();
+      else window.submitCode();
+    }
+  });
+
+  // ── View Previous Submission Code ─────────────────────────────────────────
+  window.viewCodeDetail = async function (sid) {
+    const modal = document.getElementById('subModal');
+    const title = document.getElementById('modalTitle');
+    const meta  = document.getElementById('modalMeta');
+    const code  = document.getElementById('modalCode');
+    const err   = document.getElementById('modalError');
+
+    title.textContent = "Yuklanmoqda...";
+    meta.innerHTML = "";
+    code.textContent = "";
+    err.style.display = "none";
+    modal.style.display = "flex";
+
+    try {
+        const res = await fetch(`/arena/submissions/${sid}/code`);
+        const data = await res.json();
+        
+        title.innerHTML = `<span style="font-family:monospace; color:var(--ar-muted); font-size:.9rem; margin-right:8px;">${data.problem_code}</span> ${data.problem_title}`;
+        
+        let statusHtml = `<span class="ar-badge badge-${data.status.toLowerCase()}">${data.status}</span>`;
+        meta.innerHTML = `
+            <span><i class="fas fa-clock"></i> ${data.submitted_at}</span>
+            <span><i class="fas fa-terminal"></i> ${data.language}</span>
+            <span><i class="fas fa-tachometer-alt"></i> ${data.time_used}s</span>
+            ${statusHtml}
+        `;
+        
+        code.textContent = data.code;
+        
+        if (data.error_msg) {
+            err.style.display = "block";
+            err.textContent = "Xatolik:\n" + data.error_msg;
+        }
+    } catch (e) {
+        title.textContent = "Xatolik yuz berdi";
+        err.style.display = "block";
+        err.textContent = "Ma'lumotlarni yuklashda xato: " + e.message;
+    }
+  };
+
+  window.closeModal = function() {
+    document.getElementById('subModal').style.display = "none";
+  };
+
+  // Close on background click
+  window.addEventListener('click', function(event) {
+    const modal = document.getElementById('subModal');
+    if (event.target == modal) modal.style.display = "none";
+  });
+})();
+</script>
+{% endblock %}

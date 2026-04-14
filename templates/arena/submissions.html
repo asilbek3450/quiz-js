@@ -1,0 +1,184 @@
+{% extends "arena/base.html" %}
+{% block title %}Mening urinishlarim{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">Urinishlar</li>{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+  <h2 style="font-size:1.2rem; font-weight:700; margin:0;">Mening urinishlarim</h2>
+  <div class="d-flex gap-2">
+    {% for lbl, val in [('Barchasi',''), ('Qabul','AC'), ('Xato','WA'), ('Kutish','PE')] %}
+    <a href="{{ url_for('arena.submissions', status=val) }}"
+       class="ar-btn ar-btn-sm {% if current_status == val %}ar-btn-primary{% else %}ar-btn-outline{% endif %}">
+      {% if val == 'AC' %}<i class="fas fa-check"></i>{% elif val == 'WA' %}<i class="fas fa-times"></i>{% elif val == 'PE' %}<i class="fas fa-clock"></i>{% endif %}
+      {{ lbl }}
+    </a>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="ar-card">
+  <table class="ar-table">
+    <thead><tr>
+      <th style="width:60px">#</th>
+      <th>Masala</th>
+      <th style="width:90px">Murakkablik</th>
+      <th style="width:80px; text-align:center">Holat</th>
+      <th>Javob</th>
+      <th style="width:110px; text-align:right">Vaqt</th>
+    </tr></thead>
+    <tbody>
+    {% for s in subs.items %}
+    <tr class="sub-row-link" onclick="viewCode({{ s.id }})">
+      <td style="color:var(--ar-muted); font-size:.78rem;">{{ s.id }}</td>
+      <td>
+        <a href="{{ url_for('arena.problem_detail', pid=s.problem_id) }}"
+           style="color:var(--ar-text); text-decoration:none;">
+          <span style="font-family:'Courier New',monospace; color:var(--ar-muted); font-size:.8rem; margin-right:6px;">{{ s.problem.code }}</span>
+          {{ s.problem.title }}
+        </a>
+      </td>
+      <td>
+        <span class="ar-badge badge-{{ s.problem.difficulty }}">
+          {% if s.problem.difficulty == 'easy' %}Oson{% elif s.problem.difficulty == 'medium' %}O'rta{% else %}Qiyin{% endif %}
+        </span>
+      </td>
+      <td style="text-align:center;">
+        <span class="ar-badge badge-{{ s.status.lower() }}">
+          {% if s.status == 'AC' %}<i class="fas fa-check"></i> {% elif s.status == 'WA' %}<i class="fas fa-times"></i> {% else %}<i class="fas fa-clock"></i> {% endif %}
+          {{ s.status }}
+        </span>
+      </td>
+      <td style="color:var(--ar-muted); font-size:.82rem; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+        {{ s.answer[:60] }}{% if s.answer|length > 60 %}…{% endif %}
+      </td>
+      <td style="text-align:right; color:var(--ar-muted); font-size:.78rem; white-space:nowrap;">
+        {{ s.submitted_at.strftime('%H:%M, %d-%m-%Y') }}
+      </td>
+    </tr>
+    {% else %}
+    <tr>
+      <td colspan="6" style="text-align:center; padding:48px; color:var(--ar-muted);">
+        <i class="fas fa-history fa-3x" style="opacity:.2; display:block; margin-bottom:12px;"></i>
+        Urinishlar yo'q
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Submission Code Modal -->
+<div id="subModal" class="ar-modal" style="display:none;">
+    <div class="ar-modal-content" style="max-width:800px;">
+        <div class="ar-modal-header">
+            <h3 id="modalTitle" style="margin:0; font-size:1.1rem; font-weight:700;"></h3>
+            <button onclick="closeModal()" style="background:none; border:none; color:var(--ar-muted); cursor:pointer; font-size:1.2rem;">&times;</button>
+        </div>
+        <div class="ar-modal-body">
+            <div id="modalMeta" style="margin-bottom:12px; font-size:.8rem; display:flex; gap:12px; color:var(--ar-muted);"></div>
+            <pre id="modalCode" style="margin:0; background:#0d1117; padding:12px; border:1px solid var(--ar-border); border-radius:6px; font-size:.85rem; color:#e6edf3; overflow-x:auto;"></pre>
+            <div id="modalError" style="margin-top:12px; padding:10px; background:rgba(248,81,73,.1); border:1px solid rgba(248,81,73,.2); border-radius:6px; color:var(--ar-red); font-size:.8rem; display:none; white-space:pre-wrap;"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+.ar-modal {
+    position: fixed; top:0; left:0; width:100%; height:100%;
+    background: rgba(0,0,0,.7); display:flex; align-items:center; justify-content:center;
+    z-index: 1000; padding:20px;
+}
+.ar-modal-content {
+    background: #161b22; border:1px solid var(--ar-border);
+    border-radius: 10px; width:100%; max-height:90vh; display:flex; flex-direction:column;
+    box-shadow: 0 12px 30px rgba(0,0,0,.5);
+}
+.ar-modal-header {
+    padding: 14px 20px; border-bottom: 1px solid var(--ar-border);
+    display:flex; justify-content:between; align-items:center;
+}
+.ar-modal-body {
+    padding: 20px; overflow-y:auto;
+}
+.sub-row-link { cursor:pointer; }
+.sub-row-link:hover { background: rgba(255,255,255,.03); }
+</style>
+
+<!-- Pagination -->
+{% if subs.pages > 1 %}
+<div class="d-flex justify-content-center mt-4">
+  <div class="ar-pagination">
+    <a href="{{ url_for('arena.submissions', page=subs.prev_num, status=current_status) }}"
+       class="ar-page-btn {% if not subs.has_prev %}disabled{% endif %}">
+      <i class="fas fa-chevron-left"></i>
+    </a>
+    {% for pg in subs.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+      {% if pg %}
+        <a href="{{ url_for('arena.submissions', page=pg, status=current_status) }}"
+           class="ar-page-btn {% if pg == subs.page %}active{% endif %}">{{ pg }}</a>
+      {% else %}
+        <span class="ar-page-btn" style="pointer-events:none;">…</span>
+      {% endif %}
+    {% endfor %}
+    <a href="{{ url_for('arena.submissions', page=subs.next_num, status=current_status) }}"
+       class="ar-page-btn {% if not subs.has_next %}disabled{% endif %}">
+      <i class="fas fa-chevron-right"></i>
+    </a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+async function viewCode(sid) {
+    const modal = document.getElementById('subModal');
+    const title = document.getElementById('modalTitle');
+    const meta  = document.getElementById('modalMeta');
+    const code  = document.getElementById('modalCode');
+    const err   = document.getElementById('modalError');
+
+    title.textContent = "Yuklanmoqda...";
+    meta.innerHTML = "";
+    code.textContent = "";
+    err.style.display = "none";
+    modal.style.display = "flex";
+
+    try {
+        const res = await fetch(`/arena/submissions/${sid}/code`);
+        const data = await res.json();
+        
+        title.innerHTML = `<span style="font-family:monospace; color:var(--ar-muted); font-size:.9rem; margin-right:8px;">${data.problem_code}</span> ${data.problem_title}`;
+        
+        let statusHtml = `<span class="ar-badge badge-${data.status.toLowerCase()}">${data.status}</span>`;
+        meta.innerHTML = `
+            <span><i class="fas fa-clock"></i> ${data.submitted_at}</span>
+            <span><i class="fas fa-terminal"></i> ${data.language}</span>
+            <span><i class="fas fa-tachometer-alt"></i> ${data.time_used}s</span>
+            ${statusHtml}
+        `;
+        
+        code.textContent = data.code;
+        
+        if (data.error_msg) {
+            err.style.display = "block";
+            err.textContent = "Xatolik:\n" + data.error_msg;
+        }
+    } catch (e) {
+        title.textContent = "Xatolik yuz berdi";
+        err.style.display = "block";
+        err.textContent = "Ma'lumotlarni yuklashda xato: " + e.message;
+    }
+}
+
+function closeModal() {
+    document.getElementById('subModal').style.display = "none";
+}
+
+// Close on background click
+window.onclick = function(event) {
+    const modal = document.getElementById('subModal');
+    if (event.target == modal) closeModal();
+}
+</script>
+{% endblock %}

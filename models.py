@@ -82,6 +82,11 @@ class Question(db.Model):
 
     subject = db.relationship('Subject', backref='questions')
 
+    __table_args__ = (
+        db.Index('ix_question_subject_grade_quarter', 'subject_id', 'grade', 'quarter'),
+        db.Index('ix_question_difficulty', 'difficulty'),
+    )
+
 
 class TestResult(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -101,6 +106,12 @@ class TestResult(db.Model):
     control_work = db.relationship('ControlWork', backref='results')
     subject = db.relationship('Subject', backref='results')
 
+    __table_args__ = (
+        db.Index('ix_result_subject_grade', 'subject_id', 'grade'),
+        db.Index('ix_result_date', 'test_date'),
+        db.Index('ix_result_quarter', 'quarter'),
+    )
+
 
 class Feedback(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -115,3 +126,83 @@ class Feedback(db.Model):
     is_read = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=tashkent_now)
     responded_at = db.Column(db.DateTime)
+
+
+# ─── Arena Module ─────────────────────────────────────────────────────────────
+
+class ArenaUser(db.Model):
+    __tablename__ = 'arena_users'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    full_name = db.Column(db.String(100), nullable=False)
+    age = db.Column(db.Integer)
+    password_hash = db.Column(db.String(256), nullable=False)
+    bio = db.Column(db.Text, default='')
+    rating = db.Column(db.Integer, default=0)
+    problems_solved = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=tashkent_now)
+    last_seen = db.Column(db.DateTime, default=tashkent_now)
+
+    submissions = db.relationship('ArenaSubmission', backref='user', lazy='dynamic')
+
+    def set_password(self, password):
+        from werkzeug.security import generate_password_hash
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        from werkzeug.security import check_password_hash
+        return check_password_hash(self.password_hash, password)
+
+    __table_args__ = (
+        db.Index('ix_arena_user_username', 'username'),
+        db.Index('ix_arena_user_rating', 'rating'),
+    )
+
+
+class ArenaProblem(db.Model):
+    __tablename__ = 'arena_problems'
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(10), unique=True, nullable=False)  # A001, M005
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    input_format = db.Column(db.Text, default='')
+    output_format = db.Column(db.Text, default='')
+    constraints = db.Column(db.Text, default='')
+    examples = db.Column(db.Text, default='[]')  # JSON: [{input, output, explanation}]
+    difficulty = db.Column(db.String(10), default='easy')   # easy / medium / hard
+    category = db.Column(db.String(50), default='general')
+    correct_answer = db.Column(db.Text, default='')          # for auto-grading
+    time_limit = db.Column(db.Float, default=1.0)            # seconds (display)
+    memory_limit = db.Column(db.Integer, default=256)        # MB (display)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=tashkent_now)
+    accepted_count = db.Column(db.Integer, default=0)
+    submission_count = db.Column(db.Integer, default=0)
+
+    submissions = db.relationship('ArenaSubmission', backref='problem', lazy='dynamic')
+
+    __table_args__ = (
+        db.Index('ix_arena_problem_difficulty', 'difficulty'),
+        db.Index('ix_arena_problem_category', 'category'),
+        db.Index('ix_arena_problem_active', 'is_active'),
+    )
+
+
+class ArenaSubmission(db.Model):
+    __tablename__ = 'arena_submissions'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('arena_users.id'), nullable=False)
+    problem_id = db.Column(db.Integer, db.ForeignKey('arena_problems.id'), nullable=False)
+    code = db.Column(db.Text, default='')            # submitted source code
+    language = db.Column(db.String(20), default='python')
+    answer = db.Column(db.Text, default='')          # program's stdout (for display)
+    status = db.Column(db.String(5), default='PE')   # AC / WA / TLE / RE / CE / PE
+    time_used = db.Column(db.Float, default=0.0)     # execution time in seconds
+    error_msg = db.Column(db.Text, default='')       # stderr / error text
+    submitted_at = db.Column(db.DateTime, default=tashkent_now)
+
+    __table_args__ = (
+        db.Index('ix_arena_sub_user', 'user_id'),
+        db.Index('ix_arena_sub_problem', 'problem_id'),
+        db.Index('ix_arena_sub_user_status', 'user_id', 'status'),
+    )

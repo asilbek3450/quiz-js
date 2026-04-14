@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}{% if problem %}Masalani tahrirlash{% else %}Yangi masala{% endif %}{% endblock %}
+
+{% block content %}
+<div class="main-container" style="max-width:860px;">
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a href="{{ url_for('arena.admin_problems') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="fas fa-arrow-left"></i>
+    </a>
+    <h2 class="fw-bold mb-0">
+      {% if problem %}Masalani tahrirlash: <code>{{ problem.code }}</code>{% else %}Yangi masala{% endif %}
+    </h2>
+  </div>
+
+  {% if error %}
+  <div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>{{ error }}</div>
+  {% endif %}
+
+  <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="row g-3 mb-3">
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">Kod <span class="text-danger">*</span></label>
+        <input class="form-control" type="text" name="code"
+               value="{{ problem.code if problem else '' }}"
+               placeholder="A001" required
+               style="font-family:monospace; text-transform:uppercase;">
+        <div class="form-text">A001, M010, H005 formatida</div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">Sarlavha <span class="text-danger">*</span></label>
+        <input class="form-control" type="text" name="title"
+               value="{{ problem.title if problem else '' }}" required
+               placeholder="Masala nomi">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">Murakkablik</label>
+        <select class="form-select" name="difficulty">
+          <option value="easy"   {% if problem and problem.difficulty=='easy'   %}selected{% endif %}>Oson</option>
+          <option value="medium" {% if problem and problem.difficulty=='medium' %}selected{% elif not problem %}selected{% endif %}>O'rta</option>
+          <option value="hard"   {% if problem and problem.difficulty=='hard'   %}selected{% endif %}>Qiyin</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Toifa</label>
+        <input class="form-control" type="text" name="category"
+               value="{{ problem.category if problem else 'general' }}"
+               placeholder="masalan: matematika">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label fw-semibold">Vaqt limiti (s)</label>
+        <input class="form-control" type="number" name="time_limit" step="0.5" min="0.5"
+               value="{{ problem.time_limit if problem else '1.0' }}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label fw-semibold">Xotira (MB)</label>
+        <input class="form-control" type="number" name="memory_limit" min="16"
+               value="{{ problem.memory_limit if problem else '256' }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Holat</label>
+        <select class="form-select" name="is_active">
+          <option value="1" {% if not problem or problem.is_active %}selected{% endif %}>Faol (ko'rinadi)</option>
+          <option value="0" {% if problem and not problem.is_active %}selected{% endif %}>Yashirin</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Masala matni <span class="text-danger">*</span></label>
+      <textarea class="form-control" name="description" rows="6" required
+                placeholder="Masalaning to'liq tavsifi...">{{ problem.description if problem else '' }}</textarea>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">Kirish formati</label>
+        <textarea class="form-control" name="input_format" rows="3"
+                  placeholder="Kirish ma'lumotlari formati...">{{ problem.input_format if problem else '' }}</textarea>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">Chiqish formati</label>
+        <textarea class="form-control" name="output_format" rows="3"
+                  placeholder="Kutilgan chiqish formati...">{{ problem.output_format if problem else '' }}</textarea>
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Cheklovlar</label>
+      <input class="form-control" type="text" name="constraints"
+             value="{{ problem.constraints if problem else '' }}"
+             placeholder="1 ≤ n ≤ 10^9, 1 ≤ T ≤ 100" style="font-family:monospace;">
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label fw-semibold">
+        To'g'ri javob <span class="text-danger">*</span>
+        <span class="text-muted fw-normal small">(foydalanuvchi javobi shu bilan solishtiriladi)</span>
+      </label>
+      <input class="form-control" type="text" name="correct_answer"
+             value="{{ problem.correct_answer if problem else '' }}"
+             placeholder="Masalan: 42  yoki  YES  yoki  3.14"
+             style="font-family:monospace;" required>
+    </div>
+
+    <!-- Examples -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <h6 class="fw-bold mb-3"><i class="fas fa-list-ol me-2 text-primary"></i>Namunalar (ixtiyoriy, 5 tagacha)</h6>
+        {% for i in range(5) %}
+        <div class="border rounded p-3 mb-3" style="background:#f8fafc;">
+          <div class="fw-semibold small text-muted mb-2">Namuna {{ i+1 }}</div>
+          <div class="row g-2">
+            <div class="col-md-5">
+              <label class="form-label small">Kirish</label>
+              <textarea class="form-control form-control-sm" name="ex_input_{{ i+1 }}" rows="2"
+                        style="font-family:monospace;">{{ ex_list[i].input }}</textarea>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label small">Chiqish</label>
+              <textarea class="form-control form-control-sm" name="ex_output_{{ i+1 }}" rows="2"
+                        style="font-family:monospace;">{{ ex_list[i].output }}</textarea>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small">Tushuntirish</label>
+              <textarea class="form-control form-control-sm" name="ex_explanation_{{ i+1 }}" rows="2"
+                        placeholder="Ixtiyoriy">{{ ex_list[i].explanation }}</textarea>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary px-4">
+        <i class="fas fa-save me-1"></i> Saqlash
+      </button>
+      <a href="{{ url_for('arena.admin_problems') }}" class="btn btn-outline-secondary">Bekor qilish</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

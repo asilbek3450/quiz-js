@@ -327,109 +327,191 @@
 </style>
 
 <script>
-    let lastMessageCount = 0;
+(function () {
+    'use strict';
 
-    function toggleChat() {
-        const window = document.getElementById('studentChatWindow');
-        const isOpening = window.classList.contains('d-none');
-        window.classList.toggle('d-none');
+    const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const POLL_INTERVAL = 3000; // ms — admin javoblarini tekshirish
 
-        if (isOpening) {
-            loadFeedbackHistory(true);
-            document.getElementById('studentUnreadBadge').classList.add('d-none');
-        }
+    let userUuid = null;
+    let lastKnownId = 0;   // since_id uchun — faqat yangi xabarlarni olish
+    let hasMessages = false;
+    let pollTimer = null;
+    let fetchInFlight = false;
+
+    // ── XSS himoya ─────────────────────────────────────────────────────────────
+    function esc(str) {
+        return String(str == null ? '' : str)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
 
-    function loadFeedbackHistory(shouldScroll = false) {
-        const userUuid = localStorage.getItem('user_feedback_uuid');
-        if (!userUuid) return;
+    // ── Bubble yaratish ─────────────────────────────────────────────────────────
+    function makeBubble(f, animate) {
+        const cls = animate ? ' animate-fade-in-up' : '';
+        const safeText = esc(f.text);
+        const safeTime = esc(f.created_at || '');
+        if ((f.sender || 'student') === 'admin') {
+            return `<div class="chat-bubble admin-msg${cls}">
+                        <div class="fw-bold small mb-1 text-primary">Admin:</div>
+                        <div class="bubble-text">${safeText}</div>
+                        <div class="text-end" style="font-size:0.6rem;opacity:0.7;margin-top:4px;">${safeTime}</div>
+                    </div>`;
+        }
+        return `<div class="chat-bubble user-msg${cls}">
+                    <div class="bubble-text">${safeText}</div>
+                    <div class="text-end" style="font-size:0.6rem;opacity:0.7;margin-top:4px;">${safeTime}</div>
+                </div>`;
+    }
 
+    // ── Optimistik append (darhol ko'rsatish) ──────────────────────────────────
+    function appendOptimistic(text) {
+        const historyDiv = document.getElementById('feedbackHistory');
+        const empty = historyDiv.querySelector('.text-center');
+        if (empty) empty.remove();
+        const fakeMsg = { sender: 'student', text: text, created_at: '' };
+        historyDiv.insertAdjacentHTML('beforeend', makeBubble(fakeMsg, true));
+        historyDiv.scrollTop = historyDiv.scrollHeight;
+    }
+
+    // ── Birinchi yuklash (barcha xabarlar) ─────────────────────────────────────
+    function loadAll(shouldScroll) {
+        if (!userUuid || fetchInFlight) return;
+        fetchInFlight = true;
         fetch(`/student/my_feedbacks/${userUuid}`)
-            .then(res => res.json())
+            .then(r => r.ok ? r.json() : [])
             .then(feedbacks => {
                 const historyDiv = document.getElementById('feedbackHistory');
-
-                // Check for new messages to show notification if window is closed
-                const chatWindow = document.getElementById('studentChatWindow');
-                if (feedbacks.length > lastMessageCount && chatWindow.classList.contains('d-none') && lastMessageCount !== 0) {
-                    document.getElementById('studentUnreadBadge').classList.remove('d-none');
-                }
-                lastMessageCount = feedbacks.length;
-
-                if (feedbacks.length === 0) {
+                if (!feedbacks.length) {
                     historyDiv.innerHTML = `<div class="text-center text-muted small py-5">
-                <i class="fas fa-comments fa-3x mb-3 opacity-25"></i><br>
-                Hozircha xabarlar yo'q
-            </div>`;
-                    return;
+                        <i class="fas fa-comments fa-3x mb-3 opacity-25"></i><br>
+                        Hozircha xabarlar yo'q</div>`;
+                    hasMessages = false;
+                } else {
+                    historyDiv.innerHTML = feedbacks.map(f => makeBubble(f, false)).join('');
+                    lastKnownId = feedbacks[feedbacks.length - 1].id;
+                    hasMessages = true;
+                    if (shouldScroll) historyDiv.scrollTop = historyDiv.scrollHeight;
                 }
-
-                historyDiv.innerHTML = feedbacks.map(f => {
-                    const sender = f.sender || 'student';
-                    const text = f.text || '';
-                    if (!text) return '';
-                    if (sender === 'admin') {
-                        return `<div class="chat-bubble admin-msg animate-fade-in-up">
-                            <div class="fw-bold small mb-1 text-primary">Admin:</div>
-                            <div class="bubble-text">${text}</div>
-                            <div class="text-end" style="font-size: 0.6rem; opacity: 0.7; margin-top: 4px;">${f.created_at}</div>
-                        </div>`;
-                    }
-                    return `<div class="chat-bubble user-msg animate-fade-in-up">
-                        <div class="bubble-text">${text}</div>
-                        <div class="text-end" style="font-size: 0.6rem; opacity: 0.7; margin-top: 4px;">${f.created_at}</div>
-                    </div>`;
-                }).join('');
-
-                if (shouldScroll) {
-                    setTimeout(() => {
-                        historyDiv.scrollTop = historyDiv.scrollHeight;
-                    }, 50);
-                }
-            });
+            })
+            .catch(() => {})
+            .finally(() => { fetchInFlight = false; });
     }
 
+    // ── Incremental poll (faqat yangi xabarlar) ─────────────────────────────────
+    function pollNew() {
+        if (!userUuid || fetchInFlight) return;
+        fetchInFlight = true;
+        fetch(`/student/my_feedbacks/${userUuid}?since_id=${lastKnownId}`)
+            .then(r => r.ok ? r.json() : [])
+            .then(newMsgs => {
+                if (!newMsgs.length) return;
+                const historyDiv = document.getElementById('feedbackHistory');
+                const empty = historyDiv.querySelector('.text-center');
+                if (empty) empty.remove();
+                newMsgs.forEach(f => {
+                    historyDiv.insertAdjacentHTML('beforeend', makeBubble(f, true));
+                    lastKnownId = f.id;
+                });
+                hasMessages = true;
+                const chatWindow = document.getElementById('studentChatWindow');
+                if (chatWindow.classList.contains('d-none')) {
+                    // Chat yopiq — unread badge ko'rsatish
+                    document.getElementById('studentUnreadBadge').classList.remove('d-none');
+                } else {
+                    historyDiv.scrollTop = historyDiv.scrollHeight;
+                }
+            })
+            .catch(() => {})
+            .finally(() => { fetchInFlight = false; });
+    }
+
+    // ── Polling boshqaruv ──────────────────────────────────────────────────────
+    function startPolling() {
+        if (pollTimer) return;
+        pollTimer = setInterval(pollNew, POLL_INTERVAL);
+    }
+    function stopPolling() {
+        clearInterval(pollTimer);
+        pollTimer = null;
+    }
+
+    // ── Chat ochish/yopish ─────────────────────────────────────────────────────
+    window.toggleChat = function () {
+        const win = document.getElementById('studentChatWindow');
+        const isOpening = win.classList.contains('d-none');
+        win.classList.toggle('d-none');
+        if (isOpening) {
+            document.getElementById('studentUnreadBadge').classList.add('d-none');
+            loadAll(true);
+        }
+    };
+
+    // ── DOMContentLoaded ───────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', function () {
-        let userUuid = localStorage.getItem('user_feedback_uuid');
+        // UUID localStorage'dan olish yoki yangi yaratish
+        userUuid = localStorage.getItem('user_feedback_uuid');
         if (!userUuid) {
             userUuid = 'user-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now();
             localStorage.setItem('user_feedback_uuid', userUuid);
         }
 
-        loadFeedbackHistory(); // Initial load to set message count
-        setInterval(() => loadFeedbackHistory(false), 10000); // Poll for new responses every 10s
+        // Boshlang'ich so'rov — lastKnownId ni o'rnatish uchun (scroll yo'q)
+        loadAll(false);
+        startPolling();
 
+        // Tab yashirilganda polling to'xtatiladi — batareya va trafik tejash
+        document.addEventListener('visibilitychange', function () {
+            document.hidden ? stopPolling() : startPolling();
+        });
+
+        // ── Forma submit ──────────────────────────────────────────────────────
         const feedbackForm = document.getElementById('feedbackForm');
+        const input = document.getElementById('feedbackMessage');
+
         feedbackForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            const input = document.getElementById('feedbackMessage');
             const message = input.value.trim();
             if (!message) return;
 
+            // 1. Optimistik: darhol ko'rsatish
+            appendOptimistic(message);
+            input.value = '';
+            input.style.height = '40px';
+
+            // 2. Server: asinxron yuborish
             fetch('/student/feedback', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': CSRF
+                },
                 body: JSON.stringify({ user_uuid: userUuid, message: message })
             })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        input.value = '';
-                        loadFeedbackHistory(true);
-                    }
-                });
+            .then(r => r.json())
+            .then(data => {
+                if (data.success && data.id) {
+                    // Server ID'si bilan lastKnownId yangilash
+                    lastKnownId = Math.max(lastKnownId, data.id);
+                }
+            })
+            .catch(() => {});
         });
 
-        const feedbackMessage = document.getElementById('feedbackMessage');
-        if (feedbackMessage) {
-            // Enter = send. Shift+Enter or Ctrl/Cmd+Enter = new line.
-            feedbackMessage.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
-                    e.preventDefault();
-                    feedbackForm.dispatchEvent(new Event('submit'));
-                }
-            });
-        }
+        // Enter = yuborish, Shift+Enter = yangi qator
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+                e.preventDefault();
+                feedbackForm.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        // Auto-resize textarea
+        input.addEventListener('input', function () {
+            this.style.height = '40px';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
     });
+}());
 </script>
 {% endblock %}

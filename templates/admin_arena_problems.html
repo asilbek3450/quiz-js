@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Arena — Masalalarni boshqarish{% endblock %}
+
+{% block content %}
+<div class="main-container">
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <h2 class="fw-bold mb-0"><i class="fas fa-code me-2 text-primary"></i> Arena masalalari</h2>
+    <a href="{{ url_for('arena.admin_problem_new') }}" class="btn btn-primary">
+      <i class="fas fa-plus me-1"></i> Yangi masala
+    </a>
+  </div>
+
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in msgs %}
+    <div class="alert alert-{{ 'success' if cat=='success' else 'danger' }} alert-dismissible fade show">
+      {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="card">
+    <div class="card-body p-0">
+      <table class="table table-hover mb-0" style="font-size:.88rem;">
+        <thead class="table-light">
+          <tr>
+            <th>Kod</th>
+            <th>Sarlavha</th>
+            <th>Murakkablik</th>
+            <th>Toifa</th>
+            <th class="text-center">Urinish</th>
+            <th class="text-center">Qabul</th>
+            <th class="text-center">Holat</th>
+            <th class="text-end">Amallar</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for p in problems %}
+        <tr>
+          <td><code>{{ p.code }}</code></td>
+          <td>{{ p.title }}</td>
+          <td>
+            <span class="badge {% if p.difficulty=='easy' %}bg-success{% elif p.difficulty=='medium' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+              {% if p.difficulty=='easy' %}Oson{% elif p.difficulty=='medium' %}O'rta{% else %}Qiyin{% endif %}
+            </span>
+          </td>
+          <td class="text-muted">{{ p.category or '—' }}</td>
+          <td class="text-center">{{ p.submission_count }}</td>
+          <td class="text-center text-success fw-bold">{{ p.accepted_count }}</td>
+          <td class="text-center">
+            {% if p.is_active %}
+            <span class="badge bg-success">Faol</span>
+            {% else %}
+            <span class="badge bg-secondary">Yashirin</span>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            <a href="{{ url_for('arena.problem_detail', pid=p.id) }}" class="btn btn-sm btn-outline-primary" target="_blank">
+              <i class="fas fa-eye"></i>
+            </a>
+            <a href="{{ url_for('arena.admin_problem_edit', pid=p.id) }}" class="btn btn-sm btn-outline-secondary">
+              <i class="fas fa-edit"></i>
+            </a>
+            <form method="POST" action="{{ url_for('arena.admin_problem_delete', pid=p.id) }}"
+                  class="d-inline" onsubmit="return confirm('O\'chirishni tasdiqlaysizmi?')">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-sm btn-outline-danger">
+                <i class="fas fa-trash"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="text-center py-5 text-muted">
+          <i class="fas fa-code fa-2x d-block mb-2 opacity-25"></i>
+          Masalalar yo'q. Birinchi masalani qo'shing!
+        </td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

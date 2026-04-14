@@ -6,7 +6,7 @@ import secrets
 from pathlib import Path
 from typing import Any
 
-from flask import current_app, url_for
+from flask import current_app, g, url_for
 from flask_babel import gettext as _
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
@@ -44,12 +44,18 @@ def _normalize_store(payload: Any) -> dict[str, dict[str, Any]]:
 
 
 def load_feature_store() -> dict[str, dict[str, Any]]:
+    # Request-level cache: faylni bir so'rov davomida bir marta o'qiymiz
+    if hasattr(g, '_feature_store'):
+        return g._feature_store
     store_path = _feature_store_path()
     try:
         payload = json.loads(store_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError) as e:
+        current_app.logger.warning("feature_store o'qishda xato: %s", e)
         payload = {}
-    return _normalize_store(payload)
+    result = _normalize_store(payload)
+    g._feature_store = result
+    return result
 
 
 def save_feature_store(payload: dict[str, dict[str, Any]]) -> None:
@@ -58,6 +64,9 @@ def save_feature_store(payload: dict[str, dict[str, Any]]) -> None:
     temp_path = store_path.with_suffix(".tmp")
     temp_path.write_text(json.dumps(normalized, ensure_ascii=False, indent=2), encoding="utf-8")
     os.replace(temp_path, store_path)
+    # Keshni tozalash — saqlangandan keyin yangi qiymat o'qilsin
+    if hasattr(g, '_feature_store'):
+        del g._feature_store
 
 
 def get_subject_grade_settings(subject_id: int | None) -> dict[str, int]:
@@ -80,12 +89,13 @@ def get_subject_grade_settings(subject_id: int | None) -> dict[str, int]:
         except (TypeError, ValueError):
             settings[key] = default_value
 
+    # validate_grade_settings xato bo'lsa (None emas) — defaults qaytaramiz
     if validate_grade_settings(
         settings["excellent_min"],
         settings["good_min"],
         settings["satisfactory_min"],
         settings["fail_max"],
-    ):
+    ) is not None:
         return dict(DEFAULT_GRADE_SETTINGS)
 
     return settings
