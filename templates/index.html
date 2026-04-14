@@ -86,6 +86,34 @@
     </div>
 </div>
 
+<div class="row g-4 mb-5 justify-content-center animate-fade-in-up" style="animation-delay: 0.35s;">
+    <div class="col-md-8">
+        <div class="card h-100 role-card hover-lift border-info border-2"
+            onclick="enterArena(event);"
+            style="background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(230,242,255,0.9));">
+            <div
+                class="card-body p-4 text-center d-flex align-items-center justify-content-between flex-column flex-sm-row gap-3">
+                <div class="d-flex align-items-center gap-3 text-start">
+                    <div class="icon-circle bg-soft-info text-info"
+                        style="width: 4rem; height: 4rem; font-size: 2rem; flex-shrink: 0;">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <div>
+                        <h3 class="fw-bold mb-1 text-uppercase text-info">{{ _('Coding Arena') }}</h3>
+                        <p class="text-muted mb-0 small" style="max-width: 400px;">
+                            {{ _('Algoritmik masalalar yechish va dasturlash bo\'yicha bilimlarni sinash uchun maxsus platforma. Python va boshqa tillarda kod yozing.') }}
+                        </p>
+                    </div>
+                </div>
+                <button onclick="enterArena(event)"
+                    class="btn btn-info text-white btn-lg px-3 px-sm-4 pill-btn fw-bold" style="min-width: 180px;">
+                    <i class="fas fa-terminal me-2"></i> {{ _('Arenaga o\'tish') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Floating Chat Window for Feedback -->
 <div class="fab-container shadow-lg animate-fade-in-up" style="animation-delay: 0.5s;">
     <button class="btn btn-primary fab-btn" onclick="toggleChat()" id="feedbackFab">
@@ -139,6 +167,7 @@
     {% endfor %}
 </div>
 
+
 <style>
     .project-title {
         letter-spacing: -1px;
@@ -172,6 +201,11 @@
     .bg-soft-warning {
         background: rgba(245, 158, 11, 0.1);
     }
+
+    .bg-soft-info {
+        background: rgba(14, 165, 233, 0.1);
+    }
+
 
     .role-card {
         cursor: pointer;
@@ -403,7 +437,14 @@
         if (!userUuid || fetchInFlight) return;
         fetchInFlight = true;
         fetch(`/student/my_feedbacks/${userUuid}?since_id=${lastKnownId}`)
-            .then(r => r.ok ? r.json() : [])
+            .then(r => {
+                if (r.status === 403) {
+                    // Session expired or unauthorized, stop polling to avoid log spam
+                    stopPolling();
+                    return [];
+                }
+                return r.ok ? r.json() : [];
+            })
             .then(newMsgs => {
                 if (!newMsgs.length) return;
                 const historyDiv = document.getElementById('feedbackHistory');
@@ -415,10 +456,7 @@
                 });
                 hasMessages = true;
                 const chatWindow = document.getElementById('studentChatWindow');
-                if (chatWindow.classList.contains('d-none')) {
-                    // Chat yopiq — unread badge ko'rsatish
-                    document.getElementById('studentUnreadBadge').classList.remove('d-none');
-                } else {
+                if (!chatWindow.classList.contains('d-none')) {
                     historyDiv.scrollTop = historyDiv.scrollHeight;
                 }
             })
@@ -444,6 +482,9 @@
         if (isOpening) {
             document.getElementById('studentUnreadBadge').classList.add('d-none');
             loadAll(true);
+            startPolling();
+        } else {
+            stopPolling();
         }
     };
 
@@ -456,9 +497,8 @@
             localStorage.setItem('user_feedback_uuid', userUuid);
         }
 
-        // Boshlang'ich so'rov — lastKnownId ni o'rnatish uchun (scroll yo'q)
-        loadAll(false);
-        startPolling();
+        // Dastlabki yuklash o'chirildi - faqat chat ochilganda yuklanadi
+        // startPolling() ham o'chirildi
 
         // Tab yashirilganda polling to'xtatiladi — batareya va trafik tejash
         document.addEventListener('visibilitychange', function () {
@@ -512,6 +552,7 @@
             this.style.height = Math.min(this.scrollHeight, 120) + 'px';
         });
     });
+
 }());
 </script>
 {% endblock %}
