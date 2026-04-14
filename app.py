@@ -74,6 +74,11 @@ def create_app():
     app.register_blueprint(student_bp)
     app.register_blueprint(arena_bp)
     
+    @app.errorhandler(403)
+    def forbidden(e):
+        from flask import render_template
+        return render_template('403.html'), 403
+    
     
     @app.route('/googleef6572d0f05659ed.html')
     def google_verification():
