@@ -73,7 +73,8 @@ def run_code(code: str, language: str, stdin_data: str, time_limit: float = 5.0)
         if proc.returncode != 0:
             return {'verdict': 'RE', 'output': stdout, 'error': stderr, 'time': elapsed}
 
-        return {'verdict': 'OK', 'output': stdout, 'error': stderr, 'time': elapsed}
+        # returncode == 0: muvaffaqiyatli — stderr (warnings va boshqalar) e'tiborsiz
+        return {'verdict': 'OK', 'output': stdout, 'error': '', 'time': elapsed}
 
     except subprocess.TimeoutExpired:
         return {'verdict': 'TLE', 'output': '',

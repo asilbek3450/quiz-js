@@ -537,13 +537,14 @@ print(n * 2)
 
     // Verdict label
     const MAP = {
-      AC:  ['vrd-AC',  'fas fa-check-circle',     isRun ? 'Chiqish' : 'Accepted'],
+      OK:  ['vrd-AC',  'fas fa-check-circle',      'Chiqish'],
+      AC:  ['vrd-AC',  'fas fa-check-circle',      isRun ? 'Chiqish' : 'Accepted ✓'],
       WA:  ['vrd-WA',  'fas fa-times-circle',      'Wrong Answer'],
-      TLE: ['vrd-TLE', 'fas fa-clock',             'Time Limit'],
+      TLE: ['vrd-TLE', 'fas fa-clock',             'Time Limit Exceeded'],
       RE:  ['vrd-RE',  'fas fa-bug',               'Runtime Error'],
       CE:  ['vrd-CE',  'fas fa-exclamation-circle','Compile Error'],
     };
-    const [cls, icon, label] = MAP[verdict] || ['vrd-WA', 'fas fa-question', verdict];
+    const [cls, icon, label] = MAP[verdict] || ['vrd-WA', 'fas fa-question-circle', verdict];
     vrdEl.className = `out-verdict ${cls}`;
     vrdEl.innerHTML = `<i class="${icon}"></i> ${label}`;
 
@@ -611,7 +612,9 @@ print(n * 2)
       });
       clearTimeout(tid);
       const data = await res.json();
-      showOutput(data.verdict, data.output, data.error, data.time, true);
+      // Muvaffaqiyatli ishlasa (OK/AC) stderr ko'rsatilmaydi
+      const runErr = ['RE','CE','TLE'].includes(data.verdict) ? (data.error || '') : '';
+      showOutput(data.verdict, data.output, runErr, data.time, true);
     } catch (err) {
       const msg = err.name === 'AbortError' ? 'So\'rov vaqt limiti tugadi (30s)' : 'Server bilan bog\'lanishda xato: ' + err.message;
       showOutput('CE', '', msg, 0, true);
@@ -644,9 +647,11 @@ print(n * 2)
       clearTimeout(tid);
       const data = await res.json();
 
-      let extra = '';
-      if (data.failed_test) extra = `  (Test ${data.failed_test} da xato)`;
-      showOutput(data.verdict, data.output, (data.error || '') + extra, data.time, false);
+      // AC bo'lganda error ko'rsatilmaydi, failed_test faqat xato verdiktlarda
+      const isAC  = data.verdict === 'AC';
+      const extra = (!isAC && data.failed_test) ? `  (Test ${data.failed_test} da xato)` : '';
+      const errMsg = isAC ? '' : (data.error || '') + extra;
+      showOutput(data.verdict, data.output, errMsg, data.time, false);
 
       // Celebrate first AC solve, then reload
       if (data.verdict === 'AC') {
