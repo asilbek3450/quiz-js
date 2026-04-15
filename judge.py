@@ -42,7 +42,7 @@ def _check(code: str):
     return True, ""
 
 
-def run_code(code: str, language: str, stdin_data: str, time_limit: float = 5.0):
+def run_code(code: str, language: str, stdin_data: str, time_limit: float = 10.0):
     """
     Kodni ishlatadi. Qaytaradi:
       {'verdict': 'OK'|'TLE'|'RE'|'CE'|'SE', 'output': str, 'error': str, 'time': float}
@@ -64,8 +64,8 @@ def run_code(code: str, language: str, stdin_data: str, time_limit: float = 5.0)
 
     lang = LANGUAGES[language]
 
-    # Server xatolari uchun 1 marta qayta urinish
-    for attempt in range(2):
+    # Server xatolari uchun 2 marta qayta urinish (jami 3 ta urinish)
+    for attempt in range(3):
         tmp = None
         try:
             with tempfile.NamedTemporaryFile(
@@ -105,10 +105,16 @@ def run_code(code: str, language: str, stdin_data: str, time_limit: float = 5.0)
                 short = '\n'.join(lines[-10:]) if len(lines) > 10 else stderr.strip()
                 return {'verdict': 'RE', 'output': stdout, 'error': short, 'time': elapsed}
 
-            # returncode > 0 lekin Python traceback yo'q → server/muhit xatosi
-            if attempt == 0:
-                time.sleep(0.15)
-                continue  # qayta urinish
+            # returncode > 0, Python traceback yo'q:
+            # Agar stdout mavjud bo'lsa — kod to'g'ri ishlagan, exit code muhit xatosi
+            # (PythonAnywhere va ba'zi serverlarda to'g'ri kod ham non-zero qaytarishi mumkin)
+            if stdout.strip():
+                return {'verdict': 'OK', 'output': stdout, 'error': '', 'time': elapsed}
+
+            # stdout ham yo'q → server/muhit xatosi, qayta urinish
+            if attempt < 2:
+                time.sleep(0.3 * (attempt + 1))  # 0.3s, 0.6s
+                continue
             return {'verdict': 'SE', 'output': '', 'error': '', 'time': elapsed}
 
         except subprocess.TimeoutExpired:
@@ -117,8 +123,8 @@ def run_code(code: str, language: str, stdin_data: str, time_limit: float = 5.0)
 
         except (OSError, PermissionError, FileNotFoundError):
             # Server infra muammosi — qayta urinib ko'ramiz
-            if attempt == 0:
-                time.sleep(0.2)
+            if attempt < 2:
+                time.sleep(0.3 * (attempt + 1))
                 continue
             return {'verdict': 'SE', 'output': '', 'error': '', 'time': 0.0}
 
@@ -144,7 +150,7 @@ def _norm(s: str) -> str:
 
 
 def judge(code: str, language: str, test_input: str,
-          expected_output: str, time_limit: float = 5.0):
+          expected_output: str, time_limit: float = 10.0):
     """
     Kodni ishlatib, natijani expected_output bilan solishtiradi.
     Qaytaradi: run_code natijasiga qo'shimcha 'verdict' AC|WA|TLE|RE|CE|SE.

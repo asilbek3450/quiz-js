@@ -16,22 +16,22 @@ ROOMS: dict = {}   # code → room_dict
 
 # ── Texts ──────────────────────────────────────────────────────────────────────
 TEXTS = [
-    # Uzbek — qisqa (~120 belgi)
-    "Bilim olish — eng katta boylik. Kitob o'qigan inson dunyo bo'ylab sayohat qiladi.",
-    "Har bir yangi kun — yangi imkoniyat. Kechagi xatolardan saboq olib, bugunni yaxshiroq o'tkazing.",
-    "Dasturlash — bu muammolarni hal qilish san'ati. Kod yozish orqali dunyo o'zgaradi.",
-    "Matematika — barcha fanlarning asosi. Raqamlar bilan ishlash mantiqiy fikrlashni rivojlantiradi.",
-    "Mehnat qilgan odam hech qachon yutqazmaydi. Intilish va sabr — muvaffaqiyatning kaliti.",
-    # Uzbek — o'rta (~200 belgi)
-    "Kompyuter fanlari dunyosi juda keng va qiziqarli. Algoritmlar, ma'lumotlar tuzilmalari, sun'iy intellekt — bularning barchasi zamonaviy texnologiyaning asosini tashkil etadi. Har bir dasturchi bu bilimlarni egallashi lozim.",
-    "Python dasturlash tili — eng qulay va keng tarqalgan tillardan biri. Uning sintaksisi sodda bo'lgani uchun yangi boshlovchilar uchun ideal tanlovdir. Python bilan veb saytlar, o'yinlar va sun'iy intellekt dasturlari yaratish mumkin.",
-    "O'zbek tili — bizning ona tilimiz. Uni to'g'ri va chiroyli gapirish hamda yozish har bir o'zbek uchun burch va sharafdir. Tilimizni sevaylik, asraylik va rivojlantiraylik avlodlar uchun.",
-    "Maktabda o'qish — hayotning eng qimmatli davri. Ustoz va murabbiylar bizga nafaqat bilim, balki hayotiy tajriba ham beradi. Ularning mehnati va fidoyiligini hech narsa bilan o'lchab bo'lmaydi.",
-    # Uzbek — uzun (~280 belgi)
+    # Uzbek - qisqa (~120 belgi)
+    "Bilim olish eng katta boylik. Kitob o'qigan inson dunyo bo'ylab sayohat qiladi va hech narsa uni to'xtata olmaydi.",
+    "Har bir yangi kun yangi imkoniyat. Kechagi xatolardan saboq olib, bugunni yanada yaxshiroq o'tkazishga harakat qil.",
+    "Dasturlash bu muammolarni hal qilish san'ati. Kod yozish orqali siz dunyoni o'zgartirishingiz mumkin.",
+    "Matematika barcha fanlarning asosi. Raqamlar bilan ishlash insonning mantiqiy fikrlashini rivojlantiradi.",
+    "Mehnat qilgan odam hech qachon yutqazmaydi. Intilish va sabr bular muvaffaqiyatning asosiy kaliti.",
+    # Uzbek - o'rta (~200 belgi)
+    "Kompyuter fanlari dunyosi juda keng va qiziqarli. Algoritmlar, malumotlar tuzilmalari, sun'iy intellekt bularning barchasi zamonaviy texnologiyaning asosini tashkil etadi. Har bir dasturchi bu bilimlarni egallashi lozim.",
+    "Python dasturlash tili eng qulay va keng tarqalgan tillardan biri. Uning sintaksisi sodda bo'lgani uchun yangi boshlovchilar uchun ideal tanlovdir. Python bilan veb saytlar, o'yinlar va sun'iy intellekt dasturlari yaratish mumkin.",
+    "O'zbek tili bizning ona tilimiz. Uni to'g'ri va chiroyli gapirish hamda yozish har bir o'zbek uchun burch va sharafdir. Tilimizni sevaylik, asraylik va rivojlantiraylik avlodlar uchun.",
+    "Maktabda o'qish hayotning eng qimmatli davri. Ustoz va murabbiylar bizga nafaqat bilim, balki hayotiy tajriba ham beradi. Ularning mehnati va fidoyiligini hech narsa bilan o'lchab bo'lmaydi.",
+    # Uzbek - uzun (~280 belgi)
     "Jahon tarixida ko'plab buyuk mutafakkirlar bo'lib o'tgan. Ular hayotlarini ilm-fan va falsafaga bag'ishlagan. Ibn Sino, Beruniy, al-Xorazmiy kabi olimlar nafaqat Sharqda, balki butun dunyoda mashhur bo'lgan. Ularning merosini o'rganish va davom ettirish bizning burchimiz hisoblanadi.",
     "Sun'iy intellekt texnologiyasi shiddat bilan rivojlanmoqda. Mashina o'rganish va neyron tarmoqlar yordamida kompyuterlar endi rasmlarni taniydi, nutqni tushunadi va murakkab muammolarni hal qiladi. Bu soha kelgusida inson hayotini tubdan o'zgartiradi.",
     "Veb dasturlash zamonaviy texnologiyaning asosiy yo'nalishlaridan biri. HTML, CSS va JavaScript yordamida chiroyli va funksional saytlar yaratish mumkin. Backend uchun Python, Node.js yoki boshqa tillar qo'llaniladi.",
-    "O'zbekiston — Markaziy Osiyoning qadimiy va boy madaniyatga ega davlati. Samarqand, Buxoro va Xiva kabi shaharlar jahon merosi ro'yxatiga kiritilgan. Mamlakatimiz nafaqat tarixiy obidalar, balki zamonaviy texnologiyalar bilan ham rivojlanib bormoqda.",
+    "O'zbekiston Markaziy Osiyoning qadimiy va boy madaniyatga ega davlati. Samarqand, Buxoro va Xiva kabi shaharlar jahon merosi ro'yxatiga kiritilgan. Mamlakatimiz nafaqat tarixiy obidalar, balki zamonaviy texnologiyalar bilan ham rivojlanib bormoqda.",
     # English
     "The quick brown fox jumps over the lazy dog near the riverbank every single morning without fail.",
     "Programming is the art of telling a computer what to do. Good programmers find elegant solutions that are efficient and easy to understand.",
