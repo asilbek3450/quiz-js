@@ -155,32 +155,10 @@
     font-family:'Courier New',monospace; font-size:.76rem; color:var(--ar-muted);
   }
 
-  /* ── Watermark overlay ──────────────────────────────────────────────────── */
-  #wm-overlay {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 9998;
-    overflow: hidden;
-  }
-  #wm-canvas {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0.045;
-  }
 </style>
 {% endblock %}
 
 {% block content %}
-{# ── Watermark overlay (visible in screenshots) ─────────────────────────── #}
-{% if arena_user %}
-<div id="wm-overlay" aria-hidden="true">
-  <canvas id="wm-canvas"></canvas>
-</div>
-{% endif %}
-
 <div class="pd-wrap">
   <!-- ── Left: Problem statement ─────────────────────────────────────────── -->
   <div>
@@ -604,45 +582,6 @@ print(n * 2)
       document.getElementById('outTime').textContent    = '';
     }
   }
-
-  // ── Watermark canvas ─────────────────────────────────────────────────────
-  (function () {
-    const canvas = document.getElementById('wm-canvas');
-    if (!canvas) return;
-
-    function drawWatermark() {
-      const W = canvas.width  = window.innerWidth;
-      const H = canvas.height = window.innerHeight;
-      const ctx = canvas.getContext('2d');
-
-      ctx.clearRect(0, 0, W, H);
-      ctx.font = 'bold 15px "Courier New", monospace';
-      ctx.fillStyle = '#8b949e';
-
-      const username = "{{ arena_user.username if arena_user else '' }}";
-      const code     = "{{ problem.code }}";
-      const now      = new Date().toLocaleString('uz-UZ', { hour12: false });
-      const text     = `${username} | ${code} | ${now}`;
-
-      ctx.save();
-      ctx.translate(W / 2, H / 2);
-      ctx.rotate(-Math.PI / 6);
-      ctx.translate(-W / 2, -H / 2);
-
-      const step = 220;
-      for (let y = -H; y < H * 2; y += 90) {
-        for (let x = -W; x < W * 2; x += step) {
-          ctx.fillText(text, x, y);
-        }
-      }
-      ctx.restore();
-    }
-
-    drawWatermark();
-    window.addEventListener('resize', drawWatermark);
-    // Refresh timestamp every minute
-    setInterval(drawWatermark, 60000);
-  })();
 
   // ── Double-submit guard ───────────────────────────────────────────────────
   let _submitting = false;
