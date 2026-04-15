@@ -97,31 +97,60 @@ def create_app():
 
     @app.get("/sitemap.xml")
     def sitemap_xml():
+        from models import ArenaProblem
         base = app.config.get("PUBLIC_BASE_URL", "").rstrip("/")
-
         today = date.today().isoformat()
-        urls = [
-            {"path": "/", "changefreq": "daily", "priority": "1.0"},
-            {"path": "/about", "changefreq": "monthly", "priority": "0.7"},
-            {"path": "/contact", "changefreq": "yearly", "priority": "0.5"},
-            {"path": "/services", "changefreq": "monthly", "priority": "0.7"},
-            {"path": "/blog", "changefreq": "weekly", "priority": "0.8"},
+
+        # Static pages
+        static_urls = [
+            {"path": "/",                   "changefreq": "daily",   "priority": "1.0"},
+            {"path": "/about",              "changefreq": "monthly", "priority": "0.7"},
+            {"path": "/contact",            "changefreq": "yearly",  "priority": "0.5"},
+            {"path": "/services",           "changefreq": "monthly", "priority": "0.7"},
+            {"path": "/blog",               "changefreq": "weekly",  "priority": "0.8"},
+            # Arena static pages
+            {"path": "/arena",              "changefreq": "daily",   "priority": "0.9"},
+            {"path": "/arena/problems",     "changefreq": "daily",   "priority": "0.9"},
+            {"path": "/arena/users",        "changefreq": "daily",   "priority": "0.7"},
+            {"path": "/arena/register",     "changefreq": "monthly", "priority": "0.6"},
+            {"path": "/arena/login",        "changefreq": "monthly", "priority": "0.5"},
         ]
 
-        urls_xml = "\n".join([
-            "\n".join([
+        # Dynamic arena problem pages
+        try:
+            problems = ArenaProblem.query.filter_by(is_active=True).all()
+            problem_urls = [
+                {
+                    "path": f"/arena/problems/{p.id}",
+                    "changefreq": "weekly",
+                    "priority": "0.8",
+                    "lastmod": p.created_at.date().isoformat() if hasattr(p, 'created_at') and p.created_at else today,
+                }
+                for p in problems
+            ]
+        except Exception:
+            problem_urls = []
+
+        all_urls = static_urls + problem_urls
+
+        def url_entry(u):
+            lm = u.get("lastmod", today)
+            return "\n".join([
                 "  <url>",
                 f"    <loc>{base}{u['path']}</loc>",
-                f"    <lastmod>{today}</lastmod>",
+                f"    <lastmod>{lm}</lastmod>",
                 f"    <changefreq>{u['changefreq']}</changefreq>",
                 f"    <priority>{u['priority']}</priority>",
                 "  </url>",
             ])
-            for u in urls
-        ])
+
+        urls_xml = "\n".join(url_entry(u) for u in all_urls)
         xml = "\n".join([
             '<?xml version="1.0" encoding="UTF-8"?>',
-            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"',
+            '        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"',
+            '        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9',
+            '        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">',
             urls_xml,
             "</urlset>",
             "",

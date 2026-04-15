@@ -1,5 +1,7 @@
 {% extends "arena/base.html" %}
 {% block title %}{{ problem.code }} — {{ problem.title }}{% endblock %}
+{% block meta_description %}{{ problem.title }} — Asilbek Mirolimov Arena dasturlash masalasi. Bilimingizni sinab ko'ring, Python bilan yechim yozing.{% endblock %}
+{% block meta_keywords %}{{ problem.title }}, {{ problem.code }}, arena masala, asilbek mirolimov, dasturlash, python, {{ problem.category }}, bilim sinash{% endblock %}
 {% block breadcrumb %}
   <li class="breadcrumb-item"><a href="{{ url_for('arena.problems') }}">Masalalar</a></li>
   <li class="breadcrumb-item active">{{ problem.code }}</li>
@@ -129,6 +131,15 @@
                color:var(--ar-red); white-space:pre-wrap; word-break:break-word;
                max-height:140px; overflow-y:auto; border-top:1px solid var(--ar-border); }
 
+  /* ── Anti-cheat: disable text selection on problem statement ─────────── */
+  .problem-body, .example-box pre, .example-box .ex-head {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  @media print { body { display: none !important; } }
+
   /* ── Submission history ─────────────────────────────────────────────── */
   .sub-row {
     display:grid;
@@ -143,10 +154,33 @@
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     font-family:'Courier New',monospace; font-size:.76rem; color:var(--ar-muted);
   }
+
+  /* ── Watermark overlay ──────────────────────────────────────────────────── */
+  #wm-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9998;
+    overflow: hidden;
+  }
+  #wm-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.045;
+  }
 </style>
 {% endblock %}
 
 {% block content %}
+{# ── Watermark overlay (visible in screenshots) ─────────────────────────── #}
+{% if arena_user %}
+<div id="wm-overlay" aria-hidden="true">
+  <canvas id="wm-canvas"></canvas>
+</div>
+{% endif %}
+
 <div class="pd-wrap">
   <!-- ── Left: Problem statement ─────────────────────────────────────────── -->
   <div>
@@ -345,7 +379,7 @@ print(n * 2)
       </div>
       <div>
         {% for s in my_subs %}
-        <div class="sub-row sub-row-link" onclick="viewCodeDetail({{ s.id }})">
+        <div class="sub-row sub-row-link" data-sid="{{ s.id }}">
           <span class="ar-badge badge-{{ s.status.lower() }}">
             {% if s.status == 'AC' %}<i class="fas fa-check"></i> AC
             {% elif s.status == 'WA' %}<i class="fas fa-times"></i> WA
@@ -415,8 +449,82 @@ print(n * 2)
   'use strict';
 
   const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
-  const PID  = {{ problem.id }};
+  const PID  = parseInt("{{ problem.id }}", 10);
   let stdinVisible = false;
+
+  // ── Anti-cheat measures ───────────────────────────────────────────────────
+
+  // 1. Disable right-click context menu on the entire page
+  document.addEventListener('contextmenu', function (e) {
+    e.preventDefault();
+    return false;
+  });
+
+  // 2. Disable paste (Ctrl+V / Cmd+V) in the code editor
+  const editorEl = document.getElementById('codeEditor');
+  if (editorEl) {
+    editorEl.addEventListener('paste', function (e) {
+      e.preventDefault();
+      return false;
+    });
+    // Disable drag-and-drop into editor
+    editorEl.addEventListener('drop', function (e) {
+      e.preventDefault();
+      return false;
+    });
+    editorEl.addEventListener('dragover', function (e) {
+      e.preventDefault();
+      return false;
+    });
+  }
+
+  // 3. Disable copy (Ctrl+C / Cmd+C) on problem statement
+  document.addEventListener('copy', function (e) {
+    const active = document.activeElement;
+    // Allow copy only inside the code editor itself
+    if (active && active.id === 'codeEditor') return;
+    e.preventDefault();
+    return false;
+  });
+
+  // 4. Block Ctrl+A (select all) outside the editor
+  document.addEventListener('keydown', function (e) {
+    const active = document.activeElement;
+    const inEditor = active && active.id === 'codeEditor';
+    const ctrlOrMeta = e.ctrlKey || e.metaKey;
+
+    if (ctrlOrMeta && !inEditor) {
+      const blocked = ['a', 'c', 'u', 's', 'p'];
+      if (blocked.includes(e.key.toLowerCase())) {
+        e.preventDefault();
+        return false;
+      }
+    }
+    // Prevent F12 / DevTools shortcuts
+    if (e.key === 'F12') { e.preventDefault(); return false; }
+    if (ctrlOrMeta && e.shiftKey && ['i','j','c'].includes(e.key.toLowerCase())) {
+      e.preventDefault(); return false;
+    }
+  });
+
+  // 5. Tab switch / visibility detection — warn user
+  let tabWarnings = 0;
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+      tabWarnings++;
+      // Could log to server here for auditing
+    }
+  });
+
+  // 6. Disable text selection via mouse on problem body
+  document.querySelectorAll('.problem-body').forEach(function (el) {
+    el.addEventListener('mousedown', function (e) {
+      if (e.detail > 1) e.preventDefault(); // block double/triple click select
+    });
+    el.addEventListener('selectstart', function (e) {
+      e.preventDefault();
+    });
+  });
 
   // ── Tab key in textarea ───────────────────────────────────────────────────
   const editor = document.getElementById('codeEditor');
@@ -497,16 +605,62 @@ print(n * 2)
     }
   }
 
+  // ── Watermark canvas ─────────────────────────────────────────────────────
+  (function () {
+    const canvas = document.getElementById('wm-canvas');
+    if (!canvas) return;
+
+    function drawWatermark() {
+      const W = canvas.width  = window.innerWidth;
+      const H = canvas.height = window.innerHeight;
+      const ctx = canvas.getContext('2d');
+
+      ctx.clearRect(0, 0, W, H);
+      ctx.font = 'bold 15px "Courier New", monospace';
+      ctx.fillStyle = '#8b949e';
+
+      const username = "{{ arena_user.username if arena_user else '' }}";
+      const code     = "{{ problem.code }}";
+      const now      = new Date().toLocaleString('uz-UZ', { hour12: false });
+      const text     = `${username} | ${code} | ${now}`;
+
+      ctx.save();
+      ctx.translate(W / 2, H / 2);
+      ctx.rotate(-Math.PI / 6);
+      ctx.translate(-W / 2, -H / 2);
+
+      const step = 220;
+      for (let y = -H; y < H * 2; y += 90) {
+        for (let x = -W; x < W * 2; x += step) {
+          ctx.fillText(text, x, y);
+        }
+      }
+      ctx.restore();
+    }
+
+    drawWatermark();
+    window.addEventListener('resize', drawWatermark);
+    // Refresh timestamp every minute
+    setInterval(drawWatermark, 60000);
+  })();
+
+  // ── Double-submit guard ───────────────────────────────────────────────────
+  let _submitting = false;
+
   // ── Run (test against custom stdin) ──────────────────────────────────────
   window.runCode = async function () {
+    if (_submitting) return;
     const code = editor?.value?.trim();
     if (!code) { alert('Kod bo\'sh!'); return; }
 
     const stdin = document.getElementById('stdinField')?.value || '';
+    _submitting = true;
     setLoading(true);
 
     try {
-      const res = await fetch(`/arena/problems/${PID}/run`, {
+      const ctrl = new AbortController();
+      const tid  = setTimeout(() => ctrl.abort(), 30000); // 30s timeout
+      const res  = await fetch(`/arena/problems/${PID}/run`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
         body: JSON.stringify({
@@ -514,43 +668,54 @@ print(n * 2)
           language: document.getElementById('langSelect')?.value || 'python',
           stdin,
         }),
+        signal: ctrl.signal,
       });
+      clearTimeout(tid);
       const data = await res.json();
       showOutput(data.verdict, data.output, data.error, data.time, true);
     } catch (err) {
-      showOutput('CE', '', 'Server bilan bog\'lanishda xato: ' + err.message, 0, true);
+      const msg = err.name === 'AbortError' ? 'So\'rov vaqt limiti tugadi (30s)' : 'Server bilan bog\'lanishda xato: ' + err.message;
+      showOutput('CE', '', msg, 0, true);
     } finally {
       setLoading(false);
+      _submitting = false;
     }
   };
 
   // ── Submit (run against all test cases) ───────────────────────────────────
   window.submitCode = async function () {
+    if (_submitting) return;
     const code = editor?.value?.trim();
     if (!code) { alert('Kod bo\'sh!'); return; }
+    _submitting = true;
     setLoading(true);
 
     try {
-      const res = await fetch(`/arena/problems/${PID}/submit`, {
+      const ctrl = new AbortController();
+      const tid  = setTimeout(() => ctrl.abort(), 60000); // 60s timeout
+      const res  = await fetch(`/arena/problems/${PID}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
         body: JSON.stringify({
           code,
           language: document.getElementById('langSelect')?.value || 'python',
         }),
+        signal: ctrl.signal,
       });
+      clearTimeout(tid);
       const data = await res.json();
 
       let extra = '';
       if (data.failed_test) extra = `  (Test ${data.failed_test} da xato)`;
-      showOutput(data.verdict, data.output, data.error + extra, data.time, false);
+      showOutput(data.verdict, data.output, (data.error || '') + extra, data.time, false);
 
       // Reload submission history after a brief delay
       if (['AC', 'WA', 'TLE', 'RE', 'CE'].includes(data.verdict)) {
         setTimeout(() => location.reload(), data.verdict === 'AC' ? 1200 : 800);
       }
     } catch (err) {
-      showOutput('CE', '', 'Server bilan bog\'lanishda xato: ' + err.message, 0, false);
+      const msg = err.name === 'AbortError' ? 'So\'rov vaqt limiti tugadi (60s)' : 'Server bilan bog\'lanishda xato: ' + err.message;
+      showOutput('CE', '', msg, 0, false);
     } finally {
       setLoading(false);
     }
@@ -610,6 +775,14 @@ print(n * 2)
   window.closeModal = function() {
     document.getElementById('subModal').style.display = "none";
   };
+
+  // ── Submission row click via event delegation (avoids inline Jinja) ───────
+  document.querySelectorAll('.sub-row-link[data-sid]').forEach(function (row) {
+    row.addEventListener('click', function () {
+      const sid = parseInt(this.dataset.sid, 10);
+      if (sid) window.viewCodeDetail(sid);
+    });
+  });
 
   // Close on background click
   window.addEventListener('click', function(event) {
