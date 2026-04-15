@@ -90,6 +90,18 @@ def create_app():
         body = "\n".join([
             "User-agent: *",
             "Allow: /",
+            "Allow: /arena",
+            "Allow: /arena/problems",
+            "Allow: /arena/users",
+            "Disallow: /admin",
+            "Disallow: /arena/admin",
+            "Disallow: /arena/settings",
+            "Disallow: /arena/submissions",
+            "",
+            "User-agent: Googlebot",
+            "Allow: /",
+            "Crawl-delay: 1",
+            "",
             f"Sitemap: {base}/sitemap.xml",
             "",
         ])

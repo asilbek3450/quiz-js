@@ -6,10 +6,10 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
 
   {# ── SEO defaults ─────────────────────────────────────────────────────── #}
-  {% set _site_name = "Asilbek Mirolimov — Arena" %}
+  {% set _site_name = "Jahon School Arena — Asilbek Mirolimov" %}
   {% set _base_url  = (config.get("PUBLIC_BASE_URL","") or request.url_root).rstrip("/") %}
-  {% set _default_desc = "Asilbek Mirolimov tomonidan yaratilgan Arena — dasturlash masalalarini yechish, bilimni sinash va reyting tizimi. Python, algoritmlar, online judge." %}
-  {% set _default_kw   = "asilbek mirolimov, arena, test, bilim sinash, dasturlash, python, algoritmlar, online judge, masala, kod, reyting, informatika, uzbekistan" %}
+  {% set _default_desc = "Jahon School Arena — Asilbek Mirolimov tomonidan yaratilgan dasturlash platformasi. Masalalarni yeching, bilimingizni sinang, reytingda yuqoriga chiqing." %}
+  {% set _default_kw   = "jahon school arena, jahon school test, asilbek mirolimov, arena, dasturlash, python, algoritmlar, online judge, bilim sinash, masala, kod, reyting, informatika, uzbekistan" %}
   {% set _og_image     = _base_url + url_for('static', filename='img/logo.png') %}
 
   <title>{% block title %}Arena{% endblock %} — Asilbek Mirolimov Test Platformasi</title>

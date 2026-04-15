@@ -7,11 +7,11 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     {# ============ SEO defaults (override per page via blocks) ============ #}
-    {% set site_name = "Asilbek Mirolimov — Test Platformasi" %}
+    {% set site_name = "Jahon School Test Platformasi" %}
     {% set base_url = (config.get("PUBLIC_BASE_URL", "") or request.url_root).rstrip("/") %}
     {% set default_title = site_name %}
-    {% set default_description = "Asilbek Mirolimov tomonidan yaratilgan test platformasi — informatika, dasturlash, python bo'yicha interaktiv testlar va arena bo'limi. Bilimingizni sinang!" %}
-    {% set default_keywords = "asilbek mirolimov, test platformasi, bilim sinash, arena, informatika, python, dasturlash, algoritmlar, maktab, o'quvchi, o'qituvchi, online test, uzbekistan" %}
+    {% set default_description = "Jahon School online test platformasi — Asilbek Mirolimov tomonidan yaratilgan. Informatika, dasturlash, python bo'yicha testlar va Arena bo'limi. Bilimingizni sinang!" %}
+    {% set default_keywords = "jahon school test, jahon school, test platformasi, online test, bilim sinash, asilbek mirolimov, informatika, python, dasturlash, maktab testi, o'quvchi, nazorat ishi, arena, uzbekistan" %}
     {% set default_robots = "index, follow" %}
     {% set default_og_image = base_url + url_for('static', filename='img/logo.png') %}
 
@@ -40,16 +40,28 @@
         content="{{ (self.meta_description() or (seo_description or default_description)) | striptags }}">
     <meta name="twitter:image"       content="{% block twitter_image %}{{ default_og_image }}{% endblock %}">
 
-    {# JSON-LD structured data (Person + WebSite) #}
+    {# JSON-LD structured data (Organization + WebSite + Person) #}
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@graph": [
         {
+          "@type": "EducationalOrganization",
+          "name": "Jahon School",
+          "url": "{{ base_url }}",
+          "description": "Jahon School — online test platformasi va bilim sinash markazi",
+          "sameAs": []
+        },
+        {
           "@type": "WebSite",
           "name": "{{ site_name }}",
+          "alternateName": ["Jahon School Test", "Jahon School Online Test", "Asilbek Mirolimov Test Platformasi"],
           "url": "{{ base_url }}",
           "description": "{{ default_description }}",
+          "publisher": {
+            "@type": "Person",
+            "name": "Asilbek Mirolimov"
+          },
           "potentialAction": {
             "@type": "SearchAction",
             "target": "{{ base_url }}/arena/problems?q={search_term_string}",
@@ -60,7 +72,11 @@
           "@type": "Person",
           "name": "Asilbek Mirolimov",
           "url": "{{ base_url }}",
-          "sameAs": []
+          "jobTitle": "Web Developer & Educator",
+          "worksFor": {
+            "@type": "EducationalOrganization",
+            "name": "Jahon School"
+          }
         }
       ]
     }
@@ -129,10 +145,7 @@
         /* Prevent dragging images/text into Google Lens */
         img {
             -webkit-user-drag: none;
-            -khtml-user-drag: none;
-            -moz-user-drag: none;
-            -o-user-drag: none;
-            user-drag: none;
+            -webkit-user-drag: none;
             pointer-events: none;
         }
 
@@ -547,7 +560,7 @@
         .portal-text {
             font-size: 1.5rem; font-weight: 700; letter-spacing: 2px;
             background: linear-gradient(135deg, #58a6ff, #bc8cff);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
             animation: pulse 1.5s ease-in-out infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
