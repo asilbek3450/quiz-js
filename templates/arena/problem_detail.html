@@ -648,9 +648,12 @@ print(n * 2)
       if (data.failed_test) extra = `  (Test ${data.failed_test} da xato)`;
       showOutput(data.verdict, data.output, (data.error || '') + extra, data.time, false);
 
-      // Reload submission history after a brief delay
-      if (['AC', 'WA', 'TLE', 'RE', 'CE'].includes(data.verdict)) {
-        setTimeout(() => location.reload(), data.verdict === 'AC' ? 1200 : 800);
+      // Celebrate first AC solve, then reload
+      if (data.verdict === 'AC') {
+        if (typeof window._celebrateAC === 'function') window._celebrateAC();
+        setTimeout(() => location.reload(), 3500);
+      } else if (['WA', 'TLE', 'RE', 'CE'].includes(data.verdict)) {
+        setTimeout(() => location.reload(), 800);
       }
     } catch (err) {
       const msg = err.name === 'AbortError' ? 'So\'rov vaqt limiti tugadi (60s)' : 'Server bilan bog\'lanishda xato: ' + err.message;
@@ -728,6 +731,165 @@ print(n * 2)
     const modal = document.getElementById('subModal');
     if (event.target == modal) modal.style.display = "none";
   });
+
+  // ── 🎉 AC Celebration: confetti + fireworks sound ─────────────────────────
+  const ALREADY_SOLVED = "{{ 'true' if already_solved else 'false' }}" === 'true';
+
+  function playSalyutSound() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+      function boom(delay, freq, vol) {
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const dist = ctx.createWaveShaper();
+
+        // distortion curve for crackle
+        const curve = new Float32Array(256);
+        for (let i = 0; i < 256; i++) {
+          const x = (i * 2) / 256 - 1;
+          curve[i] = (Math.PI + 400) * x / (Math.PI + 400 * Math.abs(x));
+        }
+        dist.curve = curve;
+
+        osc.connect(dist); dist.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+        osc.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + delay + 0.4);
+        gain.gain.setValueAtTime(vol, ctx.currentTime + delay);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.5);
+        osc.start(ctx.currentTime + delay);
+        osc.stop(ctx.currentTime + delay + 0.55);
+      }
+
+      // white-noise burst (hissing tail)
+      function noiseBurst(delay) {
+        const bufSize = ctx.sampleRate * 0.3;
+        const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+        const src  = ctx.createBufferSource();
+        const gain = ctx.createGain();
+        src.buffer = buf;
+        src.connect(gain); gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0.25, ctx.currentTime + delay);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.3);
+        src.start(ctx.currentTime + delay);
+        src.stop(ctx.currentTime + delay + 0.3);
+      }
+
+      // 3 salyut shots
+      boom(0.00, 180, 0.7);  noiseBurst(0.05);
+      boom(0.35, 220, 0.6);  noiseBurst(0.38);
+      boom(0.65, 160, 0.65); noiseBurst(0.68);
+    } catch(e) { /* AudioContext not available */ }
+  }
+
+  function launchConfetti() {
+    const canvas = document.createElement('canvas');
+    canvas.style.cssText = [
+      'position:fixed', 'inset:0', 'width:100%', 'height:100%',
+      'pointer-events:none', 'z-index:99999'
+    ].join(';');
+    document.body.appendChild(canvas);
+
+    const ctx = canvas.getContext('2d');
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const COLORS = [
+      '#58a6ff','#3fb950','#f78166','#d29922',
+      '#bc8cff','#ffa657','#ff6bc1','#39d353'
+    ];
+    const SHAPES = ['rect', 'circle', 'star'];
+    const COUNT  = 180;
+    let   alive  = true;
+
+    // Generate particles from multiple launch points
+    const particles = Array.from({ length: COUNT }, (_, i) => {
+      const fromX = canvas.width * (0.15 + Math.random() * 0.7);
+      return {
+        x:    fromX,
+        y:    canvas.height + 10,
+        vx:   (Math.random() - 0.5) * 9,
+        vy:   -(Math.random() * 18 + 14),
+        rot:  Math.random() * Math.PI * 2,
+        rspd: (Math.random() - 0.5) * 0.25,
+        w:    Math.random() * 10 + 5,
+        h:    Math.random() * 6 + 3,
+        color: COLORS[i % COLORS.length],
+        shape: SHAPES[Math.floor(Math.random() * SHAPES.length)],
+        alpha: 1,
+        delay: Math.floor(Math.random() * 40), // staggered launch
+        tick:  0,
+      };
+    });
+
+    function drawStar(cx, ctx2d, r) {
+      ctx2d.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const a  = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+        const ai = a + (2 * Math.PI) / 10;
+        ctx2d[i === 0 ? 'moveTo' : 'lineTo'](cx + Math.cos(a)*r, Math.sin(a)*r);
+        ctx2d.lineTo(Math.cos(ai)*r, Math.sin(ai)*r*0.4);
+      }
+      ctx2d.closePath();
+      ctx2d.fill();
+    }
+
+    let frame = 0;
+    function animate() {
+      if (!alive) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      let anyActive = false;
+      particles.forEach(p => {
+        if (p.tick < p.delay) { p.tick++; return; }
+        anyActive = true;
+
+        p.vy  += 0.45;          // gravity
+        p.vx  *= 0.99;          // air drag
+        p.x   += p.vx;
+        p.y   += p.vy;
+        p.rot += p.rspd;
+
+        // fade out when falling below mid-screen
+        if (p.y > canvas.height * 0.6) p.alpha = Math.max(0, p.alpha - 0.018);
+
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle   = p.color;
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+
+        if (p.shape === 'circle') {
+          ctx.beginPath();
+          ctx.arc(0, 0, p.w / 2, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (p.shape === 'star') {
+          drawStar(0, ctx, p.w / 2);
+        } else {
+          ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+        }
+        ctx.restore();
+      });
+
+      frame++;
+      if (anyActive && frame < 420) {
+        requestAnimationFrame(animate);
+      } else {
+        alive = false;
+        canvas.remove();
+      }
+    }
+    animate();
+  }
+
+  window._celebrateAC = function () {
+    if (ALREADY_SOLVED) return;   // only first solve
+    playSalyutSound();
+    launchConfetti();
+  };
 })();
 </script>
 {% endblock %}
