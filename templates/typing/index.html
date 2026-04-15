@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+{% block title %}Typing Race — Jahon School{% endblock %}
+{% block meta_description %}Multiplayer typing race. Ustoz guruh yaratadi, o'quvchilar 6 xonali kod bilan qo'shiladi va real vaqtda yozish poygasida qatnashadi.{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Dark page override ────────────────────────────────────────── */
+  body {
+    background: #1a1b1e !important;
+    background-image: none !important;
+  }
+  footer { background: #111214 !important; color: #555 !important; }
+  footer span { color: #555 !important; }
+
+  /* ── Hero ────────────────────────────────────────────────────── */
+  .typing-hero {
+    text-align: center;
+    padding: 60px 0 40px;
+  }
+  .typing-hero .kbd-icon {
+    font-size: 3.5rem;
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: block;
+    margin-bottom: 12px;
+  }
+  .typing-hero h1 {
+    font-size: 2.6rem;
+    font-weight: 800;
+    color: #fffce1;
+    letter-spacing: -1px;
+    margin-bottom: 8px;
+  }
+  .typing-hero h1 span {
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .typing-hero p {
+    color: #888;
+    font-size: 1.05rem;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  /* ── Cards ───────────────────────────────────────────────────── */
+  .typing-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    max-width: 760px;
+    margin: 0 auto 60px;
+  }
+  @media (max-width: 640px) {
+    .typing-cards { grid-template-columns: 1fr; }
+    .typing-hero h1 { font-size: 1.9rem; }
+  }
+
+  .t-card {
+    background: #2c2e31;
+    border-radius: 20px;
+    padding: 32px 28px;
+    border: 1px solid #3a3c40;
+    transition: border-color .25s, transform .25s;
+  }
+  .t-card:hover { border-color: #f59e0b44; transform: translateY(-4px); }
+  .t-card.join-card:hover { border-color: #58a6ff44; }
+
+  .t-card h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #fffce1;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .t-card h2 .badge-pill {
+    font-size: .65rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 99px;
+    letter-spacing: .5px;
+  }
+  .badge-teacher { background: #f59e0b22; color: #f59e0b; }
+  .badge-student { background: #58a6ff22; color: #58a6ff; }
+
+  .t-card p { color: #888; font-size: .9rem; margin-bottom: 20px; }
+
+  .t-input {
+    width: 100%;
+    background: #1a1b1e;
+    border: 1.5px solid #3a3c40;
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: #fffce1;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color .2s;
+    margin-bottom: 12px;
+    font-family: inherit;
+  }
+  .t-input:focus { border-color: #f59e0b; }
+  .join-card .t-input:focus { border-color: #58a6ff; }
+  .t-input::placeholder { color: #555; }
+
+  .t-input.code-input {
+    font-family: 'Fira Code', 'Roboto Mono', monospace;
+    font-size: 1.4rem;
+    letter-spacing: 0.25em;
+    text-align: center;
+  }
+
+  .t-btn {
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity .2s, transform .15s;
+    letter-spacing: .3px;
+    margin-top: 4px;
+  }
+  .t-btn:hover { opacity: .9; transform: translateY(-1px); }
+  .t-btn:active { transform: translateY(0); }
+  .t-btn-create { background: linear-gradient(135deg, #f59e0b, #d97706); color: #1a1b1e; }
+  .t-btn-join   { background: linear-gradient(135deg, #58a6ff, #3b82f6); color: #fff; }
+  .t-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+  .t-error {
+    color: #ef4444;
+    font-size: .85rem;
+    margin-top: 8px;
+    min-height: 20px;
+    display: none;
+  }
+  .t-error.show { display: block; }
+
+  /* ── How to play ─────────────────────────────────────────────── */
+  .how-to {
+    max-width: 760px;
+    margin: 0 auto 60px;
+    background: #2c2e31;
+    border-radius: 16px;
+    padding: 28px 32px;
+    border: 1px solid #3a3c40;
+  }
+  .how-to h3 { color: #fffce1; font-size: 1rem; font-weight: 700; margin-bottom: 16px; }
+  .step-list { display: flex; flex-wrap: wrap; gap: 16px; }
+  .step {
+    display: flex; align-items: flex-start; gap: 12px;
+    flex: 1 1 200px;
+  }
+  .step-num {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    color: #1a1b1e; font-weight: 800; font-size: .9rem;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .step-text { color: #888; font-size: .88rem; line-height: 1.5; }
+  .step-text strong { color: #ccc; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="typing-hero">
+  <i class="fas fa-keyboard kbd-icon"></i>
+  <h1><span>Typing</span> Race</h1>
+  <p>Ustoz guruh yaratadi — o'quvchilar real vaqtda yozish poygasida raqobatlashadi</p>
+</div>
+
+<div class="typing-cards">
+
+  <!-- CREATE -->
+  <div class="t-card">
+    <h2>
+      <i class="fas fa-plus-circle" style="color:#f59e0b;"></i>
+      Guruh yaratish
+      <span class="badge-pill badge-teacher">USTOZ</span>
+    </h2>
+    <p>Yangi poyga xonasi oching va 6 xonali kodni o'quvchilarga yuboring.</p>
+
+    <input type="text" class="t-input" id="create-name"
+           placeholder="Ismingizni kiriting" maxlength="30" autocomplete="off">
+    <button class="t-btn t-btn-create" id="create-btn" onclick="doCreate()">
+      <i class="fas fa-play me-2"></i>Guruh yaratish
+    </button>
+    <div class="t-error" id="create-err"></div>
+  </div>
+
+  <!-- JOIN -->
+  <div class="t-card join-card">
+    <h2>
+      <i class="fas fa-sign-in-alt" style="color:#58a6ff;"></i>
+      Guruhga kirish
+      <span class="badge-pill badge-student">O'QUVCHI</span>
+    </h2>
+    <p>6 xonali kodni ustoz beradi. Ismingizni yozing va qo'shiling!</p>
+
+    <input type="text" class="t-input" id="join-name"
+           placeholder="Ismingizni kiriting" maxlength="30" autocomplete="off">
+    <input type="text" class="t-input code-input" id="join-code"
+           placeholder="123456" maxlength="6" autocomplete="off"
+           inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')">
+    <button class="t-btn t-btn-join" id="join-btn" onclick="doJoin()">
+      <i class="fas fa-arrow-right me-2"></i>Qo'shilish
+    </button>
+    <div class="t-error" id="join-err"></div>
+  </div>
+
+</div>
+
+<!-- How to play -->
+<div class="how-to">
+  <h3><i class="fas fa-info-circle me-2" style="color:#f59e0b;"></i>Qanday ishlaydi?</h3>
+  <div class="step-list">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-text"><strong>Ustoz guruh yaratadi</strong> va 6 xonali kodni sinf bilan ulashadi.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-text"><strong>O'quvchilar kod orqali</strong> ismlari bilan xonaga qo'shiladi.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-text"><strong>Ustoz "Boshlash"</strong> tugmasini bosadi — 3 soniya ortga hisob boshlanadi.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-text"><strong>Barcha bir vaqtda</strong> matnni teradilar. Poyga oxirida natijalar ko'rsatiladi.</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CSRF = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+async function doCreate() {
+  const nameEl = document.getElementById('create-name');
+  const errEl  = document.getElementById('create-err');
+  const btn    = document.getElementById('create-btn');
+  errEl.classList.remove('show');
+
+  const name = nameEl.value.trim();
+  if (!name) { showErr(errEl, 'Ism kiritilmadi'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Yaratilmoqda...';
+
+  try {
+    const res = await fetch('/typing/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ name }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showErr(errEl, data.error || 'Xato'); btn.disabled = false; btn.innerHTML='<i class="fas fa-play me-2"></i>Guruh yaratish'; return; }
+    window.location.href = data.url;
+  } catch {
+    showErr(errEl, 'Tarmoq xatosi. Qayta urining.');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-play me-2"></i>Guruh yaratish';
+  }
+}
+
+async function doJoin() {
+  const nameEl = document.getElementById('join-name');
+  const codeEl = document.getElementById('join-code');
+  const errEl  = document.getElementById('join-err');
+  const btn    = document.getElementById('join-btn');
+  errEl.classList.remove('show');
+
+  const name = nameEl.value.trim();
+  const code = codeEl.value.trim();
+  if (!name) { showErr(errEl, 'Ism kiritilmadi'); return; }
+  if (code.length !== 6) { showErr(errEl, '6 xonali kod kiriting'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Qo\'shilmoqda...';
+
+  try {
+    const res = await fetch('/typing/join', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ name, code }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showErr(errEl, data.error || 'Xato'); btn.disabled = false; btn.innerHTML='<i class="fas fa-arrow-right me-2"></i>Qo\'shilish'; return; }
+    window.location.href = data.url;
+  } catch {
+    showErr(errEl, 'Tarmoq xatosi. Qayta urining.');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-arrow-right me-2"></i>Qo\'shilish';
+  }
+}
+
+function showErr(el, msg) { el.textContent = msg; el.classList.add('show'); }
+
+// Enter key support
+document.getElementById('create-name').addEventListener('keydown', e => e.key === 'Enter' && doCreate());
+document.getElementById('join-code').addEventListener('keydown', e => e.key === 'Enter' && doJoin());
+document.getElementById('join-name').addEventListener('keydown', e => e.key === 'Enter' && document.getElementById('join-code').focus());
+</script>
+{% endblock %}

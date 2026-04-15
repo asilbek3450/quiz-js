@@ -20,6 +20,15 @@ _BANNED = re.compile(
     re.IGNORECASE
 )
 
+# Python traceback belgilari — haqiqiy kod xatosi
+_PY_ERROR = re.compile(
+    r'Traceback \(most recent call last\)|'
+    r'(SyntaxError|NameError|TypeError|ValueError|IndexError|'
+    r'KeyError|AttributeError|ZeroDivisionError|RecursionError|'
+    r'MemoryError|RuntimeError|StopIteration|IndentationError):',
+    re.IGNORECASE
+)
+
 MAX_OUTPUT = 4096   # bayt
 MAX_CODE   = 16384  # bayt
 
@@ -36,7 +45,14 @@ def _check(code: str):
 def run_code(code: str, language: str, stdin_data: str, time_limit: float = 5.0):
     """
     Kodni ishlatadi. Qaytaradi:
-      {'verdict': 'OK'|'TLE'|'RE'|'CE', 'output': str, 'error': str, 'time': float}
+      {'verdict': 'OK'|'TLE'|'RE'|'CE'|'SE', 'output': str, 'error': str, 'time': float}
+
+    Verdiktlar:
+      OK  — muvaffaqiyatli bajarildi
+      TLE — vaqt limiti oshdi (yoki OS tomonidan o'ldirildi)
+      RE  — foydalanuvchi kodi xatosi (Python Traceback bor)
+      CE  — kompilyatsiya / taqiqlangan operatsiya xatosi
+      SE  — server infra xatosi (foydalanuvchi kodi bilan bog'liq emas)
     """
     if language not in LANGUAGES:
         return {'verdict': 'CE', 'output': '',
@@ -47,46 +63,80 @@ def run_code(code: str, language: str, stdin_data: str, time_limit: float = 5.0)
         return {'verdict': 'CE', 'output': '', 'error': msg, 'time': 0.0}
 
     lang = LANGUAGES[language]
-    tmp = None
-    try:
-        with tempfile.NamedTemporaryFile(
-                suffix=lang['ext'], delete=False,
-                mode='w', encoding='utf-8') as f:
-            f.write(code)
-            tmp = f.name
 
-        cmd = [c.replace('{file}', tmp) for c in lang['cmd']]
-        t0  = time.monotonic()
+    # Server xatolari uchun 1 marta qayta urinish
+    for attempt in range(2):
+        tmp = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                    suffix=lang['ext'], delete=False,
+                    mode='w', encoding='utf-8') as f:
+                f.write(code)
+                tmp = f.name
 
-        proc = subprocess.run(
-            cmd,
-            input=stdin_data or '',
-            capture_output=True,
-            text=True,
-            timeout=time_limit,
-        )
-        elapsed = round(time.monotonic() - t0, 3)
+            cmd = [c.replace('{file}', tmp) for c in lang['cmd']]
+            t0  = time.monotonic()
 
-        stdout = proc.stdout[:MAX_OUTPUT]
-        stderr = proc.stderr[:1024]
+            proc = subprocess.run(
+                cmd,
+                input=stdin_data or '',
+                capture_output=True,
+                text=True,
+                timeout=time_limit,
+            )
+            elapsed = round(time.monotonic() - t0, 3)
 
-        if proc.returncode != 0:
-            return {'verdict': 'RE', 'output': stdout, 'error': stderr, 'time': elapsed}
+            stdout = proc.stdout[:MAX_OUTPUT]
+            stderr = proc.stderr[:1024]
 
-        # returncode == 0: muvaffaqiyatli — stderr (warnings va boshqalar) e'tiborsiz
-        return {'verdict': 'OK', 'output': stdout, 'error': '', 'time': elapsed}
+            if proc.returncode == 0:
+                # Muvaffaqiyatli — stderr (warnings) e'tiborsiz
+                return {'verdict': 'OK', 'output': stdout, 'error': '', 'time': elapsed}
 
-    except subprocess.TimeoutExpired:
-        return {'verdict': 'TLE', 'output': '',
-                'error': f'Vaqt limiti oshdi ({time_limit}s)', 'time': time_limit}
-    except Exception as e:
-        return {'verdict': 'RE', 'output': '', 'error': str(e), 'time': 0.0}
-    finally:
-        if tmp:
-            try:
-                os.unlink(tmp)
-            except OSError:
-                pass
+            # returncode < 0 → OS SIGKILL/SIGTERM (resurs limiti) → TLE sifatida
+            if proc.returncode < 0:
+                return {'verdict': 'TLE', 'output': '',
+                        'error': 'Vaqt yoki xotira limiti oshdi.', 'time': elapsed}
+
+            # returncode > 0 — Python traceback bormi? → haqiqiy RE
+            if _PY_ERROR.search(stderr):
+                # Faqat muhim qism: oxirgi 10 qator
+                lines = stderr.strip().splitlines()
+                short = '\n'.join(lines[-10:]) if len(lines) > 10 else stderr.strip()
+                return {'verdict': 'RE', 'output': stdout, 'error': short, 'time': elapsed}
+
+            # returncode > 0 lekin Python traceback yo'q → server/muhit xatosi
+            if attempt == 0:
+                time.sleep(0.15)
+                continue  # qayta urinish
+            return {'verdict': 'SE', 'output': '', 'error': '', 'time': elapsed}
+
+        except subprocess.TimeoutExpired:
+            return {'verdict': 'TLE', 'output': '',
+                    'error': f'Vaqt limiti oshdi ({time_limit}s).', 'time': time_limit}
+
+        except (OSError, PermissionError, FileNotFoundError):
+            # Server infra muammosi — qayta urinib ko'ramiz
+            if attempt == 0:
+                time.sleep(0.2)
+                continue
+            return {'verdict': 'SE', 'output': '', 'error': '', 'time': 0.0}
+
+        except Exception as e:
+            # Boshqa kutilmagan xato
+            err_str = str(e)
+            if _PY_ERROR.search(err_str):
+                return {'verdict': 'RE', 'output': '', 'error': err_str, 'time': 0.0}
+            return {'verdict': 'SE', 'output': '', 'error': '', 'time': 0.0}
+
+        finally:
+            if tmp:
+                try:
+                    os.unlink(tmp)
+                except OSError:
+                    pass
+
+    return {'verdict': 'SE', 'output': '', 'error': '', 'time': 0.0}
 
 
 def _norm(s: str) -> str:
@@ -97,16 +147,21 @@ def judge(code: str, language: str, test_input: str,
           expected_output: str, time_limit: float = 5.0):
     """
     Kodni ishlatib, natijani expected_output bilan solishtiradi.
-    Qaytaradi: run_code natijasiга qo'shimcha 'verdict' AC|WA|TLE|RE|CE.
+    Qaytaradi: run_code natijasiga qo'shimcha 'verdict' AC|WA|TLE|RE|CE|SE.
     """
     result = run_code(code, language, test_input, time_limit)
 
-    if result['verdict'] in ('TLE', 'RE', 'CE'):
-        return result            # allaqachon to'g'ri verdict
+    if result['verdict'] in ('TLE', 'CE', 'SE'):
+        return result
+
+    # RE → WA: kod xatosi bo'lsa ham faqat "Wrong Answer" ko'rsatiladi
+    if result['verdict'] == 'RE':
+        result['verdict'] = 'WA'
+        result['error']   = ''
+        return result
 
     user_out = _norm(result['output'])
     expected = _norm(expected_output or '')
 
     result['verdict'] = 'AC' if user_out == expected else 'WA'
-    result['expected'] = expected     # debuglash uchun (WA da ko'rsatilmaydi)
     return result

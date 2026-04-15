@@ -566,6 +566,51 @@
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes glow { 0%, 100% { box-shadow: 0 0 20px rgba(88,166,255,0.2); } 50% { box-shadow: 0 0 40px rgba(88,166,255,0.6); } }
         @keyframes pulse { 0%, 100% { opacity: 0.6; transform: scale(0.98); } 50% { opacity: 1; transform: scale(1.02); } }
+
+        /* Global Typing Portal Loader */
+        #typing-portal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(26, 27, 30, 0.97);
+            backdrop-filter: blur(16px);
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #fffce1;
+            transition: opacity 0.4s ease;
+        }
+        .typing-portal-content { text-align: center; }
+        .typing-portal-keys {
+            display: flex; gap: 8px; justify-content: center; margin-bottom: 20px;
+        }
+        .typing-portal-key {
+            width: 42px; height: 42px;
+            background: #2c2e31;
+            border: 2px solid #3a3c40;
+            border-radius: 8px;
+            border-bottom-width: 4px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Fira Code', monospace;
+            font-size: .9rem; font-weight: 700; color: #fffce1;
+            animation: key-pop .6s cubic-bezier(.34,1.56,.64,1) both;
+        }
+        .typing-portal-key:nth-child(1) { animation-delay: .05s; }
+        .typing-portal-key:nth-child(2) { animation-delay: .1s; }
+        .typing-portal-key:nth-child(3) { animation-delay: .15s; }
+        .typing-portal-key:nth-child(4) { animation-delay: .2s; }
+        .typing-portal-key:nth-child(5) { animation-delay: .25s; }
+        .typing-portal-key:nth-child(6) { animation-delay: .3s; }
+        @keyframes key-pop {
+            from { transform: translateY(-20px); opacity: 0; }
+            to   { transform: translateY(0); opacity: 1; }
+        }
+        .typing-portal-text {
+            font-size: 1.3rem; font-weight: 700; letter-spacing: 3px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -594,6 +639,13 @@
                            onclick="enterArena(event);"
                            style="background:linear-gradient(135deg,#58a6ff,#bc8cff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
                             <i class="fas fa-code me-1" style="-webkit-text-fill-color:initial;color:#58a6ff;"></i> Arena
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link fw-semibold" href="{{ url_for('typing.index') }}"
+                           onclick="enterTyping(event);"
+                           style="background:linear-gradient(135deg,#f59e0b,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+                            <i class="fas fa-keyboard me-1" style="-webkit-text-fill-color:initial;color:#f59e0b;"></i> Typing
                         </a>
                     </li>
                     {% if session.admin_id %}
@@ -858,6 +910,21 @@
 
     {% block extra_js %}{% endblock %}
 
+    <!-- Global Typing Portal Overlay -->
+    <div id="typing-portal">
+        <div class="typing-portal-content">
+            <div class="typing-portal-keys">
+                <div class="typing-portal-key">T</div>
+                <div class="typing-portal-key">Y</div>
+                <div class="typing-portal-key">P</div>
+                <div class="typing-portal-key">I</div>
+                <div class="typing-portal-key">N</div>
+                <div class="typing-portal-key">G</div>
+            </div>
+            <div class="typing-portal-text">Poyga boshlanmoqda...</div>
+        </div>
+    </div>
+
     <!-- Global Arena Portal Overlay -->
     <div id="arena-portal">
         <div class="portal-content">
@@ -890,7 +957,22 @@
             portal.style.display = 'none';
             portal.style.opacity = '0';
         }
+        const tp = document.getElementById('typing-portal');
+        if (tp) {
+            tp.style.display = 'none';
+            tp.style.opacity = '0';
+        }
     });
+
+    window.enterTyping = function(e) {
+        if (e) e.preventDefault();
+        const portal = document.getElementById('typing-portal');
+        if (!portal) { window.location.href = "{{ url_for('typing.index') }}"; return; }
+        portal.style.display = 'flex';
+        portal.style.opacity = '0';
+        setTimeout(() => { portal.style.opacity = '1'; }, 10);
+        setTimeout(() => { window.location.href = "{{ url_for('typing.index') }}"; }, 1000);
+    };
 
     // Barcha POST formalariga avtomatik CSRF token qo'shish
     (function() {

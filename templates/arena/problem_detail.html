@@ -537,14 +537,15 @@ print(n * 2)
 
     // Verdict label
     const MAP = {
-      OK:  ['vrd-AC',  'fas fa-check-circle',      'Chiqish'],
-      AC:  ['vrd-AC',  'fas fa-check-circle',      isRun ? 'Chiqish' : 'Accepted ✓'],
-      WA:  ['vrd-WA',  'fas fa-times-circle',      'Wrong Answer'],
-      TLE: ['vrd-TLE', 'fas fa-clock',             'Time Limit Exceeded'],
-      RE:  ['vrd-RE',  'fas fa-bug',               'Runtime Error'],
-      CE:  ['vrd-CE',  'fas fa-exclamation-circle','Compile Error'],
+      OK:  ['vrd-AC',  'fas fa-check-circle',        'Chiqish'],
+      AC:  ['vrd-AC',  'fas fa-check-circle',        isRun ? 'Chiqish' : 'Accepted ✓'],
+      WA:  ['vrd-WA',  'fas fa-times-circle',        'Wrong Answer'],
+      TLE: ['vrd-TLE', 'fas fa-clock',               'Time Limit Exceeded'],
+      RE:  ['vrd-RE',  'fas fa-bug',                 'Runtime Error'],
+      CE:  ['vrd-CE',  'fas fa-exclamation-circle',  'Compile Error'],
+      SE:  ['vrd-TLE', 'fas fa-server',              'Server band — qayta urinib ko\'ring'],
     };
-    const [cls, icon, label] = MAP[verdict] || ['vrd-WA', 'fas fa-question-circle', verdict];
+    const [cls, icon, label] = MAP[verdict] || ['vrd-TLE', 'fas fa-question-circle', verdict];
     vrdEl.className = `out-verdict ${cls}`;
     vrdEl.innerHTML = `<i class="${icon}"></i> ${label}`;
 
@@ -653,8 +654,10 @@ print(n * 2)
       const errMsg = isAC ? '' : (data.error || '') + extra;
       showOutput(data.verdict, data.output, errMsg, data.time, false);
 
-      // Celebrate first AC solve, then reload
-      if (data.verdict === 'AC') {
+      // SE — server xatosi, reload ham saqlab qo'ymaslik kerak
+      if (data.verdict === 'SE') {
+        // tugmani qayta yoqish, foydalanuvchi o'zi qayta yuboradi
+      } else if (data.verdict === 'AC') {
         if (typeof window._celebrateAC === 'function') window._celebrateAC();
         setTimeout(() => location.reload(), 3500);
       } else if (['WA', 'TLE', 'RE', 'CE'].includes(data.verdict)) {

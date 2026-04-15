@@ -8,6 +8,7 @@ from routes.main import main_bp
 from routes.admin import admin_bp
 from routes.student import student_bp
 from routes.arena import arena_bp
+from routes.typing_bp import typing_bp
 import markdown
 from models import (Admin, Subject, Question, TestResult, ControlWork,
                     Feedback, ArenaUser, ArenaProblem, ArenaSubmission)
@@ -73,6 +74,7 @@ def create_app():
     app.register_blueprint(admin_bp)
     app.register_blueprint(student_bp)
     app.register_blueprint(arena_bp)
+    app.register_blueprint(typing_bp)
     
     @app.errorhandler(403)
     def forbidden(e):

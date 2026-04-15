@@ -1,0 +1,970 @@
+{% extends "base.html" %}
+{% block title %}Typing Race — {{ code }}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Dark page ──────────────────────────────────────────────────────────────── */
+body {
+  background: #1a1b1e !important;
+  background-image: none !important;
+  color: #fffce1;
+  -webkit-user-select: none;
+  user-select: none;
+}
+footer { background: #111214 !important; }
+footer span { color: #444 !important; }
+
+/* ── Layout ──────────────────────────────────────────────────────────────────── */
+.race-wrap {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px 16px 60px;
+}
+
+/* ── Header bar ──────────────────────────────────────────────────────────────── */
+.race-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.room-code-badge {
+  background: #2c2e31;
+  border: 1px solid #3a3c40;
+  border-radius: 10px;
+  padding: 6px 16px;
+  font-family: 'Fira Code', monospace;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #f59e0b;
+  letter-spacing: .25em;
+  cursor: pointer;
+  transition: background .2s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.room-code-badge:hover { background: #363840; }
+.copy-hint {
+  font-size: .65rem;
+  color: #666;
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+.participant-count {
+  color: #888;
+  font-size: .9rem;
+}
+.participant-count strong { color: #fffce1; }
+
+/* ── Waiting panel ───────────────────────────────────────────────────────────── */
+#panel-waiting {
+  background: #2c2e31;
+  border-radius: 20px;
+  padding: 32px;
+  border: 1px solid #3a3c40;
+}
+.waiting-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fffce1;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.waiting-title .pulse-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: pulse-dot 1.4s infinite;
+}
+@keyframes pulse-dot {
+  0%,100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.5); opacity: .6; }
+}
+
+.participant-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 28px;
+  min-height: 44px;
+}
+.p-chip {
+  background: #1a1b1e;
+  border: 1.5px solid #3a3c40;
+  border-radius: 99px;
+  padding: 6px 16px;
+  font-size: .9rem;
+  color: #ccc;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: border-color .2s;
+}
+.p-chip.me { border-color: #f59e0b; color: #f59e0b; }
+.p-chip .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #3a3c40;
+}
+.p-chip.me .dot { background: #f59e0b; }
+
+.start-btn {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  border: none;
+  border-radius: 14px;
+  padding: 14px 40px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity .2s, transform .15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.start-btn:hover { opacity: .9; transform: translateY(-2px); }
+.start-btn:active { transform: none; }
+.start-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+.waiting-hint { color: #666; font-size: .85rem; margin-top: 12px; }
+
+/* ── Countdown overlay ───────────────────────────────────────────────────────── */
+#panel-countdown {
+  display: none;
+  text-align: center;
+  padding: 80px 0;
+}
+.countdown-num {
+  font-size: 8rem;
+  font-weight: 900;
+  line-height: 1;
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: pop-in .35s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes pop-in {
+  from { transform: scale(.4); opacity: 0; }
+  to   { transform: scale(1);  opacity: 1; }
+}
+.countdown-label { color: #666; font-size: 1rem; margin-top: 12px; letter-spacing: 2px; text-transform: uppercase; }
+
+/* ── Racing panel ────────────────────────────────────────────────────────────── */
+#panel-racing { display: none; }
+
+/* Stats bar */
+.stats-bar {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.stat-box {
+  background: #2c2e31;
+  border-radius: 12px;
+  padding: 10px 20px;
+  min-width: 90px;
+  text-align: center;
+}
+.stat-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fffce1;
+  font-family: 'Fira Code', monospace;
+}
+.stat-label { font-size: .7rem; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+
+/* Typing text box */
+.typing-box {
+  background: #2c2e31;
+  border-radius: 16px;
+  padding: 28px 32px;
+  font-family: 'Fira Code', 'Roboto Mono', 'Courier New', monospace;
+  font-size: 1.35rem;
+  line-height: 2;
+  letter-spacing: .04em;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+  cursor: text;
+  min-height: 120px;
+  border: 2px solid transparent;
+  transition: border-color .25s;
+}
+.typing-box.focused { border-color: #f59e0b44; }
+.typing-box.unfocused-warn { border-color: #ef444466; }
+.click-to-focus {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26,27,30,.85);
+  color: #888;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  border-radius: 14px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .2s;
+  z-index: 2;
+}
+.typing-box.unfocused .click-to-focus { opacity: 1; }
+
+/* Individual chars */
+.char { position: relative; }
+.char.correct  { color: #6fcf97; }
+.char.wrong    { color: #ef4444; text-decoration: underline; }
+.char.cursor   { color: #fffce1; position: relative; }
+.char.cursor::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 5%; bottom: 5%;
+  width: 2px;
+  background: #f59e0b;
+  border-radius: 2px;
+  animation: caret-blink .85s steps(1) infinite;
+}
+.char.upcoming { color: #4a4c52; }
+.char.flash-err {
+  animation: err-flash .15s ease;
+}
+@keyframes caret-blink {
+  0%,50% { opacity: 1; }
+  51%,100% { opacity: 0; }
+}
+@keyframes err-flash {
+  0%   { background: rgba(239,68,68,.35); border-radius: 3px; }
+  100% { background: transparent; }
+}
+
+/* Progress bars (participants) */
+.participants-section { margin-top: 8px; }
+.participants-section h4 {
+  color: #666;
+  font-size: .75rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 12px;
+}
+.p-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.p-name {
+  width: 120px;
+  flex-shrink: 0;
+  font-size: .9rem;
+  color: #ccc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.p-name.me { color: #f59e0b; font-weight: 700; }
+.p-track {
+  flex: 1;
+  height: 10px;
+  background: #1a1b1e;
+  border-radius: 99px;
+  overflow: hidden;
+}
+.p-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width .4s cubic-bezier(.4,0,.2,1);
+  background: linear-gradient(90deg, #58a6ff, #3b82f6);
+  min-width: 4px;
+}
+.p-fill.me { background: linear-gradient(90deg, #f59e0b, #d97706); }
+.p-fill.done { background: linear-gradient(90deg, #22c55e, #16a34a); }
+.p-wpm {
+  width: 72px;
+  flex-shrink: 0;
+  text-align: right;
+  font-size: .82rem;
+  color: #666;
+  font-family: 'Fira Code', monospace;
+}
+.p-rank {
+  width: 28px;
+  flex-shrink: 0;
+  text-align: center;
+  font-size: .8rem;
+}
+.rank-1 { color: #ffd700; }
+.rank-2 { color: #c0c0c0; }
+.rank-3 { color: #cd7f32; }
+
+/* ── Finished overlay ───────────────────────────────────────────────────────── */
+#panel-finished { display: none; }
+.finish-header {
+  text-align: center;
+  padding: 40px 0 28px;
+}
+.finish-trophy { font-size: 3.5rem; display: block; margin-bottom: 12px; }
+.finish-header h2 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #fffce1;
+  margin-bottom: 6px;
+}
+.finish-header p { color: #888; font-size: .9rem; }
+
+.leaderboard {
+  background: #2c2e31;
+  border-radius: 16px;
+  padding: 8px 0;
+  margin-bottom: 28px;
+  border: 1px solid #3a3c40;
+}
+.lb-row {
+  display: flex;
+  align-items: center;
+  padding: 14px 24px;
+  border-bottom: 1px solid #3a3c40;
+  gap: 16px;
+  transition: background .15s;
+}
+.lb-row:last-child { border-bottom: none; }
+.lb-row:hover { background: #363840; }
+.lb-row.me { background: #f59e0b0e; }
+.lb-pos { font-size: 1.5rem; width: 36px; flex-shrink: 0; text-align: center; }
+.lb-name { flex: 1; font-weight: 600; color: #fffce1; }
+.lb-name small { display: block; color: #666; font-size: .78rem; font-weight: 400; }
+.lb-wpm {
+  font-family: 'Fira Code', monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #f59e0b;
+}
+.lb-wpm small { color: #666; font-size: .7rem; font-weight: 400; display: block; text-align: right; }
+
+.finish-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.btn-replay {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border: none;
+  border-radius: 12px;
+  padding: 12px 32px;
+  font-size: .95rem;
+  font-weight: 700;
+  color: #1a1b1e;
+  cursor: pointer;
+  transition: opacity .2s, transform .15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-replay:hover { opacity: .9; transform: translateY(-2px); }
+.btn-back {
+  background: #2c2e31;
+  border: 1.5px solid #3a3c40;
+  border-radius: 12px;
+  padding: 12px 28px;
+  font-size: .95rem;
+  font-weight: 600;
+  color: #ccc;
+  cursor: pointer;
+  transition: background .2s, transform .15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+.btn-back:hover { background: #363840; transform: translateY(-2px); color: #fffce1; }
+
+/* ── Hidden input for keyboard capture ────────────────────────────────────────── */
+#ghost-input {
+  position: fixed;
+  top: -9999px;
+  left: -9999px;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+/* ── Toast ──────────────────────────────────────────────────────────────────── */
+.toast-copied {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(60px);
+  background: #22c55e;
+  color: #fff;
+  padding: 10px 24px;
+  border-radius: 99px;
+  font-weight: 600;
+  font-size: .9rem;
+  transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+  z-index: 9999;
+  pointer-events: none;
+}
+.toast-copied.show { transform: translateX(-50%) translateY(0); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="race-wrap">
+
+  <!-- Header -->
+  <div class="race-header">
+    <div class="room-code-badge" onclick="copyCode()" title="Kodni nusxalash">
+      {{ code }}
+      <span class="copy-hint"><i class="fas fa-copy"></i> nusxa</span>
+    </div>
+    <div class="participant-count">
+      <strong id="p-count">{{ room.participants | length }}</strong> ishtirokchi
+    </div>
+  </div>
+
+  <!-- WAITING STATE -->
+  <div id="panel-waiting">
+    <div class="waiting-title">
+      <div class="pulse-dot"></div>
+      Ishtirokchilar kutilmoqda
+    </div>
+    <div class="participant-chips" id="chips-container">
+      {% for uid, p in room.participants.items() %}
+      <div class="p-chip {% if uid == my_uid %}me{% endif %}" data-uid="{{ uid }}">
+        <div class="dot"></div>
+        {{ p.name }}{% if uid == my_uid %} (siz){% endif %}
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if is_creator %}
+    <button class="start-btn" id="start-btn" onclick="startRace()">
+      <i class="fas fa-flag-checkered"></i> Poygani boshlash
+    </button>
+    <div class="waiting-hint">Barcha o'quvchilar qo'shilgach boshlang</div>
+    {% else %}
+    <div class="waiting-hint" style="font-size:.95rem;color:#888;">
+      <i class="fas fa-hourglass-half me-2" style="color:#f59e0b;"></i>
+      Ustoz poygani boshlaguncha kuting...
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- COUNTDOWN STATE -->
+  <div id="panel-countdown">
+    <div class="countdown-num" id="countdown-num">3</div>
+    <div class="countdown-label">Tayyor bo'ling...</div>
+  </div>
+
+  <!-- RACING STATE -->
+  <div id="panel-racing">
+    <!-- Stats -->
+    <div class="stats-bar">
+      <div class="stat-box">
+        <div class="stat-value" id="stat-wpm">0</div>
+        <div class="stat-label">WPM</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="stat-pct">0%</div>
+        <div class="stat-label">Bajarildi</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="stat-timer">0:00</div>
+        <div class="stat-label">Vaqt</div>
+      </div>
+    </div>
+
+    <!-- Text to type -->
+    <div class="typing-box unfocused" id="typing-box" onclick="focusInput()">
+      <div class="click-to-focus">
+        <span><i class="fas fa-keyboard me-2"></i>Boshlash uchun bu yerga bosing</span>
+      </div>
+      <div id="chars-container">
+        {%- for ch in text -%}
+        <span class="char upcoming" data-i="{{ loop.index0 }}">{{ ch }}</span>
+        {%- endfor -%}
+      </div>
+    </div>
+
+    <!-- Participants progress -->
+    <div class="participants-section">
+      <h4><i class="fas fa-users me-1"></i> Ishtirokchilar</h4>
+      <div id="participants-race"></div>
+    </div>
+  </div>
+
+  <!-- FINISHED STATE -->
+  <div id="panel-finished">
+    <div class="finish-header">
+      <span class="finish-trophy">🏆</span>
+      <h2>Poyga yakunlandi!</h2>
+      <p id="finish-subtitle">Barcha ishtirokchilar natijasi</p>
+    </div>
+    <div class="leaderboard" id="leaderboard"></div>
+    <div class="finish-actions">
+      {% if is_creator %}
+      <button class="btn-replay" onclick="window.location.href='/typing'">
+        <i class="fas fa-redo"></i> Yangi poyga
+      </button>
+      {% endif %}
+      <a class="btn-back" href="/typing">
+        <i class="fas fa-arrow-left"></i> Bosh sahifa
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<!-- Hidden keyboard capture input -->
+<input type="text" id="ghost-input" autocomplete="off" autocorrect="off"
+       autocapitalize="off" spellcheck="false" tabindex="-1">
+
+<!-- Toast notification -->
+<div class="toast-copied" id="toast">Kod nusxalandi!</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Constants from server ──────────────────────────────────────────────────────
+const ROOM_CODE   = "{{ code }}";
+const TEXT        = {{ text | tojson }};
+const MY_UID      = "{{ my_uid }}";
+const IS_CREATOR  = "{{ 'true' if is_creator else 'false' }}" === 'true';
+const CSRF        = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+const INITIAL_STATE = "{{ room.state }}";
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let cursor        = 0;
+let startTime     = null;
+let wpm           = 0;
+let myFinished    = false;
+let raceStarted   = false;
+let countdownTimer = null;
+let stateInterval = null;
+let progressInterval = null;
+let lastCountdownEnd = null;
+let lastDisplayedCount = -1;
+let ghostFocused  = false;
+
+// ── DOM refs ──────────────────────────────────────────────────────────────────
+const ghostInput    = document.getElementById('ghost-input');
+const typingBox     = document.getElementById('typing-box');
+const charsContainer = document.getElementById('chars-container');
+const spans         = Array.from(charsContainer.querySelectorAll('.char'));
+const statWpm       = document.getElementById('stat-wpm');
+const statPct       = document.getElementById('stat-pct');
+const statTimer     = document.getElementById('stat-timer');
+const pCountEl      = document.getElementById('p-count');
+
+// ── Focus management ──────────────────────────────────────────────────────────
+function focusInput() {
+  ghostInput.focus();
+  typingBox.classList.remove('unfocused', 'unfocused-warn');
+  typingBox.classList.add('focused');
+  ghostFocused = true;
+}
+
+ghostInput.addEventListener('focus', () => {
+  typingBox.classList.remove('unfocused', 'unfocused-warn');
+  typingBox.classList.add('focused');
+  ghostFocused = true;
+});
+ghostInput.addEventListener('blur', () => {
+  if (raceStarted && !myFinished) {
+    typingBox.classList.remove('focused');
+    typingBox.classList.add('unfocused');
+    ghostFocused = false;
+  }
+});
+
+// ── Keyboard handling ─────────────────────────────────────────────────────────
+ghostInput.addEventListener('keydown', handleKey);
+
+// Also capture from document in case ghost loses focus
+document.addEventListener('keydown', function(e) {
+  if (raceStarted && !myFinished && !ghostFocused) {
+    if (e.key.length === 1 || e.key === 'Backspace') {
+      focusInput();
+    }
+  }
+});
+
+function handleKey(e) {
+  if (!raceStarted || myFinished) return;
+
+  // Ignore modifier keys
+  if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+  if (e.key === 'Backspace') {
+    e.preventDefault();
+    if (cursor > 0) {
+      cursor--;
+      renderChars();
+    }
+    return;
+  }
+
+  if (e.key.length !== 1) return;
+  e.preventDefault();
+
+  const expected = TEXT[cursor];
+  if (e.key === expected) {
+    cursor++;
+    if (!startTime) startTime = Date.now();
+    renderChars();
+    if (cursor === TEXT.length) {
+      finishRace();
+    }
+  } else {
+    flashError();
+  }
+
+  // Keep ghost input empty (prevent browser insertion)
+  ghostInput.value = '';
+}
+
+// ── Render text ───────────────────────────────────────────────────────────────
+function renderChars() {
+  spans.forEach((span, i) => {
+    span.className = 'char';
+    if (i < cursor)       span.classList.add('correct');
+    else if (i === cursor) span.classList.add('cursor');
+    else                   span.classList.add('upcoming');
+  });
+
+  // Scroll cursor into view
+  if (cursor < spans.length) {
+    spans[cursor].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  updateStats();
+}
+
+function flashError() {
+  if (cursor < spans.length) {
+    const s = spans[cursor];
+    s.classList.add('flash-err');
+    setTimeout(() => s.classList.remove('flash-err'), 160);
+  }
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+function updateStats() {
+  const pct = Math.round(cursor / TEXT.length * 100);
+  statPct.textContent = pct + '%';
+
+  if (startTime) {
+    const elapsedMin = (Date.now() - startTime) / 60000;
+    wpm = elapsedMin > 0 ? Math.round((cursor / 5) / elapsedMin) : 0;
+    statWpm.textContent = wpm;
+  }
+}
+
+// Timer (runs every second during race)
+let timerInterval = null;
+function startTimer() {
+  if (timerInterval) return;
+  const raceStart = Date.now();
+  timerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - raceStart) / 1000);
+    const m = Math.floor(elapsed / 60);
+    const s = elapsed % 60;
+    statTimer.textContent = m + ':' + String(s).padStart(2, '0');
+  }, 1000);
+}
+
+// ── Race flow ─────────────────────────────────────────────────────────────────
+function activateRacing() {
+  raceStarted = true;
+  document.getElementById('panel-waiting').style.display   = 'none';
+  document.getElementById('panel-countdown').style.display = 'none';
+  document.getElementById('panel-racing').style.display    = 'block';
+  document.getElementById('panel-finished').style.display  = 'none';
+
+  renderChars();
+  startTimer();
+  focusInput();
+  startProgressSend();
+}
+
+function finishRace() {
+  myFinished = true;
+  ghostInput.blur();
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+
+  // Mark all chars correct for visual
+  spans.forEach(s => { s.className = 'char correct'; });
+
+  // Immediately send 100% progress
+  sendProgress(true);
+}
+
+async function sendProgress(force = false) {
+  if (!raceStarted) return;
+  try {
+    await fetch('/typing/api/room/' + ROOM_CODE + '/progress', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ progress: cursor, wpm: wpm }),
+    });
+  } catch { /* ignore */ }
+}
+
+function startProgressSend() {
+  if (progressInterval) clearInterval(progressInterval);
+  progressInterval = setInterval(() => {
+    if (!myFinished) sendProgress();
+  }, 600);
+}
+
+// ── Start race (creator) ──────────────────────────────────────────────────────
+async function startRace() {
+  const btn = document.getElementById('start-btn');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch('/typing/api/room/' + ROOM_CODE + '/start', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': CSRF },
+    });
+    if (!res.ok) {
+      const d = await res.json();
+      alert(d.error || 'Xato');
+      if (btn) btn.disabled = false;
+    }
+  } catch {
+    if (btn) btn.disabled = false;
+  }
+}
+
+// ── State polling ─────────────────────────────────────────────────────────────
+async function pollState() {
+  try {
+    const res = await fetch('/typing/api/room/' + ROOM_CODE + '/state');
+    if (!res.ok) return;
+    const data = await res.json();
+    applyState(data);
+  } catch { /* ignore */ }
+}
+
+function applyState(data) {
+  const state = data.state;
+  pCountEl.textContent = data.participants ? data.participants.length : '';
+
+  if (state === 'waiting') {
+    renderWaiting(data);
+  } else if (state === 'countdown') {
+    renderCountdown(data);
+  } else if (state === 'racing') {
+    if (!raceStarted) activateRacing();
+    renderParticipantBars(data.participants);
+  } else if (state === 'finished') {
+    if (!raceStarted) {
+      // We missed the race or it finished while we were gone
+      activateRacing();
+      myFinished = true;
+    }
+    // show finished
+    if (!document.getElementById('panel-finished').style.display ||
+        document.getElementById('panel-finished').style.display === 'none') {
+      if (myFinished || state === 'finished') {
+        showFinished(data.participants);
+      }
+    }
+    renderParticipantBars(data.participants);
+  }
+}
+
+function renderWaiting(data) {
+  document.getElementById('panel-waiting').style.display   = 'block';
+  document.getElementById('panel-countdown').style.display = 'none';
+  document.getElementById('panel-racing').style.display    = 'none';
+  document.getElementById('panel-finished').style.display  = 'none';
+
+  // Update participant chips
+  const chips = document.getElementById('chips-container');
+  const existing = {};
+  chips.querySelectorAll('.p-chip').forEach(c => { existing[c.dataset.uid] = c; });
+
+  const seen = new Set();
+  data.participants.forEach(p => {
+    seen.add(p.id);
+    if (!existing[p.id]) {
+      const div = document.createElement('div');
+      div.className = 'p-chip' + (p.is_me ? ' me' : '');
+      div.dataset.uid = p.id;
+      div.innerHTML = `<div class="dot"></div>${esc(p.name)}${p.is_me ? ' (siz)' : ''}`;
+      chips.appendChild(div);
+    }
+  });
+  // Remove chips that left
+  Object.entries(existing).forEach(([uid, el]) => {
+    if (!seen.has(uid)) el.remove();
+  });
+}
+
+function renderCountdown(data) {
+  document.getElementById('panel-waiting').style.display   = 'none';
+  document.getElementById('panel-countdown').style.display = 'block';
+  document.getElementById('panel-racing').style.display    = 'none';
+  document.getElementById('panel-finished').style.display  = 'none';
+
+  const cEnd = data.countdown_end;
+  if (!cEnd) return;
+
+  // If this is a new countdown_end value, set up a local countdown loop
+  if (cEnd !== lastCountdownEnd) {
+    lastCountdownEnd = cEnd;
+    if (countdownTimer) clearInterval(countdownTimer);
+    lastDisplayedCount = -1;
+
+    countdownTimer = setInterval(() => {
+      const remaining = Math.ceil(cEnd - Date.now() / 1000);
+      const num = Math.max(remaining, 0);
+      if (num !== lastDisplayedCount) {
+        lastDisplayedCount = num;
+        const el = document.getElementById('countdown-num');
+        if (num > 0) {
+          el.textContent = num;
+          // Restart animation
+          el.style.animation = 'none';
+          void el.offsetWidth;
+          el.style.animation = 'pop-in .35s cubic-bezier(.34,1.56,.64,1)';
+        } else {
+          el.textContent = 'GO!';
+          el.style.animation = 'none';
+          void el.offsetWidth;
+          el.style.animation = 'pop-in .35s cubic-bezier(.34,1.56,.64,1)';
+        }
+      }
+      if (num <= 0) {
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+      }
+    }, 100);
+  }
+}
+
+function renderParticipantBars(participants) {
+  if (!participants) return;
+  const container = document.getElementById('participants-race');
+
+  participants.forEach(p => {
+    let row = container.querySelector('[data-pid="' + p.id + '"]');
+    if (!row) {
+      row = document.createElement('div');
+      row.className = 'p-row';
+      row.dataset.pid = p.id;
+      row.innerHTML = `
+        <div class="p-name ${p.is_me ? 'me' : ''}" title="${esc(p.name)}">${esc(p.name)}</div>
+        <div class="p-track"><div class="p-fill ${p.is_me ? 'me' : ''}" style="width:0%"></div></div>
+        <div class="p-wpm">0 WPM</div>
+        <div class="p-rank"></div>`;
+      container.appendChild(row);
+    }
+    const fill = row.querySelector('.p-fill');
+    fill.style.width = p.pct + '%';
+    if (p.finished) fill.classList.add('done');
+    row.querySelector('.p-wpm').textContent = p.wpm + ' WPM';
+    const rankEl = row.querySelector('.p-rank');
+    if (p.rank) {
+      const medals = ['🥇','🥈','🥉'];
+      rankEl.textContent = medals[p.rank - 1] || '#' + p.rank;
+    }
+  });
+}
+
+function showFinished(participants) {
+  document.getElementById('panel-waiting').style.display   = 'none';
+  document.getElementById('panel-countdown').style.display = 'none';
+  document.getElementById('panel-racing').style.display    = 'none';
+  document.getElementById('panel-finished').style.display  = 'block';
+
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  if (progressInterval) { clearInterval(progressInterval); progressInterval = null; }
+
+  const lb = document.getElementById('leaderboard');
+  lb.innerHTML = '';
+
+  // Sort by rank (finished first), then by progress
+  const sorted = [...participants].sort((a, b) => {
+    if (a.finished && b.finished) return (a.rank || 99) - (b.rank || 99);
+    if (a.finished) return -1;
+    if (b.finished) return 1;
+    return b.pct - a.pct;
+  });
+
+  sorted.forEach((p, idx) => {
+    const pos = p.rank || (idx + 1);
+    const medals = ['🥇', '🥈', '🥉'];
+    const medal = medals[pos - 1] || pos + '.';
+    const row = document.createElement('div');
+    row.className = 'lb-row' + (p.is_me ? ' me' : '');
+    row.innerHTML = `
+      <div class="lb-pos">${medal}</div>
+      <div class="lb-name">
+        ${esc(p.name)}${p.is_me ? ' <span style="color:#f59e0b;font-size:.75rem;">(siz)</span>' : ''}
+        <small>${p.finished ? p.pct + '% • Tugatdi' : p.pct + '% • Tugatmadi'}</small>
+      </div>
+      <div class="lb-wpm">${p.wpm}<small>WPM</small></div>`;
+    lb.appendChild(row);
+  });
+
+  // Stop state polling
+  if (stateInterval) { clearInterval(stateInterval); stateInterval = null; }
+}
+
+// ── Copy code ─────────────────────────────────────────────────────────────────
+function copyCode() {
+  navigator.clipboard.writeText(ROOM_CODE).then(() => {
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 1800);
+  });
+}
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+(function init() {
+  const state = INITIAL_STATE;
+  if (state === 'racing') {
+    activateRacing();
+  } else if (state === 'finished') {
+    // Will be resolved by first poll
+  }
+
+  // Poll every 450ms
+  stateInterval = setInterval(pollState, 450);
+  pollState(); // immediate first poll
+
+  // Also send progress heartbeat to keep last_seen fresh
+  setInterval(() => {
+    if (!raceStarted) {
+      // Keep alive while waiting
+      fetch('/typing/api/room/' + ROOM_CODE + '/state').catch(() => {});
+    }
+  }, 8000);
+})();
+
+// Auto-focus ghost input on user interaction (for keyboard capture)
+document.addEventListener('click', () => {
+  if (raceStarted && !myFinished) focusInput();
+});
+
+// Finished listener: when I finish, auto-show finished panel after a short delay
+// (polling will catch it, but let's not wait)
+</script>
+{% endblock %}

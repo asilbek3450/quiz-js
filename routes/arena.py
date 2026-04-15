@@ -335,7 +335,16 @@ def submit(pid):
             break
         final_output = result.get('output', '')
 
-    # Record submission
+    # SE (server xatosi) — submission saqlanmaydi, foydalanuvchiga qayta urinish tavsiya
+    if final_verdict == 'SE':
+        return jsonify({
+            'verdict': 'SE',
+            'output': '',
+            'error': '',
+            'time': round(final_time, 3),
+        })
+
+    # Record submission (faqat haqiqiy verdiktlar uchun)
     sub = ArenaSubmission(
         user_id=uid,
         problem_id=pid,
