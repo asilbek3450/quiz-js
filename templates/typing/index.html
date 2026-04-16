@@ -1,170 +1,240 @@
 {% extends "base.html" %}
 {% block title %}Typing Race — Jahon School{% endblock %}
-{% block meta_description %}Multiplayer typing race. Ustoz guruh yaratadi, o'quvchilar 6 xonali kod bilan qo'shiladi va real vaqtda yozish poygasida qatnashadi.{% endblock %}
+{% block meta_description %}Yozish tezligini sinab ko'ring. Yolg'iz yoki guruhda poyga qiling.{% endblock %}
 
 {% block extra_css %}
 <style>
-  /* ── Dark page override ────────────────────────────────────────── */
-  body {
-    background: #1a1b1e !important;
-    background-image: none !important;
-  }
-  footer { background: #111214 !important; color: #555 !important; }
-  footer span { color: #555 !important; }
+body {
+  background: #1a1b1e !important;
+  background-image: none !important;
+}
+footer { background: #111214 !important; color: #555 !important; }
+footer span { color: #555 !important; }
 
-  /* ── Hero ────────────────────────────────────────────────────── */
-  .typing-hero {
-    text-align: center;
-    padding: 60px 0 40px;
-  }
-  .typing-hero .kbd-icon {
-    font-size: 3.5rem;
-    background: linear-gradient(135deg, #f59e0b, #ef4444);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    display: block;
-    margin-bottom: 12px;
-  }
-  .typing-hero h1 {
-    font-size: 2.6rem;
-    font-weight: 800;
-    color: #fffce1;
-    letter-spacing: -1px;
-    margin-bottom: 8px;
-  }
-  .typing-hero h1 span {
-    background: linear-gradient(135deg, #f59e0b, #ef4444);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  .typing-hero p {
-    color: #888;
-    font-size: 1.05rem;
-    max-width: 480px;
-    margin: 0 auto;
-  }
+/* Hero */
+.typing-hero {
+  text-align: center;
+  padding: 52px 0 36px;
+}
+.typing-hero .kbd-icon {
+  font-size: 3rem;
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: block;
+  margin-bottom: 10px;
+}
+.typing-hero h1 {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: #fffce1;
+  letter-spacing: -1px;
+  margin-bottom: 8px;
+}
+.typing-hero h1 span {
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.typing-hero p { color: #666; font-size: 1rem; }
 
-  /* ── Cards ───────────────────────────────────────────────────── */
-  .typing-cards {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    max-width: 760px;
-    margin: 0 auto 60px;
-  }
-  @media (max-width: 640px) {
-    .typing-cards { grid-template-columns: 1fr; }
-    .typing-hero h1 { font-size: 1.9rem; }
-  }
+/* Wrapper */
+.t-wrap {
+  max-width: 780px;
+  margin: 0 auto 64px;
+  padding: 0 16px;
+}
 
-  .t-card {
-    background: #2c2e31;
-    border-radius: 20px;
-    padding: 32px 28px;
-    border: 1px solid #3a3c40;
-    transition: border-color .25s, transform .25s;
-  }
-  .t-card:hover { border-color: #f59e0b44; transform: translateY(-4px); }
-  .t-card.join-card:hover { border-color: #58a6ff44; }
+/* ── SOLO CARD ── */
+.solo-card {
+  background: #2c2e31;
+  border: 1.5px solid #f59e0b33;
+  border-radius: 22px;
+  padding: 32px 32px 28px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.solo-card::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #f59e0b0a, transparent 70%);
+  pointer-events: none;
+}
+.solo-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+.solo-card-header h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fffce1;
+  margin: 0;
+}
+.solo-card-header p {
+  color: #777;
+  font-size: .85rem;
+  margin: 2px 0 0;
+}
+.solo-icon {
+  width: 46px; height: 46px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f59e0b22, #ef444422);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
 
-  .t-card h2 {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: #fffce1;
-    margin-bottom: 6px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .t-card h2 .badge-pill {
-    font-size: .65rem;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 99px;
-    letter-spacing: .5px;
-  }
-  .badge-teacher { background: #f59e0b22; color: #f59e0b; }
-  .badge-student { background: #58a6ff22; color: #58a6ff; }
+/* Name input */
+.t-input {
+  width: 100%;
+  background: #1a1b1e;
+  border: 1.5px solid #3a3c40;
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: #fffce1;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color .2s;
+  margin-bottom: 18px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+.t-input:focus { border-color: #f59e0b; }
+.t-input::placeholder { color: #444; }
+.t-input.blue:focus { border-color: #58a6ff; }
 
-  .t-card p { color: #888; font-size: .9rem; margin-bottom: 20px; }
+/* Mode chips */
+.mode-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  align-items: center;
+}
+.mode-label {
+  color: #666;
+  font-size: .8rem;
+  font-weight: 600;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  margin-right: 4px;
+  white-space: nowrap;
+}
+.chip {
+  padding: 7px 18px;
+  border-radius: 99px;
+  border: 1.5px solid #3a3c40;
+  background: transparent;
+  color: #888;
+  font-size: .88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .18s;
+  font-family: inherit;
+}
+.chip:hover { border-color: #f59e0b88; color: #f59e0b; }
+.chip.active {
+  background: linear-gradient(135deg, #f59e0b22, #ef444422);
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
 
-  .t-input {
-    width: 100%;
-    background: #1a1b1e;
-    border: 1.5px solid #3a3c40;
-    border-radius: 12px;
-    padding: 12px 16px;
-    color: #fffce1;
-    font-size: 1rem;
-    outline: none;
-    transition: border-color .2s;
-    margin-bottom: 12px;
-    font-family: inherit;
-  }
-  .t-input:focus { border-color: #f59e0b; }
-  .join-card .t-input:focus { border-color: #58a6ff; }
-  .t-input::placeholder { color: #555; }
+/* Start button */
+.t-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .2s, transform .15s;
+  margin-top: 4px;
+  font-family: inherit;
+}
+.t-btn:hover { opacity: .9; transform: translateY(-1px); }
+.t-btn:active { transform: none; }
+.t-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+.t-btn-solo   { background: linear-gradient(135deg, #f59e0b, #d97706); color: #111; }
+.t-btn-create { background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; }
+.t-btn-join   { background: linear-gradient(135deg, #58a6ff, #3b82f6); color: #fff; }
 
-  .t-input.code-input {
-    font-family: 'Fira Code', 'Roboto Mono', monospace;
-    font-size: 1.4rem;
-    letter-spacing: 0.25em;
-    text-align: center;
-  }
+/* Error */
+.t-error {
+  color: #ef4444; font-size: .83rem;
+  margin-top: 8px; min-height: 18px; display: none;
+}
+.t-error.show { display: block; }
 
-  .t-btn {
-    width: 100%;
-    padding: 13px;
-    border: none;
-    border-radius: 12px;
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: opacity .2s, transform .15s;
-    letter-spacing: .3px;
-    margin-top: 4px;
-  }
-  .t-btn:hover { opacity: .9; transform: translateY(-1px); }
-  .t-btn:active { transform: translateY(0); }
-  .t-btn-create { background: linear-gradient(135deg, #f59e0b, #d97706); color: #1a1b1e; }
-  .t-btn-join   { background: linear-gradient(135deg, #58a6ff, #3b82f6); color: #fff; }
-  .t-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+/* ── GROUP SECTION ── */
+.group-section {
+  margin-top: 12px;
+}
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.section-divider span {
+  color: #444;
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.section-divider::before,
+.section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #2c2e31;
+}
 
-  .t-error {
-    color: #ef4444;
-    font-size: .85rem;
-    margin-top: 8px;
-    min-height: 20px;
-    display: none;
-  }
-  .t-error.show { display: block; }
+.group-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 560px) {
+  .group-cards { grid-template-columns: 1fr; }
+  .typing-hero h1 { font-size: 1.9rem; }
+  .solo-card { padding: 24px 20px 20px; }
+}
 
-  /* ── How to play ─────────────────────────────────────────────── */
-  .how-to {
-    max-width: 760px;
-    margin: 0 auto 60px;
-    background: #2c2e31;
-    border-radius: 16px;
-    padding: 28px 32px;
-    border: 1px solid #3a3c40;
-  }
-  .how-to h3 { color: #fffce1; font-size: 1rem; font-weight: 700; margin-bottom: 16px; }
-  .step-list { display: flex; flex-wrap: wrap; gap: 16px; }
-  .step {
-    display: flex; align-items: flex-start; gap: 12px;
-    flex: 1 1 200px;
-  }
-  .step-num {
-    width: 32px; height: 32px; border-radius: 50%;
-    background: linear-gradient(135deg, #f59e0b, #ef4444);
-    color: #1a1b1e; font-weight: 800; font-size: .9rem;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
-  .step-text { color: #888; font-size: .88rem; line-height: 1.5; }
-  .step-text strong { color: #ccc; }
+.t-card {
+  background: #2c2e31;
+  border-radius: 18px;
+  padding: 24px 22px;
+  border: 1.5px solid #3a3c40;
+  transition: border-color .2s, transform .2s;
+}
+.t-card:hover { border-color: #6366f133; transform: translateY(-3px); }
+.t-card.join:hover { border-color: #58a6ff33; }
+.t-card h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fffce1;
+  margin-bottom: 4px;
+  display: flex; align-items: center; gap: 8px;
+}
+.t-card p { color: #666; font-size: .83rem; margin-bottom: 16px; }
+
+.code-input {
+  font-family: 'Fira Code', 'Roboto Mono', monospace;
+  font-size: 1.35rem;
+  letter-spacing: 0.25em;
+  text-align: center;
+}
 </style>
 {% endblock %}
 
@@ -172,78 +242,125 @@
 <div class="typing-hero">
   <i class="fas fa-keyboard kbd-icon"></i>
   <h1><span>Typing</span> Race</h1>
-  <p>Ustoz guruh yaratadi — o'quvchilar real vaqtda yozish poygasida raqobatlashadi</p>
+  <p>Yozish tezligingizni sinab ko'ring — yolg'iz yoki guruhda</p>
 </div>
 
-<div class="typing-cards">
+<div class="t-wrap">
 
-  <!-- CREATE -->
-  <div class="t-card">
-    <h2>
-      <i class="fas fa-plus-circle" style="color:#f59e0b;"></i>
-      Guruh yaratish
-      <span class="badge-pill badge-teacher">USTOZ</span>
-    </h2>
-    <p>Yangi poyga xonasi oching va 6 xonali kodni o'quvchilarga yuboring.</p>
+  <!-- ── SOLO CARD ── -->
+  <div class="solo-card">
+    <div class="solo-card-header">
+      <div class="solo-icon">⚡</div>
+      <div>
+        <h2>Boshlash</h2>
+        <p>Guruhsiz, darhol yozishni boshlang</p>
+      </div>
+    </div>
 
-    <input type="text" class="t-input" id="create-name"
+    <input type="text" class="t-input" id="solo-name"
            placeholder="Ismingizni kiriting" maxlength="30" autocomplete="off">
-    <button class="t-btn t-btn-create" id="create-btn" onclick="doCreate()">
-      <i class="fas fa-play me-2"></i>Guruh yaratish
+
+    <div class="mode-row">
+      <span class="mode-label">Matn:</span>
+      <button class="chip active" data-solo="t1" onclick="setSolo('t1',this)">Qisqa</button>
+      <button class="chip" data-solo="t2" onclick="setSolo('t2',this)">O'rta</button>
+      <button class="chip" data-solo="t3" onclick="setSolo('t3',this)">Uzun</button>
+      <button class="chip" data-solo="tR" onclick="setSolo('tR',this)">Tasodifiy</button>
+    </div>
+
+    <button class="t-btn t-btn-solo" id="solo-btn" onclick="doSolo()">
+      <i class="fas fa-bolt me-2"></i>Boshlash
     </button>
-    <div class="t-error" id="create-err"></div>
+    <div class="t-error" id="solo-err"></div>
   </div>
 
-  <!-- JOIN -->
-  <div class="t-card join-card">
-    <h2>
-      <i class="fas fa-sign-in-alt" style="color:#58a6ff;"></i>
-      Guruhga kirish
-      <span class="badge-pill badge-student">O'QUVCHI</span>
-    </h2>
-    <p>6 xonali kodni ustoz beradi. Ismingizni yozing va qo'shiling!</p>
+  <!-- ── GROUP SECTION ── -->
+  <div class="group-section">
+    <div class="section-divider">
+      <span>Guruh rejimi</span>
+    </div>
 
-    <input type="text" class="t-input" id="join-name"
-           placeholder="Ismingizni kiriting" maxlength="30" autocomplete="off">
-    <input type="text" class="t-input code-input" id="join-code"
-           placeholder="123456" maxlength="6" autocomplete="off"
-           inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')">
-    <button class="t-btn t-btn-join" id="join-btn" onclick="doJoin()">
-      <i class="fas fa-arrow-right me-2"></i>Qo'shilish
-    </button>
-    <div class="t-error" id="join-err"></div>
+    <div class="group-cards">
+
+      <!-- CREATE -->
+      <div class="t-card">
+        <h3><i class="fas fa-plus-circle" style="color:#6366f1;"></i> Guruh yaratish</h3>
+        <p>Yangi xona oching, kodni o'quvchilarga yuboring</p>
+        <input type="text" class="t-input" id="create-name"
+               placeholder="Ismingiz" maxlength="30" autocomplete="off">
+        <button class="t-btn t-btn-create" id="create-btn" onclick="doCreate()">
+          <i class="fas fa-users me-2"></i>Yaratish
+        </button>
+        <div class="t-error" id="create-err"></div>
+      </div>
+
+      <!-- JOIN -->
+      <div class="t-card join">
+        <h3><i class="fas fa-sign-in-alt" style="color:#58a6ff;"></i> Qo'shilish</h3>
+        <p>Ustoz bergan 6 xonali kodni kiriting</p>
+        <input type="text" class="t-input blue" id="join-name"
+               placeholder="Ismingiz" maxlength="30" autocomplete="off">
+        <input type="text" class="t-input blue code-input" id="join-code"
+               placeholder="123456" maxlength="6" autocomplete="off"
+               inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')">
+        <button class="t-btn t-btn-join" id="join-btn" onclick="doJoin()">
+          <i class="fas fa-arrow-right me-2"></i>Qo'shilish
+        </button>
+        <div class="t-error" id="join-err"></div>
+      </div>
+
+    </div>
   </div>
 
-</div>
-
-<!-- How to play -->
-<div class="how-to">
-  <h3><i class="fas fa-info-circle me-2" style="color:#f59e0b;"></i>Qanday ishlaydi?</h3>
-  <div class="step-list">
-    <div class="step">
-      <div class="step-num">1</div>
-      <div class="step-text"><strong>Ustoz guruh yaratadi</strong> va 6 xonali kodni sinf bilan ulashadi.</div>
-    </div>
-    <div class="step">
-      <div class="step-num">2</div>
-      <div class="step-text"><strong>O'quvchilar kod orqali</strong> ismlari bilan xonaga qo'shiladi.</div>
-    </div>
-    <div class="step">
-      <div class="step-num">3</div>
-      <div class="step-text"><strong>Ustoz "Boshlash"</strong> tugmasini bosadi — 3 soniya ortga hisob boshlanadi.</div>
-    </div>
-    <div class="step">
-      <div class="step-num">4</div>
-      <div class="step-text"><strong>Barcha bir vaqtda</strong> matnni teradilar. Poyga oxirida natijalar ko'rsatiladi.</div>
-    </div>
-  </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 const CSRF = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+let soloMode = 't1';   // t1 | t2 | t3 | tR
 
+function setSolo(mode, el) {
+  soloMode = mode;
+  document.querySelectorAll('[data-solo]').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── Solo ──────────────────────────────────────────────────────────────────────
+async function doSolo() {
+  const nameEl = document.getElementById('solo-name');
+  const errEl  = document.getElementById('solo-err');
+  const btn    = document.getElementById('solo-btn');
+  errEl.classList.remove('show');
+
+  const name = nameEl.value.trim();
+  if (!name) { showErr(errEl, 'Ism kiritilmadi'); nameEl.focus(); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Tayyorlanmoqda...';
+
+  try {
+    const res = await fetch('/typing/solo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ name, mode: soloMode }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showErr(errEl, data.error || 'Xato yuz berdi');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-bolt me-2"></i>Boshlash';
+      return;
+    }
+    window.location.href = data.url;
+  } catch {
+    showErr(errEl, 'Tarmoq xatosi. Qayta urining.');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-bolt me-2"></i>Boshlash';
+  }
+}
+
+// ── Create group ──────────────────────────────────────────────────────────────
 async function doCreate() {
   const nameEl = document.getElementById('create-name');
   const errEl  = document.getElementById('create-err');
@@ -251,7 +368,7 @@ async function doCreate() {
   errEl.classList.remove('show');
 
   const name = nameEl.value.trim();
-  if (!name) { showErr(errEl, 'Ism kiritilmadi'); return; }
+  if (!name) { showErr(errEl, 'Ism kiritilmadi'); nameEl.focus(); return; }
 
   btn.disabled = true;
   btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Yaratilmoqda...';
@@ -263,15 +380,21 @@ async function doCreate() {
       body: JSON.stringify({ name }),
     });
     const data = await res.json();
-    if (!res.ok) { showErr(errEl, data.error || 'Xato'); btn.disabled = false; btn.innerHTML='<i class="fas fa-play me-2"></i>Guruh yaratish'; return; }
+    if (!res.ok) {
+      showErr(errEl, data.error || 'Xato');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-users me-2"></i>Yaratish';
+      return;
+    }
     window.location.href = data.url;
   } catch {
     showErr(errEl, 'Tarmoq xatosi. Qayta urining.');
     btn.disabled = false;
-    btn.innerHTML = '<i class="fas fa-play me-2"></i>Guruh yaratish';
+    btn.innerHTML = '<i class="fas fa-users me-2"></i>Yaratish';
   }
 }
 
+// ── Join group ────────────────────────────────────────────────────────────────
 async function doJoin() {
   const nameEl = document.getElementById('join-name');
   const codeEl = document.getElementById('join-code');
@@ -281,11 +404,11 @@ async function doJoin() {
 
   const name = nameEl.value.trim();
   const code = codeEl.value.trim();
-  if (!name) { showErr(errEl, 'Ism kiritilmadi'); return; }
-  if (code.length !== 6) { showErr(errEl, '6 xonali kod kiriting'); return; }
+  if (!name) { showErr(errEl, 'Ism kiritilmadi'); nameEl.focus(); return; }
+  if (code.length !== 6) { showErr(errEl, '6 xonali kod kiriting'); codeEl.focus(); return; }
 
   btn.disabled = true;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Qo\'shilmoqda...';
+  btn.innerHTML = "<i class='fas fa-spinner fa-spin me-2'></i>Qo'shilmoqda...";
 
   try {
     const res = await fetch('/typing/join', {
@@ -294,20 +417,26 @@ async function doJoin() {
       body: JSON.stringify({ name, code }),
     });
     const data = await res.json();
-    if (!res.ok) { showErr(errEl, data.error || 'Xato'); btn.disabled = false; btn.innerHTML='<i class="fas fa-arrow-right me-2"></i>Qo\'shilish'; return; }
+    if (!res.ok) {
+      showErr(errEl, data.error || 'Xato');
+      btn.disabled = false;
+      btn.innerHTML = "<i class='fas fa-arrow-right me-2'></i>Qo'shilish";
+      return;
+    }
     window.location.href = data.url;
   } catch {
     showErr(errEl, 'Tarmoq xatosi. Qayta urining.');
     btn.disabled = false;
-    btn.innerHTML = '<i class="fas fa-arrow-right me-2"></i>Qo\'shilish';
+    btn.innerHTML = "<i class='fas fa-arrow-right me-2'></i>Qo'shilish";
   }
 }
 
 function showErr(el, msg) { el.textContent = msg; el.classList.add('show'); }
 
 // Enter key support
+document.getElementById('solo-name').addEventListener('keydown', e => e.key === 'Enter' && doSolo());
 document.getElementById('create-name').addEventListener('keydown', e => e.key === 'Enter' && doCreate());
-document.getElementById('join-code').addEventListener('keydown', e => e.key === 'Enter' && doJoin());
 document.getElementById('join-name').addEventListener('keydown', e => e.key === 'Enter' && document.getElementById('join-code').focus());
+document.getElementById('join-code').addEventListener('keydown', e => e.key === 'Enter' && doJoin());
 </script>
 {% endblock %}

@@ -66,7 +66,7 @@ def _new_participant(name: str) -> dict:
 
 
 def _cleanup() -> None:
-    """Remove rooms older than 2 hours (call before creating a new room)."""
+    """Remove rooms older than 2 hours."""
     now = time.time()
     with _lock:
         expired = [k for k, v in ROOMS.items() if now - v['created_at'] > 7200]
@@ -87,6 +87,40 @@ def index():
     return render_template('typing/index.html')
 
 
+@typing_bp.route('/solo', methods=['POST'])
+@csrf.exempt
+def solo():
+    """Yolg'iz rejim — guruhsiz, darhol boshlanadi."""
+    data = request.get_json(silent=True) or {}
+    name = (data.get('name') or '').strip()[:30]
+    if not name:
+        return jsonify({'error': 'Ism kiritilmadi'}), 400
+
+    uid = _get_uid()
+    session['typing_name'] = name
+    _cleanup()
+
+    code = _gen_code()
+    text = random.choice(TEXTS)
+    now  = time.time()
+
+    with _lock:
+        ROOMS[code] = {
+            'code':        code,
+            'creator_id':  uid,
+            'text':        text,
+            'state':       'racing',   # Darhol boshlanadi
+            'participants': {uid: _new_participant(name)},
+            'start_time':  now,
+            'countdown_end': None,
+            'finish_count': 0,
+            'created_at':  now,
+            'is_solo':     True,
+        }
+
+    return jsonify({'code': code, 'url': url_for('typing.room', code=code)})
+
+
 @typing_bp.route('/create', methods=['POST'])
 @csrf.exempt
 def create_room():
@@ -103,15 +137,16 @@ def create_room():
 
     with _lock:
         ROOMS[code] = {
-            'code': code,
-            'creator_id': uid,
-            'text': text,
-            'state': 'waiting',          # waiting | countdown | racing | finished
+            'code':        code,
+            'creator_id':  uid,
+            'text':        text,
+            'state':       'waiting',
             'participants': {uid: _new_participant(name)},
-            'start_time': None,
+            'start_time':  None,
             'countdown_end': None,
             'finish_count': 0,
-            'created_at': time.time(),
+            'created_at':  time.time(),
+            'is_solo':     False,
         }
 
     return jsonify({'code': code, 'url': url_for('typing.room', code=code)})
@@ -150,7 +185,7 @@ def room(code):
     with _lock:
         if code not in ROOMS:
             return redirect(url_for('typing.index'))
-        room_data = dict(ROOMS[code])   # shallow copy for template
+        room_data = dict(ROOMS[code])
 
     uid = session.get('typing_uid')
     if not uid or uid not in room_data['participants']:
@@ -163,6 +198,7 @@ def room(code):
         is_creator=(room_data['creator_id'] == uid),
         my_uid=uid,
         text=room_data['text'],
+        is_solo=room_data.get('is_solo', False),
     )
 
 
@@ -178,11 +214,10 @@ def room_state(code):
     now = time.time()
 
     with _lock:
-        # Refresh last_seen
         if uid and uid in room['participants']:
             room['participants'][uid]['last_seen'] = now
 
-        # Evict participants idle >15s (only while waiting, never the creator)
+        # Evict idle participants (only while waiting, never the creator)
         if room['state'] == 'waiting':
             stale = [
                 k for k, v in room['participants'].items()
@@ -201,14 +236,14 @@ def room_state(code):
         text_len = len(room['text'])
         participants_out = [
             {
-                'id': k,
-                'name': v['name'],
+                'id':       k,
+                'name':     v['name'],
                 'progress': v['progress'],
-                'wpm': v['wpm'],
+                'wpm':      v['wpm'],
                 'finished': v['finished'],
-                'rank': v['rank'],
-                'is_me': k == uid,
-                'pct': round(v['progress'] / text_len * 100) if text_len else 0,
+                'rank':     v['rank'],
+                'is_me':    k == uid,
+                'pct':      round(v['progress'] / text_len * 100) if text_len else 0,
             }
             for k, v in room['participants'].items()
         ]
@@ -216,13 +251,14 @@ def room_state(code):
     participants_out.sort(key=lambda x: (-x['pct'], x['name']))
 
     return jsonify({
-        'state': room['state'],
-        'text_len': text_len,
-        'participants': participants_out,
-        'countdown_end': room.get('countdown_end'),
-        'start_time': room.get('start_time'),
-        'is_creator': uid == room.get('creator_id'),
-        'code': code,
+        'state':          room['state'],
+        'text_len':       text_len,
+        'participants':   participants_out,
+        'countdown_end':  room.get('countdown_end'),
+        'start_time':     room.get('start_time'),
+        'is_creator':     uid == room.get('creator_id'),
+        'is_solo':        room.get('is_solo', False),
+        'code':           code,
     })
 
 
@@ -241,7 +277,37 @@ def start_race(code):
             return jsonify({'error': 'Allaqachon boshlangan'}), 400
 
         room['state'] = 'countdown'
-        room['countdown_end'] = time.time() + 3.5   # 3-second visible count + 0.5s buffer
+        room['countdown_end'] = time.time() + 3.5
+
+    return jsonify({'ok': True})
+
+
+@typing_bp.route('/api/room/<code>/reset', methods=['POST'])
+@csrf.exempt
+def reset_room(code):
+    """Poygani qayta boshlash — ishtirokchilar saqlanadi, matn yangilanadi."""
+    uid = session.get('typing_uid')
+    with _lock:
+        if code not in ROOMS:
+            return jsonify({'ok': False, 'error': 'Xona topilmadi'}), 404
+        room = ROOMS[code]
+        if room['creator_id'] != uid:
+            return jsonify({'ok': False, 'error': "Faqat yaratuvchi qayta boshlaydi"}), 403
+
+        room['state']          = 'waiting'
+        room['start_time']     = None
+        room['countdown_end']  = None
+        room['finish_count']   = 0
+        room['text']           = random.choice(TEXTS)
+        room['created_at']     = time.time()   # Expiry vaqtini uzaytirish
+
+        for p in room['participants'].values():
+            p['progress']    = 0
+            p['wpm']         = 0
+            p['finished']    = False
+            p['finish_time'] = None
+            p['rank']        = None
+            p['last_seen']   = time.time()
 
     return jsonify({'ok': True})
 
@@ -261,24 +327,24 @@ def update_progress(code):
     if room['state'] not in ('racing', 'countdown'):
         return jsonify({'ok': True})
 
-    data = request.get_json(silent=True) or {}
+    data     = request.get_json(silent=True) or {}
     text_len = len(room['text'])
     progress = min(max(int(data.get('progress', 0)), 0), text_len)
-    wpm = max(0, min(int(data.get('wpm', 0)), 999))
+    wpm      = max(0, min(int(data.get('wpm', 0)), 999))
 
     with _lock:
         p = room['participants'][uid]
-        p['progress'] = progress
-        p['wpm'] = wpm
-        p['last_seen'] = time.time()
+        p['progress']   = progress
+        p['wpm']        = wpm
+        p['last_seen']  = time.time()
 
         if progress >= text_len and not p['finished']:
-            p['finished'] = True
+            p['finished']    = True
             p['finish_time'] = time.time()
             room['finish_count'] += 1
             p['rank'] = room['finish_count']
 
-        # All finished → end race
+        # Hammasi tugatsa → poyga tugadi
         if (room['state'] == 'racing'
                 and all(v['finished'] for v in room['participants'].values())):
             room['state'] = 'finished'

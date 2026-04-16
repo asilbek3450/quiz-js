@@ -368,6 +368,7 @@ footer span { color: #444 !important; }
   gap: 8px;
 }
 .btn-replay:hover { opacity: .9; transform: translateY(-2px); }
+.btn-replay:disabled { opacity: .45; cursor: not-allowed; transform: none; }
 .btn-back {
   background: #2c2e31;
   border: 1.5px solid #3a3c40;
@@ -511,7 +512,7 @@ footer span { color: #444 !important; }
     <div class="leaderboard" id="leaderboard"></div>
     <div class="finish-actions">
       {% if is_creator %}
-      <button class="btn-replay" onclick="window.location.href='/typing'">
+      <button class="btn-replay" id="replay-btn" onclick="doReplay()">
         <i class="fas fa-redo"></i> Yangi poyga
       </button>
       {% endif %}
@@ -533,36 +534,67 @@ footer span { color: #444 !important; }
 
 {% block extra_js %}
 <script>
-// ── Constants from server ──────────────────────────────────────────────────────
-const ROOM_CODE   = "{{ code }}";
-const TEXT        = {{ text | tojson }};
-const MY_UID      = "{{ my_uid }}";
-const IS_CREATOR  = "{{ 'true' if is_creator else 'false' }}" === 'true';
-const CSRF        = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+// ── Constants ──────────────────────────────────────────────────────────────────
+const ROOM_CODE     = "{{ code }}";
+const TEXT          = {{ text | tojson }};
+const MY_UID        = "{{ my_uid }}";
+const IS_CREATOR    = "{{ 'true' if is_creator else 'false' }}" === 'true';
+const IS_SOLO       = "{{ 'true' if is_solo else 'false' }}" === 'true';
+const CSRF          = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 const INITIAL_STATE = "{{ room.state }}";
 
-// ── State ─────────────────────────────────────────────────────────────────────
-let cursor        = 0;
-let startTime     = null;
-let wpm           = 0;
-let myFinished    = false;
-let raceStarted   = false;
-let countdownTimer = null;
-let stateInterval = null;
+// ── Typing state ───────────────────────────────────────────────────────────────
+// typed[i] = null | 'correct' | 'wrong'
+let typed       = new Array(TEXT.length).fill(null);
+let cursor      = 0;
+let startTime   = null;
+let wpm         = 0;
+let myFinished  = false;
+let raceStarted = false;
+let ghostFocused = false;
+
+// ── Interval handles ───────────────────────────────────────────────────────────
+let stateInterval    = null;
 let progressInterval = null;
+let timerInterval    = null;
+let countdownTimer   = null;
 let lastCountdownEnd = null;
 let lastDisplayedCount = -1;
-let ghostFocused  = false;
 
-// ── DOM refs ──────────────────────────────────────────────────────────────────
-const ghostInput    = document.getElementById('ghost-input');
-const typingBox     = document.getElementById('typing-box');
+// ── DOM refs ───────────────────────────────────────────────────────────────────
+const ghostInput     = document.getElementById('ghost-input');
+const typingBox      = document.getElementById('typing-box');
 const charsContainer = document.getElementById('chars-container');
-const spans         = Array.from(charsContainer.querySelectorAll('.char'));
-const statWpm       = document.getElementById('stat-wpm');
-const statPct       = document.getElementById('stat-pct');
-const statTimer     = document.getElementById('stat-timer');
-const pCountEl      = document.getElementById('p-count');
+const spans          = Array.from(charsContainer.querySelectorAll('.char'));
+const statWpm        = document.getElementById('stat-wpm');
+const statPct        = document.getElementById('stat-pct');
+const statTimer      = document.getElementById('stat-timer');
+const pCountEl       = document.getElementById('p-count');
+
+// ── Word boundary helpers ─────────────────────────────────────────────────────
+// wordStarts[i] = first char index of the i-th word
+const wordStarts = [0];
+for (let i = 0; i < TEXT.length; i++) {
+  if (TEXT[i] === ' ' && i + 1 < TEXT.length) wordStarts.push(i + 1);
+}
+
+function getWordStart(pos) {
+  // Largest wordStart that is <= pos
+  let ws = 0;
+  for (const s of wordStarts) {
+    if (s <= pos) ws = s;
+    else break;
+  }
+  return ws;
+}
+
+function currentWordHasError() {
+  const ws = getWordStart(cursor);
+  for (let i = ws; i < cursor; i++) {
+    if (typed[i] === 'wrong') return true;
+  }
+  return false;
+}
 
 // ── Focus management ──────────────────────────────────────────────────────────
 function focusInput() {
@@ -585,91 +617,115 @@ ghostInput.addEventListener('blur', () => {
   }
 });
 
-// ── Keyboard handling ─────────────────────────────────────────────────────────
-ghostInput.addEventListener('keydown', handleKey);
-
-// Also capture from document in case ghost loses focus
 document.addEventListener('keydown', function(e) {
   if (raceStarted && !myFinished && !ghostFocused) {
-    if (e.key.length === 1 || e.key === 'Backspace') {
-      focusInput();
-    }
+    if (e.key.length === 1 || e.key === 'Backspace') focusInput();
   }
 });
 
+// ── Keyboard handling ─────────────────────────────────────────────────────────
+ghostInput.addEventListener('keydown', handleKey);
+
 function handleKey(e) {
   if (!raceStarted || myFinished) return;
-
-  // Ignore modifier keys
   if (e.ctrlKey || e.altKey || e.metaKey) return;
+  if (e.key.length !== 1 && e.key !== 'Backspace') return;
+  e.preventDefault();
 
+  // ── Backspace: so'z chegarasida to'xtaydi ───────────────────────────────────
   if (e.key === 'Backspace') {
-    e.preventDefault();
-    if (cursor > 0) {
+    const ws = getWordStart(cursor);
+    if (cursor > ws) {
       cursor--;
+      typed[cursor] = null;
       renderChars();
     }
+    // ws da bo'lsa: oldingi so'zga o'ta olmaydi
+    ghostInput.value = '';
     return;
   }
 
-  if (e.key.length !== 1) return;
-  e.preventDefault();
+  if (cursor >= TEXT.length) return;
 
-  const expected = TEXT[cursor];
-  if (e.key === expected) {
-    cursor++;
-    if (!startTime) startTime = Date.now();
-    renderChars();
-    if (cursor === TEXT.length) {
-      finishRace();
+  // ── Space ───────────────────────────────────────────────────────────────────
+  if (e.key === ' ') {
+    if (TEXT[cursor] === ' ') {
+      if (currentWordHasError()) {
+        // Xato harflar bor — keyingi so'zga o'tmaydi, qizil chaqnaydi
+        flashCurrentWord();
+      } else {
+        // Hammasi to'g'ri — space qabul qilinadi
+        typed[cursor] = 'correct';
+        cursor++;
+        if (!startTime) startTime = Date.now();
+        renderChars();
+        if (cursor >= TEXT.length) finishRace();
+      }
+    } else {
+      // Space kutilmayotgan joyda bosildi — xato char sifatida qo'shiladi
+      typed[cursor] = 'wrong';
+      cursor++;
+      if (!startTime) startTime = Date.now();
+      renderChars();
+      if (cursor >= TEXT.length) finishRace();
     }
-  } else {
-    flashError();
+    ghostInput.value = '';
+    return;
   }
 
-  // Keep ghost input empty (prevent browser insertion)
+  // ── Oddiy belgi ─────────────────────────────────────────────────────────────
+  typed[cursor] = (e.key === TEXT[cursor]) ? 'correct' : 'wrong';
+  cursor++;
+  if (!startTime) startTime = Date.now();
+  renderChars();
+  if (cursor >= TEXT.length) finishRace();
   ghostInput.value = '';
 }
 
-// ── Render text ───────────────────────────────────────────────────────────────
+// ── Render ────────────────────────────────────────────────────────────────────
 function renderChars() {
   spans.forEach((span, i) => {
     span.className = 'char';
-    if (i < cursor)       span.classList.add('correct');
-    else if (i === cursor) span.classList.add('cursor');
-    else                   span.classList.add('upcoming');
+    if (i < cursor) {
+      span.classList.add(typed[i] === 'wrong' ? 'wrong' : 'correct');
+    } else if (i === cursor) {
+      span.classList.add('cursor');
+    } else {
+      span.classList.add('upcoming');
+    }
   });
 
-  // Scroll cursor into view
   if (cursor < spans.length) {
     spans[cursor].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
-
   updateStats();
 }
 
-function flashError() {
-  if (cursor < spans.length) {
-    const s = spans[cursor];
-    s.classList.add('flash-err');
-    setTimeout(() => s.classList.remove('flash-err'), 160);
+function flashCurrentWord() {
+  const ws = getWordStart(cursor);
+  for (let i = ws; i <= cursor && i < spans.length; i++) {
+    spans[i].classList.add('flash-err');
   }
+  setTimeout(() => {
+    for (let i = ws; i <= cursor && i < spans.length; i++) {
+      spans[i].classList.remove('flash-err');
+    }
+  }, 220);
 }
 
 // ── Stats ─────────────────────────────────────────────────────────────────────
 function updateStats() {
+  const correctCount = typed.filter(t => t === 'correct').length;
   const pct = Math.round(cursor / TEXT.length * 100);
   statPct.textContent = pct + '%';
 
   if (startTime) {
     const elapsedMin = (Date.now() - startTime) / 60000;
-    wpm = elapsedMin > 0 ? Math.round((cursor / 5) / elapsedMin) : 0;
+    wpm = elapsedMin > 0 ? Math.round((correctCount / 5) / elapsedMin) : 0;
     statWpm.textContent = wpm;
   }
 }
 
-// Timer (runs every second during race)
-let timerInterval = null;
 function startTimer() {
   if (timerInterval) return;
   const raceStart = Date.now();
@@ -699,11 +755,7 @@ function finishRace() {
   myFinished = true;
   ghostInput.blur();
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
-
-  // Mark all chars correct for visual
   spans.forEach(s => { s.className = 'char correct'; });
-
-  // Immediately send 100% progress
   sendProgress(true);
 }
 
@@ -713,7 +765,7 @@ async function sendProgress(force = false) {
     await fetch('/typing/api/room/' + ROOM_CODE + '/progress', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-      body: JSON.stringify({ progress: cursor, wpm: wpm }),
+      body: JSON.stringify({ progress: cursor, wpm }),
     });
   } catch { /* ignore */ }
 }
@@ -744,6 +796,25 @@ async function startRace() {
   }
 }
 
+// ── Replay (creator): reset xonani, sahifani yangilaydi ──────────────────────
+async function doReplay() {
+  const btn = document.getElementById('replay-btn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Tayyorlanmoqda...'; }
+  try {
+    const res = await fetch('/typing/api/room/' + ROOM_CODE + '/reset', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': CSRF },
+    });
+    if (res.ok) {
+      window.location.reload();
+    } else {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-redo"></i> Yangi poyga'; }
+    }
+  } catch {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-redo"></i> Yangi poyga'; }
+  }
+}
+
 // ── State polling ─────────────────────────────────────────────────────────────
 async function pollState() {
   try {
@@ -756,7 +827,7 @@ async function pollState() {
 
 function applyState(data) {
   const state = data.state;
-  pCountEl.textContent = data.participants ? data.participants.length : '';
+  if (pCountEl) pCountEl.textContent = data.participants ? data.participants.length : '';
 
   if (state === 'waiting') {
     renderWaiting(data);
@@ -766,17 +837,10 @@ function applyState(data) {
     if (!raceStarted) activateRacing();
     renderParticipantBars(data.participants);
   } else if (state === 'finished') {
-    if (!raceStarted) {
-      // We missed the race or it finished while we were gone
-      activateRacing();
-      myFinished = true;
-    }
-    // show finished
-    if (!document.getElementById('panel-finished').style.display ||
-        document.getElementById('panel-finished').style.display === 'none') {
-      if (myFinished || state === 'finished') {
-        showFinished(data.participants);
-      }
+    if (!raceStarted) { activateRacing(); myFinished = true; }
+    if (document.getElementById('panel-finished').style.display === 'none'
+        || !document.getElementById('panel-finished').style.display) {
+      showFinished(data.participants);
     }
     renderParticipantBars(data.participants);
   }
@@ -788,13 +852,13 @@ function renderWaiting(data) {
   document.getElementById('panel-racing').style.display    = 'none';
   document.getElementById('panel-finished').style.display  = 'none';
 
-  // Update participant chips
   const chips = document.getElementById('chips-container');
+  if (!chips) return;
   const existing = {};
   chips.querySelectorAll('.p-chip').forEach(c => { existing[c.dataset.uid] = c; });
 
   const seen = new Set();
-  data.participants.forEach(p => {
+  (data.participants || []).forEach(p => {
     seen.add(p.id);
     if (!existing[p.id]) {
       const div = document.createElement('div');
@@ -804,7 +868,6 @@ function renderWaiting(data) {
       chips.appendChild(div);
     }
   });
-  // Remove chips that left
   Object.entries(existing).forEach(([uid, el]) => {
     if (!seen.has(uid)) el.remove();
   });
@@ -817,45 +880,29 @@ function renderCountdown(data) {
   document.getElementById('panel-finished').style.display  = 'none';
 
   const cEnd = data.countdown_end;
-  if (!cEnd) return;
+  if (!cEnd || cEnd === lastCountdownEnd) return;
+  lastCountdownEnd = cEnd;
+  if (countdownTimer) clearInterval(countdownTimer);
+  lastDisplayedCount = -1;
 
-  // If this is a new countdown_end value, set up a local countdown loop
-  if (cEnd !== lastCountdownEnd) {
-    lastCountdownEnd = cEnd;
-    if (countdownTimer) clearInterval(countdownTimer);
-    lastDisplayedCount = -1;
-
-    countdownTimer = setInterval(() => {
-      const remaining = Math.ceil(cEnd - Date.now() / 1000);
-      const num = Math.max(remaining, 0);
-      if (num !== lastDisplayedCount) {
-        lastDisplayedCount = num;
-        const el = document.getElementById('countdown-num');
-        if (num > 0) {
-          el.textContent = num;
-          // Restart animation
-          el.style.animation = 'none';
-          void el.offsetWidth;
-          el.style.animation = 'pop-in .35s cubic-bezier(.34,1.56,.64,1)';
-        } else {
-          el.textContent = 'GO!';
-          el.style.animation = 'none';
-          void el.offsetWidth;
-          el.style.animation = 'pop-in .35s cubic-bezier(.34,1.56,.64,1)';
-        }
-      }
-      if (num <= 0) {
-        clearInterval(countdownTimer);
-        countdownTimer = null;
-      }
-    }, 100);
-  }
+  countdownTimer = setInterval(() => {
+    const remaining = Math.ceil(cEnd - Date.now() / 1000);
+    const num = Math.max(remaining, 0);
+    if (num !== lastDisplayedCount) {
+      lastDisplayedCount = num;
+      const el = document.getElementById('countdown-num');
+      el.textContent = num > 0 ? num : 'GO!';
+      el.style.animation = 'none';
+      void el.offsetWidth;
+      el.style.animation = 'pop-in .35s cubic-bezier(.34,1.56,.64,1)';
+    }
+    if (num <= 0) { clearInterval(countdownTimer); countdownTimer = null; }
+  }, 100);
 }
 
 function renderParticipantBars(participants) {
   if (!participants) return;
   const container = document.getElementById('participants-race');
-
   participants.forEach(p => {
     let row = container.querySelector('[data-pid="' + p.id + '"]');
     if (!row) {
@@ -874,10 +921,7 @@ function renderParticipantBars(participants) {
     if (p.finished) fill.classList.add('done');
     row.querySelector('.p-wpm').textContent = p.wpm + ' WPM';
     const rankEl = row.querySelector('.p-rank');
-    if (p.rank) {
-      const medals = ['🥇','🥈','🥉'];
-      rankEl.textContent = medals[p.rank - 1] || '#' + p.rank;
-    }
+    if (p.rank) rankEl.textContent = ['🥇','🥈','🥉'][p.rank - 1] || '#' + p.rank;
   });
 }
 
@@ -887,13 +931,12 @@ function showFinished(participants) {
   document.getElementById('panel-racing').style.display    = 'none';
   document.getElementById('panel-finished').style.display  = 'block';
 
-  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  if (timerInterval)    { clearInterval(timerInterval);    timerInterval    = null; }
   if (progressInterval) { clearInterval(progressInterval); progressInterval = null; }
 
   const lb = document.getElementById('leaderboard');
   lb.innerHTML = '';
 
-  // Sort by rank (finished first), then by progress
   const sorted = [...participants].sort((a, b) => {
     if (a.finished && b.finished) return (a.rank || 99) - (b.rank || 99);
     if (a.finished) return -1;
@@ -903,8 +946,7 @@ function showFinished(participants) {
 
   sorted.forEach((p, idx) => {
     const pos = p.rank || (idx + 1);
-    const medals = ['🥇', '🥈', '🥉'];
-    const medal = medals[pos - 1] || pos + '.';
+    const medal = ['🥇','🥈','🥉'][pos - 1] || pos + '.';
     const row = document.createElement('div');
     row.className = 'lb-row' + (p.is_me ? ' me' : '');
     row.innerHTML = `
@@ -917,7 +959,6 @@ function showFinished(participants) {
     lb.appendChild(row);
   });
 
-  // Stop state polling
   if (stateInterval) { clearInterval(stateInterval); stateInterval = null; }
 }
 
@@ -930,41 +971,26 @@ function copyCode() {
   });
 }
 
-// ── Utilities ─────────────────────────────────────────────────────────────────
 function esc(s) {
-  return String(s)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ── Init ─────────────────────────────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────────────────────────
 (function init() {
-  const state = INITIAL_STATE;
-  if (state === 'racing') {
+  if (INITIAL_STATE === 'racing') {
     activateRacing();
-  } else if (state === 'finished') {
-    // Will be resolved by first poll
   }
-
-  // Poll every 450ms
   stateInterval = setInterval(pollState, 450);
-  pollState(); // immediate first poll
+  pollState();
 
-  // Also send progress heartbeat to keep last_seen fresh
   setInterval(() => {
-    if (!raceStarted) {
-      // Keep alive while waiting
-      fetch('/typing/api/room/' + ROOM_CODE + '/state').catch(() => {});
-    }
+    if (!raceStarted) fetch('/typing/api/room/' + ROOM_CODE + '/state').catch(() => {});
   }, 8000);
 })();
 
-// Auto-focus ghost input on user interaction (for keyboard capture)
 document.addEventListener('click', () => {
   if (raceStarted && !myFinished) focusInput();
 });
-
-// Finished listener: when I finish, auto-show finished panel after a short delay
-// (polling will catch it, but let's not wait)
 </script>
 {% endblock %}
