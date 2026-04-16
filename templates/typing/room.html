@@ -648,22 +648,16 @@ function handleKey(e) {
   if (cursor >= TEXT.length) return;
 
   // ── Space ───────────────────────────────────────────────────────────────────
+  // Space FAQAT so'z to'liq va to'g'ri yozilganda ishlaydi:
+  //   1) cursor aniq space belgisida bo'lishi kerak
+  //   2) joriy so'zda hech qanday xato bo'lmasligi kerak
   if (e.key === ' ') {
-    if (TEXT[cursor] === ' ') {
-      if (currentWordHasError()) {
-        // Xato harflar bor — keyingi so'zga o'tmaydi, qizil chaqnaydi
-        flashCurrentWord();
-      } else {
-        // Hammasi to'g'ri — space qabul qilinadi
-        typed[cursor] = 'correct';
-        cursor++;
-        if (!startTime) startTime = Date.now();
-        renderChars();
-        if (cursor >= TEXT.length) finishRace();
-      }
+    if (TEXT[cursor] !== ' ' || currentWordHasError()) {
+      // So'z tugallanmagan yoki xato bor — space bloklanadi
+      flashCurrentWord();
     } else {
-      // Space kutilmayotgan joyda bosildi — xato char sifatida qo'shiladi
-      typed[cursor] = 'wrong';
+      // So'z to'liq va to'g'ri — space qabul qilinadi
+      typed[cursor] = 'correct';
       cursor++;
       if (!startTime) startTime = Date.now();
       renderChars();
