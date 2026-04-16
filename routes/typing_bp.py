@@ -7,6 +7,7 @@ import random, string, time, threading
 from flask import (Blueprint, render_template, request, session,
                    jsonify, redirect, url_for)
 from extensions import csrf
+from models import db, TypingResult
 
 typing_bp = Blueprint('typing', __name__, url_prefix='/typing')
 
@@ -327,26 +328,66 @@ def update_progress(code):
     if room['state'] not in ('racing', 'countdown'):
         return jsonify({'ok': True})
 
-    data     = request.get_json(silent=True) or {}
-    text_len = len(room['text'])
-    progress = min(max(int(data.get('progress', 0)), 0), text_len)
-    wpm      = max(0, min(int(data.get('wpm', 0)), 999))
+    data          = request.get_json(silent=True) or {}
+    text_len      = len(room['text'])
+    progress      = min(max(int(data.get('progress', 0)), 0), text_len)
+    wpm           = max(0, min(int(data.get('wpm', 0)), 999))
+    accuracy      = max(0, min(int(data.get('accuracy', 100)), 100))
+    chars_correct = max(0, int(data.get('chars_correct', 0)))
+    just_finished = False
 
     with _lock:
         p = room['participants'][uid]
-        p['progress']   = progress
-        p['wpm']        = wpm
-        p['last_seen']  = time.time()
+        p['progress']  = progress
+        p['wpm']       = wpm
+        p['last_seen'] = time.time()
 
         if progress >= text_len and not p['finished']:
             p['finished']    = True
             p['finish_time'] = time.time()
             room['finish_count'] += 1
-            p['rank'] = room['finish_count']
+            p['rank']        = room['finish_count']
+            just_finished    = True
 
-        # Hammasi tugatsa → poyga tugadi
         if (room['state'] == 'racing'
                 and all(v['finished'] for v in room['participants'].values())):
             room['state'] = 'finished'
 
+    # Natijani DB ga saqlash (faqat tugatgan va wpm > 0 bo'lganda)
+    if just_finished and wpm > 0:
+        name = room['participants'][uid]['name']
+        try:
+            record = TypingResult(
+                name=name,
+                wpm=wpm,
+                accuracy=accuracy,
+                chars_correct=chars_correct,
+                chars_total=text_len,
+                is_solo=room.get('is_solo', False),
+            )
+            db.session.add(record)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
     return jsonify({'ok': True})
+
+
+@typing_bp.route('/leaderboard')
+@csrf.exempt
+def leaderboard():
+    """Top 10 — barcha vaqt bo'yicha."""
+    top = (TypingResult.query
+           .order_by(TypingResult.wpm.desc())
+           .limit(10).all())
+    return jsonify([
+        {
+            'rank':     i + 1,
+            'name':     r.name,
+            'wpm':      r.wpm,
+            'accuracy': r.accuracy,
+            'date':     r.created_at.strftime('%d.%m.%Y'),
+            'is_solo':  r.is_solo,
+        }
+        for i, r in enumerate(top)
+    ])

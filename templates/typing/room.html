@@ -755,11 +755,18 @@ function finishRace() {
 
 async function sendProgress(force = false) {
   if (!raceStarted) return;
+  const correctCount  = typed.filter(t => t === 'correct').length;
+  const accuracy      = cursor > 0 ? Math.round(correctCount / cursor * 100) : 100;
   try {
     await fetch('/typing/api/room/' + ROOM_CODE + '/progress', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-      body: JSON.stringify({ progress: cursor, wpm }),
+      body: JSON.stringify({
+        progress:      cursor,
+        wpm,
+        accuracy,
+        chars_correct: correctCount,
+      }),
     });
   } catch { /* ignore */ }
 }

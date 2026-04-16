@@ -188,6 +188,26 @@ class ArenaProblem(db.Model):
     )
 
 
+# ─── Typing Race Module ───────────────────────────────────────────────────────
+
+class TypingResult(db.Model):
+    """Typing race natijasi — login talab qilinmaydi."""
+    __tablename__ = 'typing_results'
+    id           = db.Column(db.Integer, primary_key=True)
+    name         = db.Column(db.String(30), nullable=False)
+    wpm          = db.Column(db.Integer, nullable=False)
+    accuracy     = db.Column(db.Integer, nullable=False, default=100)  # 0–100 %
+    chars_correct = db.Column(db.Integer, default=0)
+    chars_total  = db.Column(db.Integer, default=0)
+    is_solo      = db.Column(db.Boolean, default=False)
+    created_at   = db.Column(db.DateTime, default=tashkent_now)
+
+    __table_args__ = (
+        db.Index('ix_typing_wpm', 'wpm'),
+        db.Index('ix_typing_created', 'created_at'),
+    )
+
+
 class ArenaSubmission(db.Model):
     __tablename__ = 'arena_submissions'
     id = db.Column(db.Integer, primary_key=True)

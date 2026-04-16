@@ -235,6 +235,73 @@ footer span { color: #555 !important; }
   letter-spacing: 0.25em;
   text-align: center;
 }
+
+/* ── Leaderboard ── */
+.lb-card {
+  background: #2c2e31;
+  border-radius: 18px;
+  border: 1.5px solid #3a3c40;
+  overflow: hidden;
+}
+.lb-loading {
+  text-align: center;
+  padding: 28px;
+  color: #555;
+  font-size: 1.2rem;
+}
+.lb-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 22px;
+  border-bottom: 1px solid #232527;
+  transition: background .15s;
+}
+.lb-row:last-child { border-bottom: none; }
+.lb-row:hover { background: #333538; }
+.lb-pos {
+  font-size: 1.25rem;
+  width: 32px;
+  flex-shrink: 0;
+  text-align: center;
+}
+.lb-name {
+  flex: 1;
+  font-weight: 600;
+  color: #ddd;
+  font-size: .95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lb-name small {
+  display: block;
+  color: #555;
+  font-size: .75rem;
+  font-weight: 400;
+}
+.lb-wpm {
+  font-family: 'Fira Code', monospace;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #f59e0b;
+  white-space: nowrap;
+}
+.lb-wpm small { color: #666; font-size: .68rem; font-weight:400; margin-left:3px; }
+.lb-acc {
+  font-size: .82rem;
+  color: #666;
+  font-family: 'Fira Code', monospace;
+  white-space: nowrap;
+  width: 52px;
+  text-align: right;
+}
+.lb-empty {
+  text-align: center;
+  padding: 32px;
+  color: #555;
+  font-size: .9rem;
+}
 </style>
 {% endblock %}
 
@@ -274,8 +341,16 @@ footer span { color: #555 !important; }
     <div class="t-error" id="solo-err"></div>
   </div>
 
+  <!-- ── TOP 10 LEADERBOARD ── -->
+  <div class="group-section" style="margin-bottom:0;">
+    <div class="section-divider"><span>Eng yaxshi natijalar</span></div>
+    <div class="lb-card" id="lb-card">
+      <div class="lb-loading"><i class="fas fa-spinner fa-spin"></i></div>
+    </div>
+  </div>
+
   <!-- ── GROUP SECTION ── -->
-  <div class="group-section">
+  <div class="group-section" style="margin-top:20px;">
     <div class="section-divider">
       <span>Guruh rejimi</span>
     </div>
@@ -432,6 +507,36 @@ async function doJoin() {
 }
 
 function showErr(el, msg) { el.textContent = msg; el.classList.add('show'); }
+
+// ── Leaderboard ───────────────────────────────────────────────────────────────
+(async function loadLeaderboard() {
+  const card = document.getElementById('lb-card');
+  try {
+    const res  = await fetch('/typing/leaderboard');
+    const data = await res.json();
+    if (!data.length) {
+      card.innerHTML = '<div class="lb-empty"><i class="fas fa-keyboard" style="color:#333;font-size:2rem;display:block;margin-bottom:10px;"></i>Hali natija yo\'q — birinchi bo\'ling!</div>';
+      return;
+    }
+    const medals = ['🥇','🥈','🥉'];
+    card.innerHTML = data.map(r => `
+      <div class="lb-row">
+        <div class="lb-pos">${medals[r.rank-1] || r.rank}</div>
+        <div class="lb-name">
+          ${esc(r.name)}
+          <small>${r.date}${r.is_solo ? ' · solo' : ' · guruh'}</small>
+        </div>
+        <div class="lb-acc">${r.accuracy}%</div>
+        <div class="lb-wpm">${r.wpm}<small>WPM</small></div>
+      </div>`).join('');
+  } catch {
+    card.innerHTML = '<div class="lb-empty">Yuklanmadi</div>';
+  }
+})();
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
 
 // Enter key support
 document.getElementById('solo-name').addEventListener('keydown', e => e.key === 'Enter' && doSolo());
