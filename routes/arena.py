@@ -335,6 +335,12 @@ def submit(pid):
             break
         final_output = result.get('output', '')
 
+    # Check before adding new submission to avoid autoflush false-positive
+    user = ArenaUser.query.get(uid)
+    already_ac = (ArenaSubmission.query
+                  .filter_by(user_id=uid, problem_id=pid, status='AC')
+                  .first())
+
     # Record submission
     sub = ArenaSubmission(
         user_id=uid,
@@ -354,10 +360,6 @@ def submit(pid):
         problem.accepted_count += 1
 
     # Update user stats (only once per unique problem)
-    user = ArenaUser.query.get(uid)
-    already_ac = (ArenaSubmission.query
-                  .filter_by(user_id=uid, problem_id=pid, status='AC')
-                  .first())
     if final_verdict == 'AC' and not already_ac:
         user.problems_solved += 1
         diff_pts = {'easy': 10, 'medium': 25, 'hard': 50}

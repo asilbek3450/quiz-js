@@ -663,18 +663,17 @@ print(n * 2)
       const errMsg = isAC ? '' : (data.error || '') + extra;
       showOutput(data.verdict, data.output, errMsg, data.time, false);
 
-      // SE — server xatosi, reload ham saqlab qo'ymaslik kerak
-      if (data.verdict === 'SE') {
-        // tugmani qayta yoqish, foydalanuvchi o'zi qayta yuboradi
-      } else if (data.verdict === 'AC') {
+      if (data.verdict === 'AC') {
         if (typeof window._celebrateAC === 'function') window._celebrateAC();
         setTimeout(() => location.reload(), 3500);
-      } else if (['WA', 'TLE', 'RE', 'CE'].includes(data.verdict)) {
-        setTimeout(() => location.reload(), 800);
+      } else {
+        // SE, WA, TLE, RE, CE — reload qilinmaydi, foydalanuvchi kodini o'zgartirishi mumkin
+        _submitting = false;
       }
     } catch (err) {
       const msg = err.name === 'AbortError' ? 'So\'rov vaqt limiti tugadi (60s)' : 'Server bilan bog\'lanishda xato: ' + err.message;
       showOutput('CE', '', msg, 0, false);
+      _submitting = false;
     } finally {
       setLoading(false);
     }
