@@ -1,36 +1,42 @@
 """
 Arena kod baholash (judge) moduli.
-Foydalanuvchi kodini subprocess orqali ishlatib, natijani tekshiradi.
+PythonAnywhere uchun optimallashtirilgan: exec() + threading.
+subprocess ishlatilmaydi — server cheklovlarisiz barqaror ishlaydi.
 """
-import subprocess, tempfile, os, sys, time, re
+import sys, re, io, time, threading, types
+import builtins as _builtins
 
 # ── Qo'llab-quvvatlanadigan tillar ────────────────────────────────────────────
 LANGUAGES = {
-    'python': {
-        'ext': '.py',
-        'cmd': [sys.executable, '{file}'],
-    },
+    'python': {'ext': '.py'},
 }
 
 # ── Xavfli pattern'lar (maktab muhiti uchun) ─────────────────────────────────
 _BANNED = re.compile(
-    r'(__import__|importlib|subprocess|shutil\.rmtree|os\.remove|'
-    r'os\.unlink|os\.system|os\.popen|socket\.|ctypes|'
-    r'open\s*\(.*["\'][aw]["\'])',
-    re.IGNORECASE
-)
-
-# Python traceback belgilari — haqiqiy kod xatosi
-_PY_ERROR = re.compile(
-    r'Traceback \(most recent call last\)|'
-    r'(SyntaxError|NameError|TypeError|ValueError|IndexError|'
-    r'KeyError|AttributeError|ZeroDivisionError|RecursionError|'
-    r'MemoryError|RuntimeError|StopIteration|IndentationError):',
+    r'(__import__\s*\(|importlib\s*\.|subprocess|shutil\s*\.\s*rmtree|'
+    r'os\s*\.\s*(?:remove|unlink|system|popen|exec[lv]?[pe]?)|'
+    r'socket\s*\.|ctypes)',
     re.IGNORECASE
 )
 
 MAX_OUTPUT = 4096   # bayt
 MAX_CODE   = 16384  # bayt
+
+# Ruxsat etilgan import'lar
+_ALLOWED_IMPORTS = frozenset({
+    'math', 'cmath', 'random', 'string', 'itertools', 'functools',
+    'collections', 'heapq', 'bisect', 'decimal', 'fractions',
+    'statistics', 'operator', 'copy', 're', 'datetime',
+    'array', 'struct', 'io', 'json', 'time', 'calendar',
+    'abc', 'enum', 'dataclasses', 'typing',
+})
+
+# Xavfli builtin'lar — exec namespace dan olib tashlanadi
+_BLOCKED_BUILTINS = frozenset({
+    'exec', 'eval', 'compile', 'open', '__loader__', '__spec__',
+    'breakpoint', 'help', 'credits', 'license', 'copyright',
+    'quit', 'exit',
+})
 
 
 def _check(code: str):
@@ -44,15 +50,15 @@ def _check(code: str):
 
 def run_code(code: str, language: str, stdin_data: str, time_limit: float = 10.0):
     """
-    Kodni ishlatadi. Qaytaradi:
-      {'verdict': 'OK'|'TLE'|'RE'|'CE'|'SE', 'output': str, 'error': str, 'time': float}
+    Kodni exec() + threading orqali ishlatadi.
+    Qaytaradi:
+      {'verdict': 'OK'|'TLE'|'RE'|'CE', 'output': str, 'error': str, 'time': float}
 
     Verdiktlar:
       OK  — muvaffaqiyatli bajarildi
-      TLE — vaqt limiti oshdi (yoki OS tomonidan o'ldirildi)
-      RE  — foydalanuvchi kodi xatosi (Python Traceback bor)
-      CE  — kompilyatsiya / taqiqlangan operatsiya xatosi
-      SE  — server infra xatosi (foydalanuvchi kodi bilan bog'liq emas)
+      TLE — vaqt limiti oshdi
+      RE  — foydalanuvchi kodi xatosi (exception yuz berdi)
+      CE  — sintaksis xatosi yoki taqiqlangan operatsiya
     """
     if language not in LANGUAGES:
         return {'verdict': 'CE', 'output': '',
@@ -62,87 +68,108 @@ def run_code(code: str, language: str, stdin_data: str, time_limit: float = 10.0
     if not ok:
         return {'verdict': 'CE', 'output': '', 'error': msg, 'time': 0.0}
 
-    lang = LANGUAGES[language]
+    # Sintaksis tekshiruvi (tez xatolikni aniqlash)
+    try:
+        compiled = compile(code, '<student_code>', 'exec')
+    except SyntaxError as e:
+        return {'verdict': 'CE', 'output': '',
+                'error': f'SyntaxError: {e.msg} (qator {e.lineno})', 'time': 0.0}
 
-    # Server xatolari uchun 2 marta qayta urinish (jami 3 ta urinish)
-    for attempt in range(3):
-        tmp = None
-        try:
-            with tempfile.NamedTemporaryFile(
-                    suffix=lang['ext'], delete=False,
-                    mode='w', encoding='utf-8') as f:
-                f.write(code)
-                tmp = f.name
+    stdout_buf = io.StringIO()
+    stdin_buf  = io.StringIO(stdin_data or '')
+    result     = {'verdict': 'OK', 'output': '', 'error': '', 'time': 0.0}
+    done_event = threading.Event()
 
-            cmd = [c.replace('{file}', tmp) for c in lang['cmd']]
-            t0  = time.monotonic()
+    def _run():
+        # ── I/O funksiyalari ──────────────────────────────────────────────────
+        def _safe_print(*args, sep=' ', end='\n', file=None, flush=False):  # file/flush: print() bilan moslik uchun
+            if stdout_buf.tell() < MAX_OUTPUT:
+                stdout_buf.write(sep.join(str(a) for a in args) + end)
 
-            proc = subprocess.run(
-                cmd,
-                input=stdin_data or '',
-                capture_output=True,
-                text=True,
-                timeout=time_limit,
+        def _safe_input(prompt=''):
+            if prompt:
+                _safe_print(str(prompt), end='')
+            return stdin_buf.readline().rstrip('\n')
+
+        # ── Fake sys moduli (stdin/stdout yo'naltirish uchun) ─────────────────
+        fake_sys = types.ModuleType('sys')
+        fake_sys.stdin   = stdin_buf
+        fake_sys.stdout  = stdout_buf
+        fake_sys.stderr  = io.StringIO()
+        fake_sys.argv    = ['<student_code>']
+        fake_sys.version = sys.version
+        fake_sys.version_info = sys.version_info
+        fake_sys.maxsize = sys.maxsize
+        fake_sys.path    = []
+        fake_sys.setrecursionlimit = lambda n: None   # no-op (xavfsizlik uchun)
+        fake_sys.getrecursionlimit = lambda: 1000
+        fake_sys.exit    = lambda *a: (_ for _ in ()).throw(SystemExit(*a))
+
+        # ── Xavfsiz import ────────────────────────────────────────────────────
+        def _safe_import(name, globals=None, locals=None, fromlist=(), level=0):
+            base = name.split('.')[0]
+            if base == 'sys':
+                return fake_sys
+            if base in _ALLOWED_IMPORTS:
+                return __import__(name, globals, locals, fromlist, level)
+            raise ImportError(
+                f"'{name}' moduli bu muhitda ruxsat etilmagan.\n"
+                f"Ruxsat etilganlar: {', '.join(sorted(_ALLOWED_IMPORTS))}"
             )
-            elapsed = round(time.monotonic() - t0, 3)
 
-            stdout = proc.stdout[:MAX_OUTPUT]
-            stderr = proc.stderr[:1024]
+        # ── Xavfsiz builtin'lar ───────────────────────────────────────────────
+        safe_builtins = {
+            name: getattr(_builtins, name)
+            for name in dir(_builtins)
+            if not name.startswith('_') and name not in _BLOCKED_BUILTINS
+        }
+        safe_builtins['print']      = _safe_print
+        safe_builtins['input']      = _safe_input
+        safe_builtins['__import__'] = _safe_import
 
-            if proc.returncode == 0:
-                # Muvaffaqiyatli — stderr (warnings) e'tiborsiz
-                return {'verdict': 'OK', 'output': stdout, 'error': '', 'time': elapsed}
+        # ── Exec namespace ────────────────────────────────────────────────────
+        globs = {
+            '__name__':     '__main__',
+            '__doc__':      None,
+            '__package__':  None,
+            '__builtins__': safe_builtins,
+            '__import__':   _safe_import,
+            'sys':          fake_sys,
+        }
 
-            # returncode < 0 → OS SIGKILL/SIGTERM (resurs limiti) → TLE sifatida
-            if proc.returncode < 0:
-                return {'verdict': 'TLE', 'output': '',
-                        'error': 'Vaqt yoki xotira limiti oshdi.', 'time': elapsed}
-
-            # returncode > 0 — Python traceback bormi? → haqiqiy RE
-            if _PY_ERROR.search(stderr):
-                # Faqat muhim qism: oxirgi 10 qator
-                lines = stderr.strip().splitlines()
-                short = '\n'.join(lines[-10:]) if len(lines) > 10 else stderr.strip()
-                return {'verdict': 'RE', 'output': stdout, 'error': short, 'time': elapsed}
-
-            # returncode > 0, Python traceback yo'q:
-            # Agar stdout mavjud bo'lsa — kod to'g'ri ishlagan, exit code muhit xatosi
-            # (PythonAnywhere va ba'zi serverlarda to'g'ri kod ham non-zero qaytarishi mumkin)
-            if stdout.strip():
-                return {'verdict': 'OK', 'output': stdout, 'error': '', 'time': elapsed}
-
-            # stdout ham yo'q → server/muhit xatosi, qayta urinish
-            if attempt < 2:
-                time.sleep(0.3 * (attempt + 1))  # 0.3s, 0.6s
-                continue
-            return {'verdict': 'SE', 'output': '', 'error': '', 'time': elapsed}
-
-        except subprocess.TimeoutExpired:
-            return {'verdict': 'TLE', 'output': '',
-                    'error': f'Vaqt limiti oshdi ({time_limit}s).', 'time': time_limit}
-
-        except (OSError, PermissionError, FileNotFoundError):
-            # Server infra muammosi — qayta urinib ko'ramiz
-            if attempt < 2:
-                time.sleep(0.3 * (attempt + 1))
-                continue
-            return {'verdict': 'SE', 'output': '', 'error': '', 'time': 0.0}
-
+        try:
+            exec(compiled, globs)
+        except SystemExit:
+            pass   # exit() chaqirildi — normal holat sifatida qabul qilamiz
+        except RecursionError:
+            result['verdict'] = 'RE'
+            result['error']   = 'RecursionError: rekursiya chuqurligi limiti oshdi.'
+        except MemoryError:
+            result['verdict'] = 'RE'
+            result['error']   = 'MemoryError: xotira yetishmadi.'
         except Exception as e:
-            # Boshqa kutilmagan xato
-            err_str = str(e)
-            if _PY_ERROR.search(err_str):
-                return {'verdict': 'RE', 'output': '', 'error': err_str, 'time': 0.0}
-            return {'verdict': 'SE', 'output': '', 'error': '', 'time': 0.0}
-
+            result['verdict'] = 'RE'
+            result['error']   = f'{type(e).__name__}: {e}'
         finally:
-            if tmp:
-                try:
-                    os.unlink(tmp)
-                except OSError:
-                    pass
+            done_event.set()
 
-    return {'verdict': 'SE', 'output': '', 'error': '', 'time': 0.0}
+    t0     = time.monotonic()
+    worker = threading.Thread(target=_run, daemon=True)
+    worker.start()
+    finished = done_event.wait(timeout=time_limit)
+    elapsed  = round(time.monotonic() - t0, 3)
+
+    result['time'] = elapsed
+
+    if not finished:
+        # Worker hali ham ishlayapti — TLE
+        result['verdict'] = 'TLE'
+        result['output']  = ''
+        result['error']   = f'Vaqt limiti oshdi ({time_limit}s).'
+    else:
+        result['output'] = stdout_buf.getvalue()[:MAX_OUTPUT]
+
+    return result
 
 
 def _norm(s: str) -> str:
@@ -153,14 +180,14 @@ def judge(code: str, language: str, test_input: str,
           expected_output: str, time_limit: float = 10.0):
     """
     Kodni ishlatib, natijani expected_output bilan solishtiradi.
-    Qaytaradi: run_code natijasiga qo'shimcha 'verdict' AC|WA|TLE|RE|CE|SE.
+    Qaytaradi: run_code natijasiga qo'shimcha 'verdict' AC|WA|TLE|RE|CE.
     """
     result = run_code(code, language, test_input, time_limit)
 
-    if result['verdict'] in ('TLE', 'CE', 'SE'):
+    if result['verdict'] in ('TLE', 'CE'):
         return result
 
-    # RE → WA: kod xatosi bo'lsa ham faqat "Wrong Answer" ko'rsatiladi
+    # RE → WA: foydalanuvchiga "Wrong Answer" ko'rsatiladi
     if result['verdict'] == 'RE':
         result['verdict'] = 'WA'
         result['error']   = ''
@@ -168,6 +195,5 @@ def judge(code: str, language: str, test_input: str,
 
     user_out = _norm(result['output'])
     expected = _norm(expected_output or '')
-
     result['verdict'] = 'AC' if user_out == expected else 'WA'
     return result

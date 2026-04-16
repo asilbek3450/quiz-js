@@ -426,8 +426,9 @@ print(n * 2)
 (function () {
   'use strict';
 
-  const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
-  const PID  = parseInt("{{ problem.id }}", 10);
+  const CSRF     = document.querySelector('meta[name="csrf-token"]')?.content || '';
+  const PID      = parseInt("{{ problem.id }}", 10);
+  const EXAMPLES = {{ examples | tojson }};   // namuna test holatlari
   let stdinVisible = false;
 
   // ── Anti-cheat measures ───────────────────────────────────────────────────
@@ -523,6 +524,11 @@ print(n * 2)
     document.getElementById('stdinWrap').style.display = stdinVisible ? 'block' : 'none';
     document.getElementById('stdinIcon').className =
       stdinVisible ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
+    // Birinchi marta ochilganda, birinchi namuna inputini placeholder sifatida ko'rsat
+    const field = document.getElementById('stdinField');
+    if (stdinVisible && field && field.value === '' && EXAMPLES && EXAMPLES.length > 0) {
+      field.value = EXAMPLES[0].input || '';
+    }
   };
 
   // ── Show output panel ─────────────────────────────────────────────────────
@@ -594,7 +600,10 @@ print(n * 2)
     const code = editor?.value?.trim();
     if (!code) { alert('Kod bo\'sh!'); return; }
 
-    const stdin = document.getElementById('stdinField')?.value || '';
+    const customStdin = document.getElementById('stdinField')?.value ?? '';
+    // Agar foydalanuvchi o'z kirishini kiritmagan bo'lsa, birinchi namunani ishlatamiz
+    const firstExInput = (EXAMPLES && EXAMPLES.length > 0) ? (EXAMPLES[0].input || '') : '';
+    const stdin = customStdin !== '' ? customStdin : firstExInput;
     _submitting = true;
     setLoading(true);
 
