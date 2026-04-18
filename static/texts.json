@@ -289,36 +289,126 @@
   },
   "ru": {
     "easy": [
-      "Знание — это сила. Учиться никогда не поздно. Чтение книг расширяет кругозор. Образование открывает двери к успеху. Будьте любознательными и настойчивыми.",
-      "Дружба делает жизнь счастливее. Хороший друг всегда поддержит в трудную минуту. Цените своих друзей и заботьтесь о них. Без друзей человек одинок.",
-      "Родина начинается с семьи. Любите свою страну и уважайте её традиции. Каждый гражданин должен заботиться о процветании родины. Родина — это наша общая колыбель.",
-      "Труд облагораживает человека. Честная работа приносит удовлетворение и достаток. Ленивый человек редко достигает успеха. Работайте усердно и с любовью.",
-      "Здоровье — главное богатство. Занимайтесь спортом и правильно питайтесь. Регулярные прогулки укрепляют организм. Здоровый образ жизни продлевает годы.",
-      "Уважайте старших и заботьтесь о младших. Доброта и вежливость украшают человека. Будьте внимательны к окружающим вас людям. Хорошее отношение возвращается добром.",
-      "Время — самый ценный ресурс. Не тратьте его на пустые занятия. Планируйте свой день и ставьте цели. Каждая минута должна быть использована с умом.",
-      "Оптимизм помогает преодолевать трудности. Верьте в свои силы и не сдавайтесь. Улыбка делает день ярче и счастливее. Радуйтесь даже маленьким победам.",
-      "Честность — основа крепких отношений. Ложь разрушает доверие навсегда. Будьте правдивы в словах и поступках. Честного человека уважают все вокруг.",
-      "Мечты вдохновляют на великие дела. Ставьте перед собой высокие цели. Идите к мечте маленькими шагами. Никогда не переставайте верить в свои мечты.",
-      "Семья — это наша крепость и опора. Любите своих родителей и детей. Проводите время с близкими людьми. Семейные ценности передаются из поколения в поколение.",
-      "Природа нуждается в нашей защите. Не мусорьте и берегите воду. Сажайте деревья и заботьтесь о животных. Чистая планета — залог здоровья всех людей.",
-      "Учитесь на своих ошибках и не бойтесь их. Каждая неудача — это урок на будущее. Ошибается тот, кто ничего не делает. Анализируйте и двигайтесь дальше.",
-      "Благодарность делает мир добрее. Говорите спасибо за любую помощь. Цените то, что имеете сегодня. Благодарный человек привлекает больше хорошего.",
-      "Новые знания открывают возможности. Изучайте иностранные языки и науки. Развивайте свой кругозор каждый день. Умный человек всегда востребован в обществе.",
-      "Терпение помогает достигать целей. Не сдавайтесь при первых трудностях. Упорный труд всегда приносит плоды. Ждите и верьте в успех своего дела.",
-      "Искусство вдохновляет и лечит душу. Слушайте хорошую музыку и читайте книги. Рисование и творчество снимают стресс. Находите красоту в каждом дне.",
-      "Скромность украшает человека больше, чем богатство. Не хвастайтесь своими достижениями. Уважайте успехи других людей. Скромный человек вызывает симпатию.",
-      "Прощение освобождает от обид. Не держите зла на других людей. Умейте прощать ошибки и слабости. Прощённый человек становится лучше и добрее.",
-      "Надежда помогает выжить в трудные времена. Всегда верьте в лучшее будущее. Даже в темноте есть свет в конце тоннеля. Надежда умирает последней.",
-      "Смелость — это не отсутствие страха, а умение его преодолеть. Идите вперёд, даже когда страшно. Герои — это обычные люди с большой верой в себя.",
-      "Дисциплина ведёт к свободе и успеху. Соблюдайте режим и выполняйте обещания. Порядок в делах создаёт порядок в голове. Будьте организованными и собранными.",
-      "Каждый день — это новый шанс начать сначала. Не оглядывайтесь на прошлое с сожалением. Живите настоящим и планируйте будущее. Утро вечера мудренее.",
-      "Счастье не в деньгах, а в душевном покое. Радуйтесь простым вещам: солнцу, улыбке, теплу. Деньги приходят и уходят, а счастье остаётся с вами навсегда.",
-      "Взаимопомощь укрепляет общество. Поддерживайте тех, кто рядом. Вместе легче преодолевать любые преграды. Одна голова хорошо, а две лучше.",
-      "Инициатива не бывает наказана, если она разумна. Не бойтесь предлагать новые идеи. Активные люди меняют мир к лучшему. Действуйте, а не ждите у моря погоды.",
-      "Личный пример заразителен. Будьте тем изменением, которое хотите видеть в мире. Ваши поступки говорят громче слов. Показывайте достойный пример другим.",
-      "Обучение не заканчивается со школой. Вся жизнь — это непрерывный процесс познания. Читайте, смотрите, слушайте и анализируйте. Будьте учеником всегда.",
-      "Самодисциплина начинается с малого. Ложитесь спать вовремя и делайте зарядку. Маленькие привычки создают большую личность. Контролируйте себя и свой день.",
-      "Смысл жизни каждый находит сам. Ищите своё призвание и любимое дело. Счастье — это когда утром хочется идти на работу. Живите осознанно и со страстью."
+      {
+        "id": 1,
+        "text": "Знание — это сила. Учиться никогда не поздно. Чтение книг расширяет кругозор. Образование открывает двери к успеху. Будьте любознательными и настойчивыми."
+      },
+      {
+        "id": 2,
+        "text": "Дружба делает жизнь счастливее. Хороший друг всегда поддержит в трудную минуту. Цените своих друзей и заботьтесь о них. Без друзей человек одинок."
+      },
+      {
+        "id": 3,
+        "text": "Родина начинается с семьи. Любите свою страну и уважайте её традиции. Каждый гражданин должен заботиться о процветании родины. Родина — это наша общая колыбель."
+      },
+      {
+        "id": 4,
+        "text": "Труд облагораживает человека. Честная работа приносит удовлетворение и достаток. Ленивый человек редко достигает успеха. Работайте усердно и с любовью."
+      },
+      {
+        "id": 5,
+        "text": "Здоровье — главное богатство. Занимайтесь спортом и правильно питайтесь. Регулярные прогулки укрепляют организм. Здоровый образ жизни продлевает годы."
+      },
+      {
+        "id": 6,
+        "text": "Уважайте старших и заботьтесь о младших. Доброта и вежливость украшают человека. Будьте внимательны к окружающим вас людям. Хорошее отношение возвращается добром."
+      },
+      {
+        "id": 7,
+        "text": "Время — самый ценный ресурс. Не тратьте его на пустые занятия. Планируйте свой день и ставьте цели. Каждая минута должна быть использована с умом."
+      },
+      {
+        "id": 8,
+        "text": "Оптимизм помогает преодолевать трудности. Верьте в свои силы и не сдавайтесь. Улыбка делает день ярче и счастливее. Радуйтесь даже маленьким победам."
+      },
+      {
+        "id": 9,
+        "text": "Честность — основа крепких отношений. Ложь разрушает доверие навсегда. Будьте правдивы в словах и поступках. Честного человека уважают все вокруг."
+      },
+      {
+        "id": 10,
+        "text": "Мечты вдохновляют на великие дела. Ставьте перед собой высокие цели. Идите к мечте маленькими шагами. Никогда не переставайте верить в свои мечты."
+      },
+      {
+        "id": 11,
+        "text": "Семья — это наша крепость и опора. Любите своих родителей и детей. Проводите время с близкими людьми. Семейные ценности передаются из поколения в поколение."
+      },
+      {
+        "id": 12,
+        "text": "Природа нуждается в нашей защите. Не мусорьте и берегите воду. Сажайте деревья и заботьтесь о животных. Чистая планета — залог здоровья всех людей."
+      },
+      {
+        "id": 13,
+        "text": "Учитесь на своих ошибках и не бойтесь их. Каждая неудача — это урок на будущее. Ошибается тот, кто ничего не делает. Анализируйте и двигайтесь дальше."
+      },
+      {
+        "id": 14,
+        "text": "Благодарность делает мир добрее. Говорите спасибо за любую помощь. Цените то, что имеете сегодня. Благодарный человек привлекает больше хорошего."
+      },
+      {
+        "id": 15,
+        "text": "Новые знания открывают возможности. Изучайте иностранные языки и науки. Развивайте свой кругозор каждый день. Умный человек всегда востребован в обществе."
+      },
+      {
+        "id": 16,
+        "text": "Терпение помогает достигать целей. Не сдавайтесь при первых трудностях. Упорный труд всегда приносит плоды. Ждите и верьте в успех своего дела."
+      },
+      {
+        "id": 17,
+        "text": "Искусство вдохновляет и лечит душу. Слушайте хорошую музыку и читайте книги. Рисование и творчество снимают стресс. Находите красоту в каждом дне."
+      },
+      {
+        "id": 18,
+        "text": "Скромность украшает человека больше, чем богатство. Не хвастайтесь своими достижениями. Уважайте успехи других людей. Скромный человек вызывает симпатию."
+      },
+      {
+        "id": 19,
+        "text": "Прощение освобождает от обид. Не держите зла на других людей. Умейте прощать ошибки и слабости. Прощённый человек становится лучше и добрее."
+      },
+      {
+        "id": 20,
+        "text": "Надежда помогает выжить в трудные времена. Всегда верьте в лучшее будущее. Даже в темноте есть свет в конце тоннеля. Надежда умирает последней."
+      },
+      {
+        "id": 21,
+        "text": "Смелость — это не отсутствие страха, а умение его преодолеть. Идите вперёд, даже когда страшно. Герои — это обычные люди с большой верой в себя."
+      },
+      {
+        "id": 22,
+        "text": "Дисциплина ведёт к свободе и успеху. Соблюдайте режим и выполняйте обещания. Порядок в делах создаёт порядок в голове. Будьте организованными и собранными."
+      },
+      {
+        "id": 23,
+        "text": "Каждый день — это новый шанс начать сначала. Не оглядывайтесь на прошлое с сожалением. Живите настоящим и планируйте будущее. Утро вечера мудренее."
+      },
+      {
+        "id": 24,
+        "text": "Счастье не в деньгах, а в душевном покое. Радуйтесь простым вещам: солнцу, улыбке, теплу. Деньги приходят и уходят, а счастье остаётся с вами навсегда."
+      },
+      {
+        "id": 25,
+        "text": "Взаимопомощь укрепляет общество. Поддерживайте тех, кто рядом. Вместе легче преодолевать любые преграды. Одна голова хорошо, а две лучше."
+      },
+      {
+        "id": 26,
+        "text": "Инициатива не бывает наказана, если она разумна. Не бойтесь предлагать новые идеи. Активные люди меняют мир к лучшему. Действуйте, а не ждите у моря погоды."
+      },
+      {
+        "id": 27,
+        "text": "Личный пример заразителен. Будьте тем изменением, которое хотите видеть в мире. Ваши поступки говорят громче слов. Показывайте достойный пример другим."
+      },
+      {
+        "id": 28,
+        "text": "Обучение не заканчивается со школой. Вся жизнь — это непрерывный процесс познания. Читайте, смотрите, слушайте и анализируйте. Будьте учеником всегда."
+      },
+      {
+        "id": 29,
+        "text": "Самодисциплина начинается с малого. Ложитесь спать вовремя и делайте зарядку. Маленькие привычки создают большую личность. Контролируйте себя и свой день."
+      },
+      {
+        "id": 30,
+        "text": "Смысл жизни каждый находит сам. Ищите своё призвание и любимое дело. Счастье — это когда утром хочется идти на работу. Живите осознанно и со страстью."
+      }
     ],
     "medium": [
       {
@@ -487,36 +577,126 @@
   },
   "en": {
     "easy": [
-      "Knowledge is power. Learning never stops. Reading books makes you smarter. Education opens many doors. Always be curious and keep asking questions.",
-      "Friends make life happier. A true friend helps in difficult times. Value your friends and care for them. Without friends, life feels empty and lonely.",
-      "Love your homeland and respect its traditions. Every citizen should work for the country's prosperity. The homeland is our common cradle. Protect it with your deeds.",
-      "Hard work makes a person better. Honest work brings satisfaction and wealth. Lazy people rarely succeed. Work hard and love what you do every day.",
-      "Health is the greatest wealth. Exercise regularly and eat healthy food. Daily walks strengthen your body. A healthy lifestyle adds years to your life.",
-      "Respect elders and take care of children. Kindness and politeness make you beautiful. Be attentive to people around you. Good behavior brings good results.",
-      "Time is the most valuable resource. Do not waste it on useless things. Plan your day and set clear goals. Every minute should be used wisely.",
-      "Optimism helps to overcome difficulties. Believe in yourself and never give up. A smile makes your day brighter and happier. Enjoy even small victories.",
-      "Honesty is the foundation of strong relationships. Lies destroy trust forever. Be truthful in your words and actions. Honest people are respected by everyone.",
-      "Dreams inspire great achievements. Set high goals for yourself. Move toward your dream step by step. Never stop believing in your dreams.",
-      "Family is our fortress and support. Love your parents and children. Spend time with your loved ones. Family values pass from generation to generation.",
-      "Nature needs our protection. Do not litter and save water. Plant trees and care for animals. A clean planet is the key to everyone's health.",
-      "Learn from your mistakes and do not fear them. Every failure is a lesson for the future. Only those who do nothing make no mistakes. Analyze and move forward.",
-      "Gratitude makes the world kinder. Say thank you for any help you receive. Appreciate what you have today. Grateful people attract more good things.",
-      "New knowledge opens new opportunities. Learn foreign languages and sciences. Broaden your horizons every single day. Smart people are always in demand.",
-      "Patience helps to achieve your goals. Do not give up at the first difficulty. Persistent work always bears fruit. Wait and believe in your success.",
-      "Art inspires and heals the soul. Listen to good music and read books. Drawing and creativity relieve stress. Find beauty in every single day.",
-      "Modesty decorates a person more than wealth. Do not brag about your achievements. Respect the success of other people. Modest people are liked by everyone.",
-      "Forgiveness frees you from grudges. Do not hold anger against others. Learn to forgive mistakes and weaknesses. A forgiven person becomes better and kinder.",
-      "Hope helps to survive hard times. Always believe in a better future. Even in darkness there is light at the end. Hope is the last thing that dies.",
-      "Courage is not the absence of fear but the ability to overcome it. Move forward even when you are scared. Heroes are ordinary people with great self-belief.",
-      "Discipline leads to freedom and success. Follow your routine and keep promises. Order in business creates order in your mind. Be organized and focused.",
-      "Every day is a new chance to start over. Do not look at the past with regret. Live in the present and plan for the future. The morning is wiser than the evening.",
-      "Happiness is not in money but in peace of mind. Enjoy simple things: sun, smile, warmth. Money comes and goes, but happiness stays with you forever.",
-      "Mutual help makes society stronger. Support those who are near you. Together it is easier to overcome any obstacles. Two heads are better than one.",
-      "Initiative is rarely punished if it is reasonable. Do not be afraid to suggest new ideas. Active people change the world for the better. Act, do not wait.",
-      "Personal example is contagious. Be the change you want to see in the world. Your actions speak louder than your words. Show a worthy example to others.",
-      "Learning does not end with school. All life is a continuous process of learning. Read, watch, listen, and analyze. Always remain a student of life.",
-      "Self-discipline starts with small things. Go to bed on time and do morning exercises. Small habits create a great personality. Control yourself and your day.",
-      "Everyone finds the meaning of life for themselves. Seek your calling and your favorite work. Happiness is waking up wanting to go to work. Live consciously and passionately."
+      {
+        "id": 1,
+        "text": "Knowledge is power. Learning never stops. Reading books makes you smarter. Education opens many doors. Always be curious and keep asking questions."
+      },
+      {
+        "id": 2,
+        "text": "Friends make life happier. A true friend helps in difficult times. Value your friends and care for them. Without friends, life feels empty and lonely."
+      },
+      {
+        "id": 3,
+        "text": "Love your homeland and respect its traditions. Every citizen should work for the country's prosperity. The homeland is our common cradle. Protect it with your deeds."
+      },
+      {
+        "id": 4,
+        "text": "Hard work makes a person better. Honest work brings satisfaction and wealth. Lazy people rarely succeed. Work hard and love what you do every day."
+      },
+      {
+        "id": 5,
+        "text": "Health is the greatest wealth. Exercise regularly and eat healthy food. Daily walks strengthen your body. A healthy lifestyle adds years to your life."
+      },
+      {
+        "id": 6,
+        "text": "Respect elders and take care of children. Kindness and politeness make you beautiful. Be attentive to people around you. Good behavior brings good results."
+      },
+      {
+        "id": 7,
+        "text": "Time is the most valuable resource. Do not waste it on useless things. Plan your day and set clear goals. Every minute should be used wisely."
+      },
+      {
+        "id": 8,
+        "text": "Optimism helps to overcome difficulties. Believe in yourself and never give up. A smile makes your day brighter and happier. Enjoy even small victories."
+      },
+      {
+        "id": 9,
+        "text": "Honesty is the foundation of strong relationships. Lies destroy trust forever. Be truthful in your words and actions. Honest people are respected by everyone."
+      },
+      {
+        "id": 10,
+        "text": "Dreams inspire great achievements. Set high goals for yourself. Move toward your dream step by step. Never stop believing in your dreams."
+      },
+      {
+        "id": 11,
+        "text": "Family is our fortress and support. Love your parents and children. Spend time with your loved ones. Family values pass from generation to generation."
+      },
+      {
+        "id": 12,
+        "text": "Nature needs our protection. Do not litter and save water. Plant trees and care for animals. A clean planet is the key to everyone's health."
+      },
+      {
+        "id": 13,
+        "text": "Learn from your mistakes and do not fear them. Every failure is a lesson for the future. Only those who do nothing make no mistakes. Analyze and move forward."
+      },
+      {
+        "id": 14,
+        "text": "Gratitude makes the world kinder. Say thank you for any help you receive. Appreciate what you have today. Grateful people attract more good things."
+      },
+      {
+        "id": 15,
+        "text": "New knowledge opens new opportunities. Learn foreign languages and sciences. Broaden your horizons every single day. Smart people are always in demand."
+      },
+      {
+        "id": 16,
+        "text": "Patience helps to achieve your goals. Do not give up at the first difficulty. Persistent work always bears fruit. Wait and believe in your success."
+      },
+      {
+        "id": 17,
+        "text": "Art inspires and heals the soul. Listen to good music and read books. Drawing and creativity relieve stress. Find beauty in every single day."
+      },
+      {
+        "id": 18,
+        "text": "Modesty decorates a person more than wealth. Do not brag about your achievements. Respect the success of other people. Modest people are liked by everyone."
+      },
+      {
+        "id": 19,
+        "text": "Forgiveness frees you from grudges. Do not hold anger against others. Learn to forgive mistakes and weaknesses. A forgiven person becomes better and kinder."
+      },
+      {
+        "id": 20,
+        "text": "Hope helps to survive hard times. Always believe in a better future. Even in darkness there is light at the end. Hope is the last thing that dies."
+      },
+      {
+        "id": 21,
+        "text": "Courage is not the absence of fear but the ability to overcome it. Move forward even when you are scared. Heroes are ordinary people with great self-belief."
+      },
+      {
+        "id": 22,
+        "text": "Discipline leads to freedom and success. Follow your routine and keep promises. Order in business creates order in your mind. Be organized and focused."
+      },
+      {
+        "id": 23,
+        "text": "Every day is a new chance to start over. Do not look at the past with regret. Live in the present and plan for the future. The morning is wiser than the evening."
+      },
+      {
+        "id": 24,
+        "text": "Happiness is not in money but in peace of mind. Enjoy simple things: sun, smile, warmth. Money comes and goes, but happiness stays with you forever."
+      },
+      {
+        "id": 25,
+        "text": "Mutual help makes society stronger. Support those who are near you. Together it is easier to overcome any obstacles. Two heads are better than one."
+      },
+      {
+        "id": 26,
+        "text": "Initiative is rarely punished if it is reasonable. Do not be afraid to suggest new ideas. Active people change the world for the better. Act, do not wait."
+      },
+      {
+        "id": 27,
+        "text": "Personal example is contagious. Be the change you want to see in the world. Your actions speak louder than your words. Show a worthy example to others."
+      },
+      {
+        "id": 28,
+        "text": "Learning does not end with school. All life is a continuous process of learning. Read, watch, listen, and analyze. Always remain a student of life."
+      },
+      {
+        "id": 29,
+        "text": "Self-discipline starts with small things. Go to bed on time and do morning exercises. Small habits create a great personality. Control yourself and your day."
+      },
+      {
+        "id": 30,
+        "text": "Everyone finds the meaning of life for themselves. Seek your calling and your favorite work. Happiness is waking up wanting to go to work. Live consciously and passionately."
+      }
     ],
     "medium": [
       {
