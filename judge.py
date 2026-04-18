@@ -187,10 +187,7 @@ def judge(code: str, language: str, test_input: str,
     if result['verdict'] in ('TLE', 'CE'):
         return result
 
-    # RE → WA: foydalanuvchiga "Wrong Answer" ko'rsatiladi
     if result['verdict'] == 'RE':
-        result['verdict'] = 'WA'
-        result['error']   = ''
         return result
 
     user_out = _norm(result['output'])

@@ -317,6 +317,14 @@ def create_app():
                 db.session.rollback()
                 print(f"Feedback migration warning: {e}")
 
+        # Check and migrate ArenaUser table
+        arena_user_columns = [c['name'] for c in inspector.get_columns('arena_users')]
+        if 'total_stars' not in arena_user_columns:
+            print("Migrating database: Adding total_stars to ArenaUser table...")
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE arena_users ADD COLUMN total_stars INTEGER DEFAULT 0"))
+                conn.commit()
+
         # Check and migrate Question table (difficulty/lesson for balanced tests)
         question_columns = [c['name'] for c in inspector.get_columns('question')]
         if 'difficulty' not in question_columns:
@@ -374,14 +382,37 @@ def create_app():
         # arena_submissions — code execution columns
         if inspector.has_table('arena_submissions'):
             as_cols = [c['name'] for c in inspector.get_columns('arena_submissions')]
-            for col, ddl in [('code',      'TEXT DEFAULT ""'),
-                              ('language',  'VARCHAR(20) DEFAULT "python"'),
-                              ('time_used', 'FLOAT DEFAULT 0.0'),
-                              ('error_msg', 'TEXT DEFAULT ""')]:
+            for col, ddl in [('code',         'TEXT DEFAULT ""'),
+                              ('language',     'VARCHAR(20) DEFAULT "python"'),
+                              ('time_used',    'FLOAT DEFAULT 0.0'),
+                              ('error_msg',    'TEXT DEFAULT ""'),
+                              ('tests_passed', 'INTEGER DEFAULT 0'),
+                              ('tests_total',  'INTEGER DEFAULT 0'),
+                              ('stars',        'INTEGER DEFAULT 0')]:
                 if col not in as_cols:
                     with db.engine.connect() as conn:
                         conn.execute(db.text(f'ALTER TABLE arena_submissions ADD COLUMN {col} {ddl}'))
                         conn.commit()
+
+        # typing_results — accuracy / chars / solo columns
+        if inspector.has_table('typing_results'):
+            tr_cols = [c['name'] for c in inspector.get_columns('typing_results')]
+            for col, ddl in [('accuracy',      'INTEGER NOT NULL DEFAULT 100'),
+                              ('chars_correct', 'INTEGER DEFAULT 0'),
+                              ('chars_total',   'INTEGER DEFAULT 0'),
+                              ('is_solo',       'BOOLEAN DEFAULT 0')]:
+                if col not in tr_cols:
+                    with db.engine.connect() as conn:
+                        conn.execute(db.text(f'ALTER TABLE typing_results ADD COLUMN {col} {ddl}'))
+                        conn.commit()
+
+        # arena_problems — hidden tests column
+        if inspector.has_table('arena_problems'):
+            ap_cols = [c['name'] for c in inspector.get_columns('arena_problems')]
+            if 'hidden_tests' not in ap_cols:
+                with db.engine.connect() as conn:
+                    conn.execute(db.text('ALTER TABLE arena_problems ADD COLUMN hidden_tests TEXT DEFAULT "[]"'))
+                    conn.commit()
 
     return app
 

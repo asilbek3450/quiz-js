@@ -7,10 +7,19 @@
   <h2 style="font-size:1.2rem; font-weight:700; margin:0;">
     <i class="fas fa-trophy" style="color:var(--ar-yellow)"></i> Reyting jadvali
   </h2>
-  <form method="GET" class="d-flex gap-2">
+  <form method="GET" class="d-flex gap-2 align-items-center" style="flex-wrap:nowrap;">
     <input class="ar-input" type="text" name="q" value="{{ search }}"
-           placeholder="Qidirish..." style="width:200px; padding:7px 12px;">
-    <button type="submit" class="ar-btn ar-btn-primary ar-btn-sm"><i class="fas fa-search"></i></button>
+           placeholder="Qidirish..." style="width:180px; padding:7px 12px; flex-shrink:0;">
+    <button type="submit" class="ar-btn ar-btn-primary ar-btn-sm" style="flex-shrink:0; padding:7px 11px;">
+      <i class="fas fa-search"></i>
+    </button>
+    <select name="sort" class="ar-input" style="padding:7px 10px; cursor:pointer; width:auto; flex-shrink:0;"
+            onchange="this.form.submit()">
+      <option value="stars"  {% if sort=='stars'  or not sort %}selected{% endif %}>⭐ Yulduz bo'yicha</option>
+      <option value="solved" {% if sort=='solved' %}selected{% endif %}>🏆 Masala bo'yicha</option>
+      <option value="rating" {% if sort=='rating' %}selected{% endif %}>📊 Reyting bo'yicha</option>
+      <option value="new"    {% if sort=='new'    %}selected{% endif %}>🕐 Yangi a'zolar</option>
+    </select>
   </form>
 </div>
 
@@ -19,14 +28,17 @@
     <thead><tr>
       <th style="width:60px; text-align:center">O'rin</th>
       <th>Foydalanuvchi</th>
-      <th style="text-align:center; width:90px">Hal qildi</th>
-      <th style="text-align:right; width:90px">Reyting</th>
-      <th style="text-align:right; width:130px">Ro'yxat sanasi</th>
+      <th style="text-align:center; width:100px">Yulduzlar</th>
+      <th style="text-align:center; width:80px">Hal qildi</th>
+      <th style="text-align:right; width:80px">Reyting</th>
+      <th style="text-align:right; width:120px">Ro'yxat sanasi</th>
     </tr></thead>
     <tbody>
     {% set offset = (users.page - 1) * users.per_page %}
     {% for u in users.items %}
     {% set rank = offset + loop.index %}
+    {# Star display: har 10 yulduz = 1 to'ldirilgan yulduz, max 5 #}
+    {% set star_count = [[(u.total_stars // 10), 5] | min, 0] | max %}
     <tr>
       <td style="text-align:center;">
         {% if rank == 1 %}
@@ -63,6 +75,17 @@
         </div>
       </td>
       <td style="text-align:center;">
+        <span style="font-size:.95rem; letter-spacing:1px;" title="{{ u.rating }} ball">
+          {%- for n in range(1, 6) -%}
+            {%- if n <= star_count -%}
+              <span style="color:#f59e0b;">★</span>
+            {%- else -%}
+              <span style="color:#3a3c40;">★</span>
+            {%- endif -%}
+          {%- endfor -%}
+        </span>
+      </td>
+      <td style="text-align:center;">
         <span class="ar-badge badge-ac" style="font-size:.8rem; padding:4px 10px;">
           {{ u.problems_solved }}
         </span>
@@ -76,7 +99,7 @@
     </tr>
     {% else %}
     <tr>
-      <td colspan="5" style="text-align:center; padding:48px; color:var(--ar-muted);">
+      <td colspan="6" style="text-align:center; padding:48px; color:var(--ar-muted);">
         <i class="fas fa-users fa-3x" style="opacity:.2; display:block; margin-bottom:12px;"></i>
         Foydalanuvchilar topilmadi
       </td>
@@ -89,19 +112,19 @@
 {% if users.pages > 1 %}
 <div class="d-flex justify-content-center mt-4">
   <div class="ar-pagination">
-    <a href="{{ url_for('arena.users', page=users.prev_num, q=search) }}"
+    <a href="{{ url_for('arena.users', page=users.prev_num, q=search, sort=sort) }}"
        class="ar-page-btn {% if not users.has_prev %}disabled{% endif %}">
       <i class="fas fa-chevron-left"></i>
     </a>
     {% for pg in users.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
       {% if pg %}
-        <a href="{{ url_for('arena.users', page=pg, q=search) }}"
+        <a href="{{ url_for('arena.users', page=pg, q=search, sort=sort) }}"
            class="ar-page-btn {% if pg == users.page %}active{% endif %}">{{ pg }}</a>
       {% else %}
         <span class="ar-page-btn" style="pointer-events:none;">…</span>
       {% endif %}
     {% endfor %}
-    <a href="{{ url_for('arena.users', page=users.next_num, q=search) }}"
+    <a href="{{ url_for('arena.users', page=users.next_num, q=search, sort=sort) }}"
        class="ar-page-btn {% if not users.has_next %}disabled{% endif %}">
       <i class="fas fa-chevron-right"></i>
     </a>

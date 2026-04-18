@@ -5,73 +5,149 @@
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mathquill/0.10.1/mathquill.min.css"/>
 <style>
+    :root {
+        --mq-primary: #10b981;
+        --mq-secondary: #3b82f6;
+    }
     .math-preview {
-        min-height: 44px;
-        font-size: 1.05rem;
-        background: #f8fafc;
-        border: 1.5px dashed #94a3b8 !important;
-        border-radius: 10px;
-        color: #334155;
-        transition: all 0.2s;
+        min-height: 52px;
+        font-size: 1.1rem;
+        background: #fdfdfd;
+        border: 2px dashed #cbd5e1 !important;
+        border-radius: 12px;
+        color: #1e293b;
+        padding: 12px 16px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+    .math-preview:not(:empty)::before {
+        content: 'Preview';
+        position: absolute;
+        top: -10px;
+        left: 10px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        background: white;
+        padding: 0 6px;
+        color: #94a3b8;
+        letter-spacing: 0.5px;
     }
     .math-preview:empty { display: none; }
-    .mq-editable-field {
-        width: 100% !important;
-        font-size: 1.5rem !important;
-        padding: 8px 12px !important;
-    }
+    
     .math-editor-box {
-        min-height: 100px;
-        border: 2px solid #10b981 !important;
-        border-radius: 12px;
+        min-height: 120px;
+        border: 2px solid #e2e8f0;
+        border-radius: 14px;
         background: #fff;
         cursor: text;
         display: flex;
         align-items: center;
-        padding: 10px 14px;
-        font-size: 1.7rem;
-        box-shadow: 0 2px 8px rgba(16,185,129,0.08);
+        padding: 15px 20px;
+        font-size: 1.8rem;
+        transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .help-example {
-        background: #f1f5f9;
-        border-radius: 8px;
-        padding: 10px 12px;
-        margin-bottom: 10px;
-        border-left: 3px solid #10b981;
+    .math-editor-box.active {
+        border-color: var(--mq-primary);
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
     }
-    .help-example code { color: #7c3aed; font-size: 0.82rem; }
-    .help-example .rendered { color: #0f172a; font-size: 1.05rem; margin-top: 4px; }
+    #mq-field-span {
+        width: 100%;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    .toolbar-tabs .nav-link {
+        border: none;
+        color: #64748b;
+        font-weight: 600;
+        padding: 10px 16px;
+        border-radius: 10px;
+        margin-right: 5px;
+        font-size: 0.85rem;
+    }
+    .toolbar-tabs .nav-link.active {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--mq-primary);
+    }
+    .toolbar-content {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 15px;
+        max-height: 220px;
+        overflow-y: auto;
+    }
     .mq-btn {
-        border-radius: 10px !important;
-        font-size: 0.82rem !important;
-        padding: 4px 10px !important;
-        transition: all 0.15s;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px !important;
+        padding: 6px 10px !important;
+        font-size: 0.9rem !important;
+        min-width: 42px;
+        color: #334155;
+        transition: all 0.2s;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
-    .mq-btn:hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,0.12); }
+    .mq-btn:hover {
+        border-color: var(--mq-primary);
+        color: var(--mq-primary);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    .mq-btn.chem-btn {
+        border-color: #3b82f6;
+        color: #3b82f6;
+    }
+    .mq-btn.chem-btn:hover {
+        background: #ebf3ff;
+    }
+
+    .help-example {
+        background: white;
+        border: 1px solid #f1f5f9;
+        border-radius: 12px;
+        padding: 12px;
+        margin-bottom: 12px;
+        transition: transform 0.2s;
+    }
+    .help-example:hover { transform: scale(1.02); }
+    .help-example code { font-size: 0.75rem; color: #6366f1; background: #eef2ff; padding: 2px 6px; border-radius: 4px; }
+    .help-example .rendered { margin-top: 8px; font-size: 1rem; color: #1e293b; }
+
+    .chem-input-mode {
+        display: none;
+    }
+    .chem-input-mode.active {
+        display: block;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-lg-8 mb-4">
-            <div class="card">
-                <div class="card-header bg-gradient text-white"
-                    style="background: linear-gradient(135deg, #4f46e5, #06b6d4);">
-                    <h3 class="mb-0">
-                        <i class="fas fa-{% if question %}edit{% else %}plus{% endif %} me-2"></i>
-                        {% if question %}{{ _('Savolni tahrirlash') }}{% else %}{{ _('Yangi savol qo\'shish') }}{% endif
-                        %}
-                    </h3>
+<div class="container pb-5">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm" style="border-radius: 24px;">
+                <div class="card-header border-0 p-4"
+                    style="background: linear-gradient(135deg, #4f46e5, #0ea5e9); border-radius: 24px 24px 0 0;">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-white bg-opacity-20 p-3 rounded-3 me-3">
+                            <i class="fas fa-{% if question %}edit{% else %}plus{% endif %} text-white fs-4"></i>
+                        </div>
+                        <div>
+                            <h3 class="mb-0 text-white fw-bold">
+                                {% if question %}{{ _('Savolni tahrirlash') }}{% else %}{{ _('Yangi savol') }}{% endif %}
+                            </h3>
+                            <p class="text-white text-opacity-75 mb-0 small">Barcha maydonlarni diqqat bilan to'ldiring</p>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-body p-4">
-                    <form method="POST" enctype="multipart/form-data">
-                        <div class="row mb-3">
+                    <form method="POST" enctype="multipart/form-data" id="questionForm">
+                        <div class="row g-3 mb-4">
                             <div class="col-md-4">
-                                <label class="form-label fw-bold">
-                                    <i class="fas fa-book text-primary"></i> {{ _('Fan') }}
-                                </label>
-                                <select name="subject_id" class="form-select" required id="subjectSelect">
+                                <label class="form-label small fw-bold text-muted uppercase">Fan</label>
+                                <select name="subject_id" class="form-select border-0 bg-light rounded-3 py-2" required id="subjectSelect">
                                     {% for subject in subjects %}
                                     <option value="{{ subject.id }}" data-grades="{{ subject.grades }}" {% if question
                                         and question.subject_id==subject.id %}selected{% endif %}>
@@ -81,114 +157,124 @@
                                 </select>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label fw-bold">
-                                    <i class="fas fa-users text-success"></i> {{ _('Sinf') }}
-                                </label>
-                                <select name="grade" class="form-select" required id="gradeSelect">
-                                    {% for g in range(5, 10) %}
+                                <label class="form-label small fw-bold text-muted uppercase">Sinf</label>
+                                <select name="grade" class="form-select border-0 bg-light rounded-3 py-2" required id="gradeSelect">
+                                    {% for g in range(1, 12) %}
                                     <option value="{{ g }}" {% if question and question.grade==g %}selected{% endif %}>
-                                        {{ g }}-{{ _('sinf') }}
+                                        {{ g }}-sinf
                                     </option>
                                     {% endfor %}
                                 </select>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label fw-bold">
-                                    <i class="fas fa-calendar text-warning"></i> {{ _('Chorak') }}
-                                </label>
-                                <select name="quarter" class="form-select" required>
+                                <label class="form-label small fw-bold text-muted uppercase">Chorak</label>
+                                <select name="quarter" class="form-select border-0 bg-light rounded-3 py-2" required>
                                     {% for q in range(1, 5) %}
-                                    <option value="{{ q }}" {% if question and question.quarter==q %}selected{% endif
-                                        %}>
-                                        {{ q }}-{{ _('chorak') }}
+                                    <option value="{{ q }}" {% if question and question.quarter==q %}selected{% endif %}>
+                                        {{ q }}-chorak
                                     </option>
                                     {% endfor %}
                                 </select>
                             </div>
                         </div>
 
-                        <!-- Question Text -->
+                        <!-- Question Text Area -->
                         <div class="mb-4">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <label class="form-label fw-bold mb-0">
-                                    <i class="fas fa-question-circle text-info"></i> {{ _('Savol matni') }}
-                                </label>
-                                <button type="button" class="btn btn-sm btn-outline-success math-edit-btn" data-target="question_text" id="math-btn-question_text">
-                                    <i class="fas fa-square-root-alt me-1"></i> Math Editor
+                                <label class="form-label small fw-bold text-muted uppercase mb-0">Savol matni</label>
+                                <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 math-edit-btn" data-target="question_text">
+                                    <i class="fas fa-calculator me-1"></i> formula qo'shish
                                 </button>
                             </div>
-                            <textarea name="question_text" id="question_text" class="form-control" rows="3" required
-                                placeholder="{{ _('Savolni kiriting... (LaTeX uchun $...$ yoki $$...$$ dan foydalaning)') }}">{% if question %}{{ question.question_text }}{% endif %}</textarea>
-                            <div id="question_text_preview" class="mt-2 p-3 math-preview" style="display:none;"></div>
+                            <textarea name="question_text" id="question_text" class="form-control border-0 bg-light rounded-4 p-3" rows="4" required
+                                placeholder="Savolni yozing... Masalan: $x^2 + y^2 = r^2$ ifodasini soddalashtiring.">{% if question %}{{ question.question_text }}{% endif %}</textarea>
+                            <div id="question_text_preview" class="mt-3 math-preview"></div>
                         </div>
 
                         <!-- Image Upload -->
-                        <div class="mb-4">
-                            <label class="form-label fw-bold">
-                                <i class="fas fa-image text-warning"></i> {{ _('Savol rasmi') }}
-                            </label>
-                            <input type="file" name="question_image" class="form-control" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp">
-                            <div class="form-text">{{ _('PNG, JPG, JPEG, GIF yoki WEBP rasm yuklashingiz mumkin') }}</div>
+                        <div class="mb-5">
+                            <label class="form-label small fw-bold text-muted uppercase">Rasm yuklash (ixtiyoriy)</label>
+                            <div class="p-4 border-2 border-dashed rounded-4 text-center bg-light bg-opacity-50 position-relative">
+                                <input type="file" name="question_image" class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer" accept="image/*">
+                                <i class="fas fa-cloud-upload-alt text-muted fs-1 mb-2"></i>
+                                <p class="mb-0 text-muted small">Rasm faylini tanlash yoki bu yerga tashlash</p>
+                                <p class="text-xs text-muted">PNG, JPG, WEBP (Maks: 5MB)</p>
+                            </div>
 
                             {% if question_image_url %}
-                            <div class="mt-3 p-3 border rounded bg-light">
-                                <div class="small text-muted fw-bold mb-2">{{ _('Joriy rasm') }}</div>
-                                <img src="{{ question_image_url }}" alt="{{ _('Savol rasmi') }}" class="img-fluid rounded shadow-sm" style="max-height: 240px;">
-                                <div class="form-check mt-3">
+                            <div class="mt-4 p-3 border rounded-4 bg-white shadow-sm d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <img src="{{ question_image_url }}" class="rounded shadow-sm me-3" style="width: 80px; height: 80px; object-fit: cover;">
+                                    <div>
+                                        <div class="fw-bold small text-dark">Hozirgi rasm</div>
+                                        <div class="text-xs text-muted">Mavjud rasm saqlangan</div>
+                                    </div>
+                                </div>
+                                <div class="form-check">
                                     <input class="form-check-input" type="checkbox" value="1" id="removeImage" name="remove_image">
-                                    <label class="form-check-label" for="removeImage">
-                                        {{ _('Joriy rasmni olib tashlash') }}
+                                    <label class="form-check-label small text-danger fw-bold" for="removeImage">
+                                        O'chirish
                                     </label>
                                 </div>
                             </div>
                             {% endif %}
                         </div>
 
-                        <!-- Answer Options -->
-                        <div class="row mb-3">
-                            {% for opt_key, opt_label, opt_color in [('option_a', 'A', 'primary'), ('option_b', 'B', 'success'), ('option_c', 'C', 'warning'), ('option_d', 'D', 'danger')] %}
-                            <div class="col-md-6 mb-3">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <label class="form-label fw-bold mb-0">
-                                        <span class="badge bg-{{ opt_color }}">{{ opt_label }}</span> {{ _('Variant') }} {{ opt_label }}
-                                    </label>
-                                    <button type="button" class="btn btn-sm btn-outline-success math-edit-btn" data-target="{{ opt_key }}" id="math-btn-{{ opt_key }}">
-                                        <i class="fas fa-square-root-alt"></i>
-                                    </button>
+                        <hr class="my-5 opacity-10">
+
+                        <!-- Options Section -->
+                        <h5 class="fw-bold mb-4 d-flex align-items-center">
+                            <span class="bg-success bg-opacity-10 text-success p-2 rounded-3 me-2">
+                                <i class="fas fa-list-ul"></i>
+                            </span>
+                            Javob variantlari
+                        </h5>
+
+                        <div class="row g-4 mb-5">
+                            {% for opt_key, opt_label, opt_color in [('option_a', 'A', '#4f46e5'), ('option_b', 'B', '#10b981'), ('option_c', 'C', '#f59e0b'), ('option_d', 'D', '#ef4444')] %}
+                            <div class="col-md-6">
+                                <div class="option-container h-100">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="fw-bold small px-2 py-1 rounded-2" style="background: {{ opt_color }}15; color: {{ opt_color }}">
+                                            Variant {{ opt_label }}
+                                        </span>
+                                        <button type="button" class="btn btn-link btn-sm text-decoration-none p-0 math-edit-btn" data-target="{{ opt_key }}">
+                                            <i class="fas fa-square-root-alt text-success"></i>
+                                        </button>
+                                    </div>
+                                    <input type="text" name="{{ opt_key }}" id="{{ opt_key }}" class="form-control border-0 bg-light rounded-3 py-2 px-3" required
+                                        placeholder="Javobni kiriting..."
+                                        value="{% if question %}{{ question[opt_key] }}{% endif %}">
+                                    <div id="{{ opt_key }}_preview" class="mt-2 math-preview small"></div>
                                 </div>
-                                <input type="text" name="{{ opt_key }}" id="{{ opt_key }}" class="form-control" required
-                                    placeholder="{{ _('Variant') }} {{ opt_label }}..."
-                                    value="{% if question %}{{ question[opt_key] }}{% endif %}">
-                                <div id="{{ opt_key }}_preview" class="mt-2 p-2 math-preview" style="display:none;"></div>
                             </div>
                             {% endfor %}
                         </div>
 
-                        <!-- Correct Answer -->
-                        <div class="mb-4">
-                            <label class="form-label fw-bold">
-                                <i class="fas fa-check-circle text-success"></i> {{ _('To\'g\'ri javob') }}
-                            </label>
-                            <div class="btn-group w-100" role="group">
+                        <!-- Correct Answer Selection -->
+                        <div class="mb-5 pt-3 border-top">
+                            <label class="form-label small fw-bold text-muted uppercase mb-3 text-center d-block w-100">To'g'ri javobni belgilang</label>
+                            <div class="row g-3">
                                 {% for opt in ['A', 'B', 'C', 'D'] %}
-                                <input type="radio" class="btn-check" name="correct_answer" id="answer{{ opt }}"
-                                    value="{{ opt }}" {% if question and question.correct_answer==opt %}checked{% endif
-                                    %} {% if not question and opt=='A' %}checked{% endif %} required>
-                                <label class="btn btn-outline-success" for="answer{{ opt }}">
-                                    <i class="fas fa-check"></i> {{ opt }}
-                                </label>
+                                <div class="col-3">
+                                    <input type="radio" class="btn-check" name="correct_answer" id="answer{{ opt }}"
+                                        value="{{ opt }}" {% if question and question.correct_answer==opt %}checked{% endif
+                                        %} {% if not question and opt=='A' %}checked{% endif %} required>
+                                    <label class="btn btn-outline-success w-100 py-3 rounded-4 fw-bold shadow-sm" for="answer{{ opt }}">
+                                        {{ opt }}
+                                    </label>
+                                </div>
                                 {% endfor %}
                             </div>
                         </div>
 
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary flex-fill">
-                                <i class="fas fa-save me-2"></i>
-                                {% if question %}{{ _('O\'zgarishlarni saqlash') }}{% else %}{{ _('Savolni qo\'shish')
-                                }}{% endif %}
+                        <div class="d-flex gap-3">
+                            <button type="submit" class="btn btn-primary flex-fill py-3 rounded-4 shadow-lg border-0 fw-bold" 
+                                    style="background: linear-gradient(135deg, #4f46e5, #4338ca);">
+                                <i class="fas fa-save me-2"></i> {% if question %}Yangilash{% else %}Saqlash va qo'shish{% endif %}
                             </button>
-                            <a href="{{ url_for('admin.questions') }}" class="btn btn-secondary">
-                                <i class="fas fa-times me-2"></i> {{ _('Bekor qilish') }}
+                            <a href="{{ url_for('admin.questions') }}" class="btn btn-light py-3 px-4 rounded-4 fw-bold text-muted">
+                                Chiqish
                             </a>
                         </div>
                     </form>
@@ -196,58 +282,40 @@
             </div>
         </div>
 
-        <!-- Teacher Help Section -->
-        <div class="col-lg-4 mb-4" id="teacher-help-section">
-            <div class="card border-0 shadow-sm" style="position: sticky; top: 100px; border-radius: 20px; overflow: hidden;">
-                <div class="card-header text-white py-3" style="background: linear-gradient(135deg, #10b981, #059669);">
-                    <h5 class="mb-0 fw-bold"><i class="fas fa-graduation-cap me-2"></i> Formulalar yo'riqnomasi</h5>
+        <!-- Help Sidebar -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm" style="border-radius: 20px; position: sticky; top: 100px;">
+                <div class="card-header bg-success bg-opacity-10 text-success border-0 py-3 px-4">
+                    <h5 class="mb-0 fw-bold d-flex align-items-center">
+                        <i class="fas fa-lightbulb me-2"></i> Yordam markazi
+                    </h5>
                 </div>
-                <div class="card-body p-3">
-                    <p class="small text-muted mb-3">
-                        <i class="fas fa-info-circle text-primary"></i>
-                        Formulani kiritish uchun <strong>Math Editor</strong> tugmasini bosing yoki bevosita <code>$...$</code> ichiga LaTeX yozing.
-                    </p>
-
+                <div class="card-body p-4 overflow-auto" style="max-height: 70vh;">
+                    <p class="text-muted small mb-4">Formulalarni yozish uchun maxsus editorimizdan foydalaning yoki quyidagi kodlardan nusxa oling:</p>
+                    
                     <div class="help-example">
-                        <div class="fw-semibold small text-muted mb-1">Inline formula</div>
-                        <code>$x^2 + y^2 = r^2$</code>
-                        <div class="rendered">$x^2 + y^2 = r^2$</div>
+                        <div class="small fw-bold text-primary mb-1">Matematika</div>
+                        <code>$\frac{a}{b}$</code> &rarr; $\frac{a}{b}$ <br>
+                        <code>$\sqrt{x}$</code> &rarr; $\sqrt{x}$ <br>
+                        <code>$x^n$</code> &rarr; $x^n$
                     </div>
 
                     <div class="help-example">
-                        <div class="fw-semibold small text-muted mb-1">Kasr — Fraction</div>
-                        <code>$\frac{1}{2}$</code>
-                        <div class="rendered">$\frac{1}{2}$</div>
+                        <div class="small fw-bold text-info mb-1">Kimyo (Mhchem)</div>
+                        <code>$\ce{H2O}$</code> &rarr; $\ce{H2O}$ <br>
+                        <code>$\ce{CO2 + H2O -> H2CO3}$</code> <br>
+                        <div class="small mt-1">&rarr; $\ce{CO2 + H2O -> H2CO3}$</div>
                     </div>
 
                     <div class="help-example">
-                        <div class="fw-semibold small text-muted mb-1">Ildiz — Square Root</div>
-                        <code>$\sqrt{16} = 4$</code>
-                        <div class="rendered">$\sqrt{16} = 4$</div>
+                        <div class="small fw-bold text-warning mb-1">Fizika</div>
+                        <code>$\rho, \lambda, \Delta$</code> &rarr; $\rho, \lambda, \Delta$ <br>
+                        <code>$F = m \cdot a$</code> &rarr; $F = m \cdot a$
                     </div>
 
-                    <div class="help-example">
-                        <div class="fw-semibold small text-muted mb-1">Logarifm</div>
-                        <code>$\log_2(8) = 3$</code>
-                        <div class="rendered">$\log_2(8) = 3$</div>
-                    </div>
-
-                    <div class="help-example">
-                        <div class="fw-semibold small text-muted mb-1">Daraja — Power</div>
-                        <code>$2^{10} = 1024$</code>
-                        <div class="rendered">$2^{10} = 1024$</div>
-                    </div>
-
-                    <div class="help-example">
-                        <div class="fw-semibold small text-muted mb-1">Murakkab formula</div>
-                        <code>$\frac{a^2 + b^2}{\sqrt{c}}$</code>
-                        <div class="rendered">$\frac{a^2 + b^2}{\sqrt{c}}$</div>
-                    </div>
-
-                    <div class="alert alert-warning border-0 small mt-2 py-2 mb-0" style="border-radius: 10px;">
-                        <i class="fas fa-lightbulb me-1"></i>
-                        Matn <strong>va</strong> formula birga yozilishi mumkin: <br>
-                        <code>Agar $x = 5$ bo'lsa, $x^2 = ?$</code>
+                    <div class="alert alert-info border-0 rounded-4 small mt-4 mb-0">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Eslatma: Bir matn ichida bir nechta formula yozishingiz mumkin. Har birini <code>$...$</code> ichiga oling.
                     </div>
                 </div>
             </div>
@@ -255,63 +323,133 @@
     </div>
 </div>
 
-<!-- Math Editor Modal -->
+<!-- Advanced Math/Science Editor Modal -->
 <div class="modal fade" id="mathEditorModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
-      <div class="modal-header text-white border-0 py-3" style="background: linear-gradient(135deg, #0f172a, #1e293b);">
-        <h5 class="modal-title fw-bold">
-            <i class="fas fa-square-root-alt text-success me-2"></i> Matematik Muharrir
-        </h5>
+    <div class="modal-content border-0 shadow-2xl" style="border-radius: 28px; overflow: hidden;">
+      <div class="modal-header border-0 bg-dark text-white p-4">
+        <div class="d-flex align-items-center">
+            <div class="bg-success rounded-circle p-2 me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                <i class="fas fa-square-root-alt text-white"></i>
+            </div>
+            <div>
+                <h5 class="modal-title fw-bold mb-0">Professional Formula Muharriri</h5>
+                <span id="targetLabel" class="text-success text-xs font-monospace">Maydon: question_text</span>
+            </div>
+        </div>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body p-4">
+      <div class="modal-body p-4 bg-white">
         <input type="hidden" id="currentTargetField">
+        
+        <!-- Category Tabs -->
+        <ul class="nav nav-pills toolbar-tabs mb-3" id="formulaTabs" role="tablist">
+          <li class="nav-item">
+            <a class="nav-link active" id="math-tab" data-bs-toggle="pill" href="#math-content" role="tab">Matematika</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="physics-tab" data-bs-toggle="pill" href="#physics-content" role="tab">Fizika</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="chemistry-tab" data-bs-toggle="pill" href="#chemistry-content" role="tab">Kimyo</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="greek-tab" data-bs-toggle="pill" href="#greek-content" role="tab">Grek alifbosi</a>
+          </li>
+        </ul>
 
-        <!-- Shortcut buttons -->
-        <div class="mb-3 pb-3 border-bottom">
-            <p class="text-muted small mb-2">Tezkor kiritish tugmalari:</p>
-            <div class="d-flex flex-wrap gap-2">
-                <button type="button" class="btn btn-outline-secondary mq-btn" data-cmd="cmd" data-latex="\frac">Kasr ÷</button>
-                <button type="button" class="btn btn-outline-secondary mq-btn" data-cmd="write" data-latex="^{ }">x² ↑</button>
-                <button type="button" class="btn btn-outline-secondary mq-btn" data-cmd="write" data-latex="_{ }">x₂ ↓</button>
-                <button type="button" class="btn btn-outline-secondary mq-btn" data-cmd="cmd" data-latex="\sqrt">√x</button>
-                <button type="button" class="btn btn-outline-secondary mq-btn" data-cmd="write" data-latex="\log_{ }">log</button>
-                <button type="button" class="btn btn-outline-secondary mq-btn" data-cmd="write" data-latex="\sin">sin</button>
-                <button type="button" class="btn btn-outline-secondary mq-btn" data-cmd="write" data-latex="\cos">cos</button>
-                <button type="button" class="btn btn-outline-secondary mq-btn" data-cmd="write" data-latex="\tan">tan</button>
-                <button type="button" class="btn btn-outline-secondary mq-btn" data-cmd="write" data-latex="\pi">π</button>
-                <button type="button" class="btn btn-outline-secondary mq-btn" data-cmd="write" data-latex="\infty">∞</button>
-                <button type="button" class="btn btn-outline-secondary mq-btn" data-cmd="write" data-latex="\alpha">α</button>
-                <button type="button" class="btn btn-outline-secondary mq-btn" data-cmd="write" data-latex="\beta">β</button>
-                <button type="button" class="btn btn-outline-secondary mq-btn" data-cmd="write" data-latex="\theta">θ</button>
-                <button type="button" class="btn btn-outline-secondary mq-btn" data-cmd="write" data-latex="\pm">±</button>
-                <button type="button" class="btn btn-outline-secondary mq-btn" data-cmd="write" data-latex="\neq">≠</button>
-                <button type="button" class="btn btn-outline-secondary mq-btn" data-cmd="write" data-latex="\leq">≤</button>
-                <button type="button" class="btn btn-outline-secondary mq-btn" data-cmd="write" data-latex="\geq">≥</button>
+        <!-- Toolbar Content -->
+        <div class="tab-content toolbar-content mb-3" id="formulaTabContent">
+          <!-- Math Tab -->
+          <div class="tab-pane fade show active" id="math-content" role="tabpanel">
+            <div class="mb-2 text-xs fw-bold text-muted">Amallar:</div>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <button type="button" class="btn mq-btn" data-latex="\frac{ }{ }">Kasr <small>÷</small></button>
+                <button type="button" class="btn mq-btn" data-latex="\sqrt{ }">Ildiz <small>√</small></button>
+                <button type="button" class="btn mq-btn" data-latex="^{ }">Daraja <small>xⁿ</small></button>
+                <button type="button" class="btn mq-btn" data-latex="_{ }">Indeks <small>xₙ</small></button>
+                <button type="button" class="btn mq-btn" data-latex="\log_{ }^{ }">Log</button>
+                <button type="button" class="btn mq-btn" data-latex="\ln">ln</button>
             </div>
+            <div class="mb-2 text-xs fw-bold text-muted">Algebra & Trig:</div>
+            <div class="d-flex flex-wrap gap-2">
+                <button type="button" class="btn mq-btn" data-latex="\sin">sin</button>
+                <button type="button" class="btn mq-btn" data-latex="\cos">cos</button>
+                <button type="button" class="btn mq-btn" data-latex="\tan">tan</button>
+                <button type="button" class="btn mq-btn" data-latex="\int_{ }^{ }">∫</button>
+                <button type="button" class="btn mq-btn" data-latex="\sum_{ }^{ }">∑</button>
+                <button type="button" class="btn mq-btn" data-latex="\lim_{ }">lim</button>
+                <button type="button" class="btn mq-btn" data-latex="\pi">π</button>
+                <button type="button" class="btn mq-btn" data-latex="\infty">∞</button>
+            </div>
+          </div>
+          
+          <!-- Physics Tab -->
+          <div class="tab-pane fade" id="physics-content" role="tabpanel">
+            <div class="mb-2 text-xs fw-bold text-muted">Kattaliklar & Belgilar:</div>
+            <div class="d-flex flex-wrap gap-2">
+                <button type="button" class="btn mq-btn" data-latex="\eta">η</button>
+                <button type="button" class="btn mq-btn" data-latex="\rho">ρ</button>
+                <button type="button" class="btn mq-btn" data-latex="\lambda">λ</button>
+                <button type="button" class="btn mq-btn" data-latex="\mu">μ</button>
+                <button type="button" class="btn mq-btn" data-latex="\omega">ω</button>
+                <button type="button" class="btn mq-btn" data-latex="\Delta">Δ</button>
+                <button type="button" class="btn mq-btn" data-latex="\Omega">Ω</button>
+                <button type="button" class="btn mq-btn" data-latex="\Phi">Φ</button>
+                <button type="button" class="btn mq-btn" data-latex="^{\circ}">Daraja °</button>
+                <button type="button" class="btn mq-btn" data-latex="\cdot">Nuqta ·</button>
+                <button type="button" class="btn mq-btn" data-latex="\pm">±</button>
+            </div>
+          </div>
+
+          <!-- Chemistry Tab -->
+          <div class="tab-pane fade" id="chemistry-content" role="tabpanel">
+            <div class="alert alert-info py-2 small mb-3">
+                <i class="fas fa-vial me-2"></i> Kimyoviy formulalar uchun <code>\ce{...}</code> ishlatiladi.
+            </div>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <button type="button" class="btn mq-btn chem-btn" data-latex="\ce{ }">CE { } <small>(Formula bloki)</small></button>
+                <button type="button" class="btn mq-btn chem-btn" data-latex="\ce{->}">Strelka &rarr;</button>
+                <button type="button" class="btn mq-btn chem-btn" data-latex="\ce{<=>}">Reaksiya &rlarr;</button>
+                <button type="button" class="btn mq-btn chem-btn" data-latex="\ce{H2O}">H₂O</button>
+                <button type="button" class="btn mq-btn chem-btn" data-latex="\ce{CO2}">CO₂</button>
+            </div>
+            <div class="form-text text-xs">Kimyo rejimida formulalar matn ko'rinishida yoziladi va avtomatik render qilinadi.</div>
+          </div>
+
+          <!-- Greek Tab -->
+          <div class="tab-pane fade" id="greek-content" role="tabpanel">
+            <div class="d-flex flex-wrap gap-2">
+                <button type="button" class="btn mq-btn" data-latex="\alpha">\alpha</button>
+                <button type="button" class="btn mq-btn" data-latex="\beta">\beta</button>
+                <button type="button" class="btn mq-btn" data-latex="\gamma">\gamma</button>
+                <button type="button" class="btn mq-btn" data-latex="\delta">\delta</button>
+                <button type="button" class="btn mq-btn" data-latex="\epsilon">\epsilon</button>
+                <button type="button" class="btn mq-btn" data-latex="\theta">\theta</button>
+                <button type="button" class="btn mq-btn" data-latex="\sigma">\sigma</button>
+                <button type="button" class="btn mq-btn" data-latex="\tau">\tau</button>
+                <button type="button" class="btn mq-btn" data-latex="\psi">\psi</button>
+                <button type="button" class="btn mq-btn" data-latex="\zeta">\zeta</button>
+            </div>
+          </div>
         </div>
 
-        <!-- MathQuill live editor -->
-        <div class="math-editor-box" id="math-editor-container" onclick="document.getElementById('mq-field-span').focus()">
+        <!-- Editor Area -->
+        <div class="math-editor-box mb-3" id="math-editor-container">
             <span id="mq-field-span"></span>
         </div>
-        <div class="form-text mt-1 ms-1"><i class="fas fa-keyboard text-muted"></i> Klaviatura bilan ham yozishingiz mumkin. <kbd>\frac</kbd>, <kbd>\sqrt</kbd> kabi buyruqlar qabul qilinadi.</div>
 
-        <!-- LaTeX output textarea -->
-        <div class="mt-4">
-            <label class="form-label fw-bold small text-muted">Olingan LaTeX kodi (tahrirlanishi mumkin):</label>
-            <div class="input-group">
-                <span class="input-group-text bg-light"><i class="fas fa-code text-muted"></i></span>
-                <textarea id="mq-latex-output" class="form-control font-monospace bg-light" rows="2" placeholder="Bu yerda LaTeX kodi paydo bo'ladi..."></textarea>
-            </div>
-            <div class="form-text">Formula saqlanganda bu qiymat <code>$...$</code> bilan o'ralgan holda maydonga qo'shiladi.</div>
+        <div class="input-group mb-2">
+            <span class="input-group-text bg-light text-muted small font-monospace">LATEX</span>
+            <input type="text" id="mq-latex-output" class="form-control font-monospace text-xs" placeholder="LaTeX kodi...">
+            <button class="btn btn-outline-secondary" type="button" id="copyLatexBtn"><i class="fas fa-copy"></i></button>
         </div>
       </div>
-      <div class="modal-footer bg-light p-3 border-0">
-        <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Bekor qilish</button>
-        <button type="button" class="btn btn-success px-5 fw-bold" id="saveMathBtn" style="border-radius: 12px;">
-            <i class="fas fa-check me-2"></i>Saqlash & Qo'shish
+      
+      <div class="modal-footer bg-light p-4 border-0">
+        <button type="button" class="btn btn-link text-muted fw-bold text-decoration-none" data-bs-dismiss="modal">Bekor qilish</button>
+        <button type="button" class="btn btn-dark px-5 py-3 rounded-4 fw-bold shadow" id="saveMathBtn">
+            <i class="fas fa-check-circle me-2 text-success"></i> MATNGA QO'SHISH
         </button>
       </div>
     </div>
@@ -323,10 +461,11 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathquill/0.10.1/mathquill.min.js"></script>
 <script>
-    // ─── Grade filter ───────────────────────────────────────────────────────────
+    // ─── Subject-Grade Linkage ──────────────────────────────────────────────────
     document.getElementById('subjectSelect').addEventListener('change', function () {
         const selectedOption = this.options[this.selectedIndex];
-        const allowedGrades = selectedOption.dataset.grades.split(',').map(g => parseInt(g));
+        const allowedGradesString = selectedOption.dataset.grades || "1,2,3,4,5,6,7,8,9,10,11";
+        const allowedGrades = allowedGradesString.split(',').map(g => parseInt(g));
         const gradeSelect = document.getElementById('gradeSelect');
 
         Array.from(gradeSelect.options).forEach(option => {
@@ -341,12 +480,11 @@
         });
 
         if (!allowedGrades.includes(parseInt(gradeSelect.value))) {
-            gradeSelect.value = allowedGrades[0];
+            gradeSelect.value = allowedGrades[0] || 1;
         }
     });
-    document.getElementById('subjectSelect').dispatchEvent(new Event('change'));
 
-    // ─── MathQuill setup ────────────────────────────────────────────────────────
+    // ─── MathQuill Implementation ───────────────────────────────────────────────
     var MQ = MathQuill.getInterface(2);
     var mqFieldSpan = document.getElementById('mq-field-span');
     var latexOutput = document.getElementById('mq-latex-output');
@@ -359,88 +497,134 @@
         }
     });
 
-    // sync manual latex edits back to MathQuill
+    // Sync manual LaTeX input back to MathQuill field
     latexOutput.addEventListener('input', function () {
         mathField.latex(this.value);
     });
 
-    var mathModal = new bootstrap.Modal(document.getElementById('mathEditorModal'));
-
-    // open modal
-    $(document).on('click', '.math-edit-btn', function () {
-        var targetId = $(this).data('target');
-        $('#currentTargetField').val(targetId);
-        mathField.latex('');
-        latexOutput.value = '';
-        mathModal.show();
-        setTimeout(function () { mathField.focus(); }, 450);
+    // Copy to clipboard
+    document.getElementById('copyLatexBtn').addEventListener('click', function() {
+        latexOutput.select();
+        document.execCommand('copy');
+        this.innerHTML = '<i class="fas fa-check"></i>';
+        setTimeout(() => { this.innerHTML = '<i class="fas fa-copy"></i>'; }, 1000);
     });
 
-    // shortcut buttons
+    var mathModal = new bootstrap.Modal(document.getElementById('mathEditorModal'));
+
+    $('.math-edit-btn').on('click', function () {
+        var targetId = $(this).data('target');
+        var label = targetId.replace('_', ' ').toUpperCase();
+        
+        $('#currentTargetField').val(targetId);
+        $('#targetLabel').text('Maydon: ' + label);
+        
+        mathField.latex('');
+        latexOutput.value = '';
+        
+        mathModal.show();
+        
+        // Focus handler
+        setTimeout(function () { 
+            mathField.focus(); 
+            $('.math-editor-box').addClass('active');
+        }, 500);
+    });
+
     $(document).on('click', '.mq-btn', function () {
-        var cmd = $(this).data('cmd');
         var latex = $(this).data('latex');
-        if (cmd === 'cmd') {
-            mathField.cmd(latex);
-        } else {
+        if (latex.includes('{')) {
             mathField.write(latex);
+            // Move cursor inside brackets if empty brackets exist
+            if (latex.includes('{ }')) {
+                mathField.keystroke('Left');
+            }
+        } else {
+            mathField.cmd(latex);
         }
         mathField.focus();
     });
 
-    // save / insert
+    // Insertion Logic: Insert at cursor position in textarea
     document.getElementById('saveMathBtn').addEventListener('click', function () {
         var targetId = document.getElementById('currentTargetField').value;
         var el = document.getElementById(targetId);
-        var current = el.value;
         var lx = latexOutput.value.trim();
+        
         if (!lx) { mathModal.hide(); return; }
+        
         var toInsert = '$' + lx + '$';
-        el.value = current ? current + ' ' + toInsert : toInsert;
-        el.dispatchEvent(new Event('input'));
-        mathModal.hide();
+        
+        // Try to insert at cursor
+        var startPos = el.selectionStart;
+        var endPos = el.selectionEnd;
+        var scrollTop = el.scrollTop;
+        
+        if (typeof startPos === 'number' && typeof endPos === 'number') {
+            var value = el.value;
+            // Add spaces around if needed
+            var prefix = (startPos > 0 && value[startPos-1] !== ' ') ? ' ' : '';
+            var suffix = (endPos < value.length && value[endPos] !== ' ') ? ' ' : '';
+            
+            el.value = value.substring(0, startPos) + prefix + toInsert + suffix + value.substring(endPos);
+            el.selectionStart = el.selectionEnd = startPos + prefix.length + toInsert.length + suffix.length;
+        } else {
+            // Fallback to append
+            el.value = el.value ? el.value + ' ' + toInsert : toInsert;
+        }
+        
         el.focus();
+        el.scrollTop = scrollTop;
+        
+        // Trigger preview update
+        $(el).trigger('input');
+        
+        mathModal.hide();
     });
 
-    // ─── Live MathJax preview ───────────────────────────────────────────────────
-    var previewTimer = null;
+    // ─── Live MathJax Preview Logic ──────────────────────────────────────────────
+    var previewTimers = {};
 
     function updatePreview(id) {
-        var val = document.getElementById(id).value;
+        var el = document.getElementById(id);
         var preview = document.getElementById(id + '_preview');
-        if (!preview) return;
+        if (!el || !preview) return;
+        
+        var val = el.value;
         if (!val || !val.trim()) {
             preview.style.display = 'none';
-            preview.textContent = '';
+            preview.innerHTML = '';
             return;
         }
-        // Safely set text (avoid XSS) then let MathJax render
-        preview.textContent = val;
+        
         preview.style.display = 'block';
+        preview.innerHTML = val.replace(/\n/g, '<br>');
+        
         if (window.MathJax) {
-            MathJax.typesetPromise([preview]).catch(function (err) {
-                console.warn('MathJax render error:', err.message);
-            });
+            MathJax.typesetPromise([preview]).catch((err) => console.log(err));
         }
     }
 
+    // Attach listeners to all text fields
     ['question_text', 'option_a', 'option_b', 'option_c', 'option_d'].forEach(function (id) {
         var el = document.getElementById(id);
         if (!el) return;
+        
         el.addEventListener('input', function () {
-            clearTimeout(previewTimer);
-            var capturedId = id;
-            previewTimer = setTimeout(function () { updatePreview(capturedId); }, 280);
+            if (previewTimers[id]) clearTimeout(previewTimers[id]);
+            previewTimers[id] = setTimeout(function () { updatePreview(id); }, 400);
         });
-        // initial render after MathJax loads
-        window.addEventListener('load', function () { updatePreview(id); });
+        
+        // Initial load
+        $(document).ready(function() { updatePreview(id); });
     });
 
-    // render help section examples once MathJax is ready
-    document.addEventListener('DOMContentLoaded', function () {
-        if (window.MathJax) {
-            MathJax.typesetPromise([document.getElementById('teacher-help-section')]);
-        }
+    // Chemistry support optimization
+    $('#physics-tab, #chemistry-tab, #greek-tab').on('shown.bs.tab', function () {
+        mathField.focus();
     });
+
+    // Initialize subject selection linkage
+    document.getElementById('subjectSelect').dispatchEvent(new Event('change'));
 </script>
 {% endblock %}

@@ -107,10 +107,10 @@
              style="font-family:monospace;" required>
     </div>
 
-    <!-- Examples -->
+    <!-- Examples (visible to users) -->
     <div class="card mb-4">
       <div class="card-body">
-        <h6 class="fw-bold mb-3"><i class="fas fa-list-ol me-2 text-primary"></i>Namunalar (ixtiyoriy, 5 tagacha)</h6>
+        <h6 class="fw-bold mb-3"><i class="fas fa-list-ol me-2 text-primary"></i>Namunalar — foydalanuvchiga ko'rinadi (5 tagacha)</h6>
         {% for i in range(5) %}
         <div class="border rounded p-3 mb-3" style="background:#f8fafc;">
           <div class="fw-semibold small text-muted mb-2">Namuna {{ i+1 }}</div>
@@ -136,12 +136,80 @@
       </div>
     </div>
 
+    <!-- Hidden Tests (NOT shown to users, used for judge) -->
+    <div class="card mb-4 border-warning">
+      <div class="card-body">
+        <h6 class="fw-bold mb-1">
+          <i class="fas fa-eye-slash me-2 text-warning"></i>Yashirin testlar — foydalanuvchiga ko'rinmaydi
+          <span class="badge bg-warning text-dark ms-2" id="ht-count">0 ta test</span>
+          <span class="badge bg-danger ms-1" id="ht-min-warn" style="display:none;">Kamida 10 ta!</span>
+        </h6>
+        <p class="text-muted small mb-3">
+          JSON massiv formatida kiriting. Har bir element: <code>{"input": "...", "output": "..."}</code><br>
+          Misol: <code>[{"input": "3\n4", "output": "7"}, {"input": "10\n20", "output": "30"}]</code><br>
+          <strong class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>Majburiy: kamida 10 ta yashirin test bo'lishi kerak.</strong>
+        </p>
+        <textarea class="form-control" name="hidden_tests_json" id="hidden-tests-field"
+                  rows="12" style="font-family:monospace; font-size:.82rem;"
+                  placeholder='[&#10;  {"input": "kirish1", "output": "chiqish1"},&#10;  {"input": "kirish2", "output": "chiqish2"}&#10;]'
+                  oninput="updateHiddenTestCount(this.value)">{{ hidden_tests_json }}</textarea>
+        <div class="d-flex gap-2 mt-2 flex-wrap">
+          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="formatHiddenTests()">
+            <i class="fas fa-indent me-1"></i>JSON formatlash
+          </button>
+          <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearHiddenTests()">
+            <i class="fas fa-trash me-1"></i>Tozalash
+          </button>
+          <span class="text-muted small align-self-center" id="ht-err"></span>
+        </div>
+      </div>
+    </div>
+
     <div class="d-flex gap-2">
       <button type="submit" class="btn btn-primary px-4">
         <i class="fas fa-save me-1"></i> Saqlash
       </button>
       <a href="{{ url_for('arena.admin_problems') }}" class="btn btn-outline-secondary">Bekor qilish</a>
     </div>
+
+    <script>
+    function updateHiddenTestCount(val) {
+      const errEl  = document.getElementById('ht-err');
+      const cntEl  = document.getElementById('ht-count');
+      const warnEl = document.getElementById('ht-min-warn');
+      try {
+        const arr = JSON.parse(val || '[]');
+        const valid = Array.isArray(arr) ? arr.filter(t => t && t.output && String(t.output).trim()) : [];
+        cntEl.textContent = valid.length + ' ta test';
+        const enough = valid.length >= 10;
+        cntEl.className = 'badge ms-2 ' + (enough ? 'bg-success' : valid.length > 0 ? 'bg-warning text-dark' : 'bg-secondary');
+        warnEl.style.display = enough ? 'none' : 'inline';
+        errEl.textContent = '';
+      } catch(e) {
+        cntEl.textContent = 'JSON xato';
+        cntEl.className = 'badge ms-2 bg-danger';
+        warnEl.style.display = 'inline';
+        errEl.textContent = e.message;
+      }
+    }
+    function formatHiddenTests() {
+      const el = document.getElementById('hidden-tests-field');
+      try {
+        el.value = JSON.stringify(JSON.parse(el.value || '[]'), null, 2);
+        updateHiddenTestCount(el.value);
+      } catch(e) {
+        document.getElementById('ht-err').textContent = 'JSON xato: ' + e.message;
+      }
+    }
+    function clearHiddenTests() {
+      if (confirm('Barcha yashirin testlarni o\'chirasizmi?')) {
+        document.getElementById('hidden-tests-field').value = '[]';
+        updateHiddenTestCount('[]');
+      }
+    }
+    // Init count on page load
+    updateHiddenTestCount(document.getElementById('hidden-tests-field').value);
+    </script>
   </form>
 </div>
 {% endblock %}

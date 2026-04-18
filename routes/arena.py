@@ -281,10 +281,24 @@ def run(pid):
     return jsonify(result)
 
 
+def _diff_stars(difficulty: str) -> int:
+    """Murakkablikka qarab masalaning yulduz qiymati: oson=10, o'rta=25, qiyin=50."""
+    return {'easy': 10, 'medium': 25, 'hard': 50}.get(difficulty, 10)
+
+
+def _calc_stars(passed: int, total: int, verdict: str, difficulty: str = 'easy') -> int:
+    """Faqat barcha testlar to'g'ri o'tsa (AC) yulduz beradi, aks holda 0."""
+    if total == 0:
+        return _diff_stars(difficulty) if verdict == 'AC' else 0
+    if passed >= total and verdict == 'AC':
+        return _diff_stars(difficulty)
+    return 0
+
+
 @arena_bp.route('/problems/<int:pid>/submit', methods=['POST'])
 @arena_required
 def submit(pid):
-    """Run code against ALL test cases, record verdict, update stats."""
+    """Run code against ALL test cases (examples + hidden), record verdict, update stats."""
     problem = ArenaProblem.query.filter_by(id=pid, is_active=True).first_or_404()
     uid      = session['arena_user_id']
 
@@ -298,50 +312,71 @@ def submit(pid):
     if language not in LANGUAGES:
         return jsonify({'verdict': 'CE', 'error': f'Til qo\'llab-quvvatlanmaydi: {language}'})
 
-    # Load test cases from examples; fall back to correct_answer as single case
+    time_limit = float(problem.time_limit or 5)
+
+    # ── Load visible examples ──────────────────────────────────────────────────
     try:
         examples = json.loads(problem.examples or '[]')
     except (ValueError, TypeError):
         examples = []
 
-    time_limit = float(problem.time_limit or 5)
+    example_tests = [{'input': ex.get('input', ''), 'output': ex.get('output', '')}
+                     for ex in examples if ex.get('output', '').strip()]
 
-    # Build test list: [{input, output}, ...]
-    tests = [{'input': ex.get('input', ''), 'output': ex.get('output', '')}
-             for ex in examples if ex.get('output', '').strip()]
+    # ── Load hidden tests ──────────────────────────────────────────────────────
+    try:
+        hidden_raw = json.loads(problem.hidden_tests or '[]')
+    except (ValueError, TypeError):
+        hidden_raw = []
 
-    # If no example outputs defined, use correct_answer with empty stdin
-    if not tests and (problem.correct_answer or '').strip():
-        tests = [{'input': '', 'output': problem.correct_answer.strip()}]
+    hidden_tests = [{'input': t.get('input', ''), 'output': t.get('output', '')}
+                    for t in hidden_raw if t.get('output', '').strip()]
 
-    if not tests:
+    # If no hidden tests, fall back to correct_answer as single hidden test
+    if not hidden_tests and (problem.correct_answer or '').strip():
+        hidden_tests = [{'input': '', 'output': problem.correct_answer.strip()}]
+
+    # ── Combined test list: examples first, then hidden ────────────────────────
+    all_tests = example_tests + hidden_tests
+
+    if not all_tests:
         return jsonify({'verdict': 'CE', 'error': 'Masalada test holatlari topilmadi.'})
 
-    # Run against each test; stop at first failure
+    # ── Run all tests, counting how many pass ──────────────────────────────────
     final_verdict = 'AC'
     final_output  = ''
     final_error   = ''
     final_time    = 0.0
     failed_test   = None
+    passed_count  = 0
+    total_count   = len(all_tests)
 
-    for i, t in enumerate(tests, 1):
+    for i, t in enumerate(all_tests, 1):
         result = judge_code(code, language, t['input'], t['output'], time_limit)
         final_time = max(final_time, result.get('time', 0))
-        if result['verdict'] != 'AC':
-            final_verdict = result['verdict']
-            final_output  = result.get('output', '')
-            final_error   = result.get('error', '')
-            failed_test   = i
-            break
-        final_output = result.get('output', '')
+        if result['verdict'] == 'AC':
+            passed_count += 1
+        else:
+            if final_verdict == 'AC':
+                # Record first failure info
+                final_verdict = result['verdict']
+                final_output  = result.get('output', '')
+                final_error   = result.get('error', '')
+                # Show only example test indices to user; hide hidden test numbers
+                failed_test   = i if i <= len(example_tests) else None
+            # TLE or CE will behave the same on all remaining tests — stop early
+            if result['verdict'] in ('TLE', 'CE'):
+                break
 
-    # Check before adding new submission to avoid autoflush false-positive
+    stars = _calc_stars(passed_count, total_count, final_verdict, problem.difficulty)
+
+    # ── Check before adding new submission ─────────────────────────────────────
     user = ArenaUser.query.get(uid)
     already_ac = (ArenaSubmission.query
                   .filter_by(user_id=uid, problem_id=pid, status='AC')
                   .first())
 
-    # Record submission
+    # ── Record submission ──────────────────────────────────────────────────────
     sub = ArenaSubmission(
         user_id=uid,
         problem_id=pid,
@@ -351,19 +386,23 @@ def submit(pid):
         status=final_verdict,
         time_used=round(final_time, 3),
         error_msg=final_error[:1000],
+        tests_passed=passed_count,
+        tests_total=total_count,
+        stars=stars,
     )
     db.session.add(sub)
 
-    # Update problem counters
+    # ── Update problem counters ────────────────────────────────────────────────
     problem.submission_count += 1
     if final_verdict == 'AC':
         problem.accepted_count += 1
 
-    # Update user stats (only once per unique problem)
+    # ── Update user stats (only once per unique problem) ──────────────────────
     if final_verdict == 'AC' and not already_ac:
         user.problems_solved += 1
-        diff_pts = {'easy': 10, 'medium': 25, 'hard': 50}
-        user.rating += diff_pts.get(problem.difficulty, 10)
+        pts = _diff_stars(problem.difficulty)
+        user.rating += pts
+        user.total_stars += pts
 
     try:
         db.session.commit()
@@ -373,11 +412,14 @@ def submit(pid):
         return jsonify({'verdict': 'CE', 'error': 'Server xatosi, qayta urinib ko\'ring.'})
 
     resp = {
-        'verdict':    final_verdict,
-        'output':     final_output,
-        'error':      final_error,
-        'time':       round(final_time, 3),
-        'sub_id':     sub.id,
+        'verdict':      final_verdict,
+        'output':       final_output,
+        'error':        final_error,
+        'time':         round(final_time, 3),
+        'sub_id':       sub.id,
+        'stars':        stars,
+        'passed':       passed_count,
+        'total':        total_count,
     }
     if failed_test:
         resp['failed_test'] = failed_test
@@ -432,21 +474,33 @@ def submission_code(sid):
 
 @arena_bp.route('/users')
 def users():
-    page = request.args.get('page', 1, type=int)
+    page   = request.args.get('page', 1, type=int)
     search = request.args.get('q', '').strip()
+    sort   = request.args.get('sort', 'stars')
 
     q = ArenaUser.query
     if search:
         q = q.filter(ArenaUser.username.ilike(f'%{search}%') |
                      ArenaUser.full_name.ilike(f'%{search}%'))
-    q = q.order_by(ArenaUser.problems_solved.desc(),
-                   ArenaUser.rating.desc(),
-                   ArenaUser.created_at.asc())
+
+    # Sorting options
+    if sort == 'solved':
+        q = q.order_by(ArenaUser.problems_solved.desc(), ArenaUser.rating.desc())
+    elif sort == 'rating':
+        q = q.order_by(ArenaUser.rating.desc(), ArenaUser.problems_solved.desc())
+    elif sort == 'new':
+        q = q.order_by(ArenaUser.created_at.desc())
+    else:  # 'stars' — default: most rating (stars) first
+        q = q.order_by(ArenaUser.rating.desc(),
+                       ArenaUser.problems_solved.desc(),
+                       ArenaUser.created_at.asc())
+
     paginated = q.paginate(page=page, per_page=25, error_out=False)
 
     return render_template('arena/users.html',
                            users=paginated,
-                           search=search)
+                           search=search,
+                           sort=sort)
 
 
 # ─── Profile ──────────────────────────────────────────────────────────────────
@@ -596,7 +650,7 @@ def _problem_form(problem):
         mem_lim     = request.form.get('memory_limit', '256')
         is_active   = request.form.get('is_active') == '1'
 
-        # Examples: up to 5 pairs
+        # Examples: up to 5 pairs (visible to users)
         examples = []
         for i in range(1, 6):
             inp = request.form.get(f'ex_input_{i}', '').strip()
@@ -606,31 +660,49 @@ def _problem_form(problem):
                 examples.append({'input': inp, 'output': out,
                                   'explanation': exp})
 
-        if not code:
-            error = 'Kod majburiy.'
-        elif not title:
-            error = 'Sarlavha majburiy.'
-        elif not description:
-            error = 'Tavsif majburiy.'
-        elif difficulty not in ('easy', 'medium', 'hard'):
-            error = 'Murakkablik noto\'g\'ri.'
-        else:
-            # Uniqueness check
-            existing = ArenaProblem.query.filter_by(code=code).first()
-            if existing and (problem is None or existing.id != problem.id):
-                error = f'"{code}" kodi allaqachon mavjud.'
+        # Hidden tests: JSON textarea (not shown to users)
+        hidden_tests_raw = request.form.get('hidden_tests_json', '').strip()
+        hidden_tests = []
+        if hidden_tests_raw:
+            try:
+                parsed = json.loads(hidden_tests_raw)
+                if isinstance(parsed, list):
+                    hidden_tests = [
+                        {'input': str(t.get('input', '')), 'output': str(t.get('output', ''))}
+                        for t in parsed
+                        if isinstance(t, dict) and str(t.get('output', '')).strip()
+                    ]
+            except (ValueError, TypeError):
+                error = 'Yashirin testlar JSON formati noto\'g\'ri.'
+
+        if not error:
+            if not code:
+                error = 'Kod majburiy.'
+            elif not title:
+                error = 'Sarlavha majburiy.'
+            elif not description:
+                error = 'Tavsif majburiy.'
+            elif difficulty not in ('easy', 'medium', 'hard'):
+                error = 'Murakkablik noto\'g\'ri.'
+            elif len(hidden_tests) < 10:
+                error = f'Kamida 10 ta yashirin test talab qilinadi (hozir {len(hidden_tests)} ta). Sifatli tekshiruv uchun ko\'proq test qo\'shing.'
+            else:
+                existing = ArenaProblem.query.filter_by(code=code).first()
+                if existing and (problem is None or existing.id != problem.id):
+                    error = f'"{code}" kodi allaqachon mavjud.'
 
         if not error:
             if problem is None:
                 problem = ArenaProblem()
                 db.session.add(problem)
-            problem.code        = code
-            problem.title       = title
-            problem.description = description
+            problem.code          = code
+            problem.title         = title
+            problem.description   = description
             problem.input_format  = input_fmt
             problem.output_format = output_fmt
             problem.constraints   = constraints
             problem.examples      = json.dumps(examples, ensure_ascii=False)
+            problem.hidden_tests  = json.dumps(hidden_tests, ensure_ascii=False, indent=2)
             problem.difficulty    = difficulty
             problem.category      = category
             problem.correct_answer = correct_ans
@@ -638,19 +710,21 @@ def _problem_form(problem):
             problem.memory_limit  = int(mem_lim) if mem_lim else 256
             problem.is_active     = is_active
             db.session.commit()
-            flash('Masala saqlandi.', 'success')
+            flash(f'Masala saqlandi. {len(hidden_tests)} ta yashirin test.', 'success')
             return redirect(url_for('arena.admin_problems'))
 
-    # Parse existing examples for form
+    # Parse existing examples and hidden_tests for form
     try:
         ex_list = json.loads(problem.examples) if problem and problem.examples else []
     except (ValueError, TypeError):
         ex_list = []
-    # Pad to 5 slots
     while len(ex_list) < 5:
         ex_list.append({'input': '', 'output': '', 'explanation': ''})
+
+    hidden_tests_pretty = (problem.hidden_tests or '[]') if problem else '[]'
 
     return render_template('admin_arena_problem_form.html',
                            problem=problem,
                            ex_list=ex_list,
+                           hidden_tests_json=hidden_tests_pretty,
                            error=error)

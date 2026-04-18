@@ -3,7 +3,7 @@ Multiplayer typing-race module.
 Rooms are ephemeral (in-memory only — no DB required).
 PythonAnywhere-compatible: uses simple HTTP polling, no WebSockets.
 """
-import random, string, time, threading
+import json, random, string, time, threading
 from flask import (Blueprint, render_template, request, session,
                    jsonify, redirect, url_for)
 from extensions import csrf
@@ -15,30 +15,19 @@ typing_bp = Blueprint('typing', __name__, url_prefix='/typing')
 _lock = threading.Lock()
 ROOMS: dict = {}   # code → room_dict
 
-# ── Texts ──────────────────────────────────────────────────────────────────────
-TEXTS = [
-    # Uzbek - qisqa (~120 belgi)
-    "Bilim olish eng katta boylik. Kitob o'qigan inson dunyo bo'ylab sayohat qiladi va hech narsa uni to'xtata olmaydi.",
-    "Har bir yangi kun yangi imkoniyat. Kechagi xatolardan saboq olib, bugunni yanada yaxshiroq o'tkazishga harakat qil.",
-    "Dasturlash bu muammolarni hal qilish san'ati. Kod yozish orqali siz dunyoni o'zgartirishingiz mumkin.",
-    "Matematika barcha fanlarning asosi. Raqamlar bilan ishlash insonning mantiqiy fikrlashini rivojlantiradi.",
-    "Mehnat qilgan odam hech qachon yutqazmaydi. Intilish va sabr bular muvaffaqiyatning asosiy kaliti.",
-    # Uzbek - o'rta (~200 belgi)
-    "Kompyuter fanlari dunyosi juda keng va qiziqarli. Algoritmlar, malumotlar tuzilmalari, sun'iy intellekt bularning barchasi zamonaviy texnologiyaning asosini tashkil etadi. Har bir dasturchi bu bilimlarni egallashi lozim.",
-    "Python dasturlash tili eng qulay va keng tarqalgan tillardan biri. Uning sintaksisi sodda bo'lgani uchun yangi boshlovchilar uchun ideal tanlovdir. Python bilan veb saytlar, o'yinlar va sun'iy intellekt dasturlari yaratish mumkin.",
-    "O'zbek tili bizning ona tilimiz. Uni to'g'ri va chiroyli gapirish hamda yozish har bir o'zbek uchun burch va sharafdir. Tilimizni sevaylik, asraylik va rivojlantiraylik avlodlar uchun.",
-    "Maktabda o'qish hayotning eng qimmatli davri. Ustoz va murabbiylar bizga nafaqat bilim, balki hayotiy tajriba ham beradi. Ularning mehnati va fidoyiligini hech narsa bilan o'lchab bo'lmaydi.",
-    # Uzbek - uzun (~280 belgi)
-    "Jahon tarixida ko'plab buyuk mutafakkirlar bo'lib o'tgan. Ular hayotlarini ilm-fan va falsafaga bag'ishlagan. Ibn Sino, Beruniy, al-Xorazmiy kabi olimlar nafaqat Sharqda, balki butun dunyoda mashhur bo'lgan. Ularning merosini o'rganish va davom ettirish bizning burchimiz hisoblanadi.",
-    "Sun'iy intellekt texnologiyasi shiddat bilan rivojlanmoqda. Mashina o'rganish va neyron tarmoqlar yordamida kompyuterlar endi rasmlarni taniydi, nutqni tushunadi va murakkab muammolarni hal qiladi. Bu soha kelgusida inson hayotini tubdan o'zgartiradi.",
-    "Veb dasturlash zamonaviy texnologiyaning asosiy yo'nalishlaridan biri. HTML, CSS va JavaScript yordamida chiroyli va funksional saytlar yaratish mumkin. Backend uchun Python, Node.js yoki boshqa tillar qo'llaniladi.",
-    "O'zbekiston Markaziy Osiyoning qadimiy va boy madaniyatga ega davlati. Samarqand, Buxoro va Xiva kabi shaharlar jahon merosi ro'yxatiga kiritilgan. Mamlakatimiz nafaqat tarixiy obidalar, balki zamonaviy texnologiyalar bilan ham rivojlanib bormoqda.",
-    # English
-    "The quick brown fox jumps over the lazy dog near the riverbank every single morning without fail.",
-    "Programming is the art of telling a computer what to do. Good programmers find elegant solutions that are efficient and easy to understand.",
-    "Technology is advancing at an incredible pace. Those who learn new skills today will shape the world of tomorrow for future generations.",
-    "Practice makes perfect. The more you type, the faster and more accurate you become over time with consistent effort.",
-]
+# ── Texts loaded from static/texts.json ───────────────────────────────────────
+_TEXTS_JSON_PATH = __file__[:__file__.rfind('routes')] + 'static/texts.json'
+with open(_TEXTS_JSON_PATH, encoding='utf-8') as _f:
+    _TEXTS_DATA: dict = json.load(_f)
+
+
+def _pick_text(lang: str = 'uz', level: str = 'easy', exclude: str = None) -> str:
+    candidates = _TEXTS_DATA.get(lang, {}).get(level) or _TEXTS_DATA.get('uz', {}).get('easy', [])
+    texts = [item['text'] for item in candidates]
+    if exclude and len(texts) > 1:
+        texts = [t for t in texts if t != exclude]
+    return random.choice(texts)
+
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -67,7 +56,6 @@ def _new_participant(name: str) -> dict:
 
 
 def _cleanup() -> None:
-    """Remove rooms older than 2 hours."""
     now = time.time()
     with _lock:
         expired = [k for k, v in ROOMS.items() if now - v['created_at'] > 7200]
@@ -91,9 +79,10 @@ def index():
 @typing_bp.route('/solo', methods=['POST'])
 @csrf.exempt
 def solo():
-    """Yolg'iz rejim — guruhsiz, darhol boshlanadi."""
-    data = request.get_json(silent=True) or {}
-    name = (data.get('name') or '').strip()[:30]
+    data  = request.get_json(silent=True) or {}
+    name  = (data.get('name') or '').strip()[:30]
+    lang  = data.get('lang',  'uz')
+    level = data.get('level', 'easy')
     if not name:
         return jsonify({'error': 'Ism kiritilmadi'}), 400
 
@@ -102,21 +91,22 @@ def solo():
     _cleanup()
 
     code = _gen_code()
-    text = random.choice(TEXTS)
+    text = _pick_text(lang, level)
     now  = time.time()
 
     with _lock:
         ROOMS[code] = {
-            'code':        code,
-            'creator_id':  uid,
-            'text':        text,
-            'state':       'racing',   # Darhol boshlanadi
-            'participants': {uid: _new_participant(name)},
-            'start_time':  now,
+            'code':          code,
+            'creator_id':    uid,
+            'text':          text,
+            'state':         'racing',
+            'participants':  {uid: _new_participant(name)},
+            'start_time':    now,
             'countdown_end': None,
-            'finish_count': 0,
-            'created_at':  now,
-            'is_solo':     True,
+            'finish_count':  0,
+            'created_at':    now,
+            'is_solo':       True,
+            'reset_count':   0,
         }
 
     return jsonify({'code': code, 'url': url_for('typing.room', code=code)})
@@ -131,23 +121,24 @@ def create_room():
         return jsonify({'error': 'Ism kiritilmadi'}), 400
 
     _cleanup()
-    uid = _get_uid()
+    uid  = _get_uid()
     session['typing_name'] = name
     code = _gen_code()
-    text = random.choice(TEXTS)
+    text = _pick_text('uz', 'easy')
 
     with _lock:
         ROOMS[code] = {
-            'code':        code,
-            'creator_id':  uid,
-            'text':        text,
-            'state':       'waiting',
-            'participants': {uid: _new_participant(name)},
-            'start_time':  None,
+            'code':          code,
+            'creator_id':    uid,
+            'text':          text,
+            'state':         'waiting',
+            'participants':  {uid: _new_participant(name)},
+            'start_time':    None,
             'countdown_end': None,
-            'finish_count': 0,
-            'created_at':  time.time(),
-            'is_solo':     False,
+            'finish_count':  0,
+            'created_at':    time.time(),
+            'is_solo':       False,
+            'reset_count':   0,
         }
 
     return jsonify({'code': code, 'url': url_for('typing.room', code=code)})
@@ -218,7 +209,6 @@ def room_state(code):
         if uid and uid in room['participants']:
             room['participants'][uid]['last_seen'] = now
 
-        # Evict idle participants (only while waiting, never the creator)
         if room['state'] == 'waiting':
             stale = [
                 k for k, v in room['participants'].items()
@@ -228,7 +218,6 @@ def room_state(code):
             for k in stale:
                 del room['participants'][k]
 
-        # Countdown elapsed → switch to racing
         if room['state'] == 'countdown' and room.get('countdown_end'):
             if now >= room['countdown_end']:
                 room['state'] = 'racing'
@@ -252,14 +241,16 @@ def room_state(code):
     participants_out.sort(key=lambda x: (-x['pct'], x['name']))
 
     return jsonify({
-        'state':          room['state'],
-        'text_len':       text_len,
-        'participants':   participants_out,
-        'countdown_end':  room.get('countdown_end'),
-        'start_time':     room.get('start_time'),
-        'is_creator':     uid == room.get('creator_id'),
-        'is_solo':        room.get('is_solo', False),
-        'code':           code,
+        'state':         room['state'],
+        'text':          room['text'],
+        'text_len':      text_len,
+        'reset_count':   room.get('reset_count', 0),
+        'participants':  participants_out,
+        'countdown_end': room.get('countdown_end'),
+        'start_time':    room.get('start_time'),
+        'is_creator':    uid == room.get('creator_id'),
+        'is_solo':       room.get('is_solo', False),
+        'code':          code,
     })
 
 
@@ -270,14 +261,18 @@ def start_race(code):
         if code not in ROOMS:
             return jsonify({'error': 'not_found'}), 404
         room = ROOMS[code]
-        uid = session.get('typing_uid')
+        uid  = session.get('typing_uid')
 
         if room['creator_id'] != uid:
             return jsonify({'error': 'Faqat yaratuvchi boshlaydi'}), 403
         if room['state'] != 'waiting':
             return jsonify({'error': 'Allaqachon boshlangan'}), 400
 
-        room['state'] = 'countdown'
+        data  = request.get_json(silent=True) or {}
+        lang  = data.get('lang',  'uz')
+        level = data.get('level', 'easy')
+        room['text']          = _pick_text(lang, level, exclude=room.get('text'))
+        room['state']         = 'countdown'
         room['countdown_end'] = time.time() + 3.5
 
     return jsonify({'ok': True})
@@ -286,7 +281,6 @@ def start_race(code):
 @typing_bp.route('/api/room/<code>/reset', methods=['POST'])
 @csrf.exempt
 def reset_room(code):
-    """Poygani qayta boshlash — ishtirokchilar saqlanadi, matn yangilanadi."""
     uid = session.get('typing_uid')
     with _lock:
         if code not in ROOMS:
@@ -295,12 +289,17 @@ def reset_room(code):
         if room['creator_id'] != uid:
             return jsonify({'ok': False, 'error': "Faqat yaratuvchi qayta boshlaydi"}), 403
 
-        room['state']          = 'waiting'
-        room['start_time']     = None
-        room['countdown_end']  = None
-        room['finish_count']   = 0
-        room['text']           = random.choice(TEXTS)
-        room['created_at']     = time.time()   # Expiry vaqtini uzaytirish
+        data  = request.get_json(silent=True) or {}
+        lang  = data.get('lang',  'uz')
+        level = data.get('level', 'easy')
+
+        room['state']         = 'waiting'
+        room['start_time']    = None
+        room['countdown_end'] = None
+        room['finish_count']  = 0
+        room['text']          = _pick_text(lang, level, exclude=room.get('text'))
+        room['reset_count']   = room.get('reset_count', 0) + 1
+        room['created_at']    = time.time()
 
         for p in room['participants'].values():
             p['progress']    = 0
@@ -353,7 +352,6 @@ def update_progress(code):
                 and all(v['finished'] for v in room['participants'].values())):
             room['state'] = 'finished'
 
-    # Natijani DB ga saqlash (faqat tugatgan va wpm > 0 bo'lganda)
     if just_finished and wpm > 0:
         name = room['participants'][uid]['name']
         try:
@@ -376,12 +374,13 @@ def update_progress(code):
 @typing_bp.route('/leaderboard')
 @csrf.exempt
 def leaderboard():
-    """Top 10 — barcha vaqt bo'yicha."""
+    is_admin = session.get('admin_user') == 'asilbek'
     top = (TypingResult.query
            .order_by(TypingResult.wpm.desc())
            .limit(10).all())
-    return jsonify([
-        {
+    rows = []
+    for i, r in enumerate(top):
+        row = {
             'rank':     i + 1,
             'name':     r.name,
             'wpm':      r.wpm,
@@ -389,5 +388,28 @@ def leaderboard():
             'date':     r.created_at.strftime('%d.%m.%Y'),
             'is_solo':  r.is_solo,
         }
-        for i, r in enumerate(top)
-    ])
+        if is_admin:
+            row['id'] = r.id
+        rows.append(row)
+    return jsonify(rows)
+
+
+@typing_bp.route('/leaderboard/<int:rid>/delete', methods=['POST'])
+@csrf.exempt
+def leaderboard_delete(rid):
+    if session.get('admin_user') != 'asilbek':
+        return jsonify({'error': 'Ruxsat yo\'q'}), 403
+    r = TypingResult.query.get_or_404(rid)
+    db.session.delete(r)
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+@typing_bp.route('/leaderboard/clear', methods=['POST'])
+@csrf.exempt
+def leaderboard_clear():
+    if session.get('admin_user') != 'asilbek':
+        return jsonify({'error': 'Ruxsat yo\'q'}), 403
+    TypingResult.query.delete()
+    db.session.commit()
+    return jsonify({'ok': True})

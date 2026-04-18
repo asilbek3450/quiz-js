@@ -133,6 +133,44 @@ footer span { color: #444 !important; }
 .start-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
 .waiting-hint { color: #666; font-size: .85rem; margin-top: 12px; }
 
+/* ── Settings in Room ────────────────────────────────────────────────────────── */
+.room-settings {
+  background: #1a1b1e;
+  border: 1px solid #3a3c40;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+.setting-group { margin-bottom: 16px; }
+.setting-group:last-child { margin-bottom: 0; }
+.setting-label {
+  display: block;
+  font-size: .75rem;
+  font-weight: 700;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+.setting-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.s-chip {
+  background: transparent;
+  border: 1.5px solid #3a3c40;
+  border-radius: 99px;
+  padding: 6px 16px;
+  font-size: .85rem;
+  color: #888;
+  cursor: pointer;
+  transition: all .2s;
+}
+.s-chip:hover { border-color: #f59e0b66; color: #f59e0b; }
+.s-chip.active {
+  background: #f59e0b22;
+  border-color: #f59e0b;
+  color: #f59e0b;
+  font-weight: 600;
+}
+
 /* ── Countdown overlay ───────────────────────────────────────────────────────── */
 #panel-countdown {
   display: none;
@@ -447,6 +485,25 @@ footer span { color: #444 !important; }
     </div>
 
     {% if is_creator %}
+    <div class="room-settings">
+      <div class="setting-group">
+        <span class="setting-label">Tilni tanlang:</span>
+        <div class="setting-chips" id="settings-lang">
+          <button class="s-chip active" onclick="setSetting('lang', 'uz', this)">Uzbek</button>
+          <button class="s-chip" onclick="setSetting('lang', 'en', this)">English</button>
+          <button class="s-chip" onclick="setSetting('lang', 'ru', this)">Russian</button>
+        </div>
+      </div>
+      <div class="setting-group">
+        <span class="setting-label">Qiyinchilik:</span>
+        <div class="setting-chips" id="settings-level">
+          <button class="s-chip active" onclick="setSetting('level', 'easy', this)">Oson</button>
+          <button class="s-chip" onclick="setSetting('level', 'medium', this)">O'rtacha</button>
+          <button class="s-chip" onclick="setSetting('level', 'hard', this)">Qiyin</button>
+        </div>
+      </div>
+    </div>
+
     <button class="start-btn" id="start-btn" onclick="startRace()">
       <i class="fas fa-flag-checkered"></i> Poygani boshlash
     </button>
@@ -500,6 +557,15 @@ footer span { color: #444 !important; }
       <h4><i class="fas fa-users me-1"></i> Ishtirokchilar</h4>
       <div id="participants-race"></div>
     </div>
+
+    {% if is_creator %}
+    <div style="margin-top:16px;">
+      <button class="btn-back" style="background:#2c2e31;border:1.5px solid #3a3c40;
+              color:#888;font-size:.82rem;padding:8px 18px;" onclick="doReplay()">
+        <i class="fas fa-redo"></i> Qayta boshlash
+      </button>
+    </div>
+    {% endif %}
   </div>
 
   <!-- FINISHED STATE -->
@@ -542,6 +608,7 @@ const IS_CREATOR    = "{{ 'true' if is_creator else 'false' }}" === 'true';
 const IS_SOLO       = "{{ 'true' if is_solo else 'false' }}" === 'true';
 const CSRF          = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 const INITIAL_STATE = "{{ room.state }}";
+let   knownResetCount = 0;
 
 // ── Typing state ───────────────────────────────────────────────────────────────
 // typed[i] = null | 'correct' | 'wrong'
@@ -565,7 +632,7 @@ let lastDisplayedCount = -1;
 const ghostInput     = document.getElementById('ghost-input');
 const typingBox      = document.getElementById('typing-box');
 const charsContainer = document.getElementById('chars-container');
-const spans          = Array.from(charsContainer.querySelectorAll('.char'));
+let spans            = Array.from(charsContainer.querySelectorAll('.char'));
 const statWpm        = document.getElementById('stat-wpm');
 const statPct        = document.getElementById('stat-pct');
 const statTimer      = document.getElementById('stat-timer');
@@ -574,9 +641,14 @@ const pCountEl       = document.getElementById('p-count');
 // ── Word boundary helpers ─────────────────────────────────────────────────────
 // wordStarts[i] = first char index of the i-th word
 const wordStarts = [0];
-for (let i = 0; i < TEXT.length; i++) {
-  if (TEXT[i] === ' ' && i + 1 < TEXT.length) wordStarts.push(i + 1);
+function buildWordStarts(txt) {
+  wordStarts.length = 1;
+  wordStarts[0] = 0;
+  for (let i = 0; i < txt.length; i++) {
+    if (txt[i] === ' ' && i + 1 < txt.length) wordStarts.push(i + 1);
+  }
 }
+buildWordStarts(TEXT);
 
 function getWordStart(pos) {
   // Largest wordStart that is <= pos
@@ -634,45 +706,57 @@ function handleKey(e) {
 
   // ── Backspace: so'z chegarasida to'xtaydi ───────────────────────────────────
   if (e.key === 'Backspace') {
-    const ws = getWordStart(cursor);
-    if (cursor > ws) {
+    if (cursor > 0) {
       cursor--;
       typed[cursor] = null;
       renderChars();
     }
-    // ws da bo'lsa: oldingi so'zga o'ta olmaydi
     ghostInput.value = '';
     return;
   }
 
-  if (cursor >= TEXT.length) return;
+  if (cursor >= textVar.length) return;
 
-  // ── Space ───────────────────────────────────────────────────────────────────
-  // Space FAQAT so'z to'liq va to'g'ri yozilganda ishlaydi:
-  //   1) cursor aniq space belgisida bo'lishi kerak
-  //   2) joriy so'zda hech qanday xato bo'lmasligi kerak
+  // ── Qat'iy tartib: xato bo'lsa oldinga o'tib bo'lmaydi ───────────────────────
+  // Faqat Backspace xatolarni o'chirish uchun ishlaydi. 
+  // Agar hozirda biron xato bo'lsa (joriy so'zda), space bosib keyingisiga o'tib bo'lmaydi.
+  
   if (e.key === ' ') {
-    if (TEXT[cursor] !== ' ' || currentWordHasError()) {
-      // So'z tugallanmagan yoki xato bor — space bloklanadi
+    if (textVar[cursor] !== ' ' || currentWordHasError()) {
       flashCurrentWord();
     } else {
-      // So'z to'liq va to'g'ri — space qabul qilinadi
       typed[cursor] = 'correct';
       cursor++;
       if (!startTime) startTime = Date.now();
       renderChars();
-      if (cursor >= TEXT.length) finishRace();
+      if (cursor >= textVar.length) finishRace();
     }
     ghostInput.value = '';
     return;
   }
 
-  // ── Oddiy belgi ─────────────────────────────────────────────────────────────
-  typed[cursor] = (e.key === TEXT[cursor]) ? 'correct' : 'wrong';
+  // Agar space belgisida bo'lsak va boshqa belgi urilsa — BLOK
+  if (textVar[cursor] === ' ') {
+    flashCurrentWord();
+    ghostInput.value = '';
+    return;
+  }
+
+  // Agar joriy belgi noto'g'ri urilsa — qizil bo'ladi, lekin cursor siljiydi
+  // Foydalanuvchi joriy so'zni tugatishi uchun space'gacha bora oladi, 
+  // lekin space uni to'xtatadi.
+  typed[cursor] = (e.key === textVar[cursor]) ? 'correct' : 'wrong';
   cursor++;
   if (!startTime) startTime = Date.now();
   renderChars();
-  if (cursor >= TEXT.length) finishRace();
+
+  if (cursor >= textVar.length) {
+    if (typed.some(t => t === 'wrong')) {
+      flashAllErrors();
+    } else {
+      finishRace();
+    }
+  }
   ghostInput.value = '';
 }
 
@@ -707,10 +791,25 @@ function flashCurrentWord() {
   }, 220);
 }
 
+function flashAllErrors() {
+  // Barcha xato belgilarni miltillatish va foydalanuvchiga xabar berish
+  spans.forEach((s, i) => {
+    if (typed[i] === 'wrong') s.classList.add('flash-err');
+  });
+  setTimeout(() => spans.forEach(s => s.classList.remove('flash-err')), 400);
+  // Typing boxni qisqa vaqt qizil chegarali qilish
+  typingBox.style.borderColor = '#ef4444';
+  typingBox.style.borderWidth = '2px';
+  setTimeout(() => {
+    typingBox.style.borderColor = '';
+    typingBox.style.borderWidth = '';
+  }, 600);
+}
+
 // ── Stats ─────────────────────────────────────────────────────────────────────
 function updateStats() {
   const correctCount = typed.filter(t => t === 'correct').length;
-  const pct = Math.round(cursor / TEXT.length * 100);
+  const pct = Math.round(cursor / textVar.length * 100);
   statPct.textContent = pct + '%';
 
   if (startTime) {
@@ -732,19 +831,6 @@ function startTimer() {
 }
 
 // ── Race flow ─────────────────────────────────────────────────────────────────
-function activateRacing() {
-  raceStarted = true;
-  document.getElementById('panel-waiting').style.display   = 'none';
-  document.getElementById('panel-countdown').style.display = 'none';
-  document.getElementById('panel-racing').style.display    = 'block';
-  document.getElementById('panel-finished').style.display  = 'none';
-
-  renderChars();
-  startTimer();
-  focusInput();
-  startProgressSend();
-}
-
 function finishRace() {
   myFinished = true;
   ghostInput.blur();
@@ -778,6 +864,18 @@ function startProgressSend() {
   }, 600);
 }
 
+// ── Settings management ───────────────────────────────────────────────────────
+let currentLang = 'uz';
+let currentLevel = 'easy';
+let textVar = TEXT; // Global matn o'zgaruvchisi
+
+function setSetting(type, val, el) {
+  if (type === 'lang') currentLang = val;
+  if (type === 'level') currentLevel = val;
+  el.parentNode.querySelectorAll('.s-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
 // ── Start race (creator) ──────────────────────────────────────────────────────
 async function startRace() {
   const btn = document.getElementById('start-btn');
@@ -785,7 +883,8 @@ async function startRace() {
   try {
     const res = await fetch('/typing/api/room/' + ROOM_CODE + '/start', {
       method: 'POST',
-      headers: { 'X-CSRFToken': CSRF },
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ lang: currentLang, level: currentLevel }),
     });
     if (!res.ok) {
       const d = await res.json();
@@ -797,26 +896,28 @@ async function startRace() {
   }
 }
 
-// ── Replay (creator): reset xonani, sahifani yangilaydi ──────────────────────
+// ── Replay (creator) ──────────────────────────────────────────────────────────
 async function doReplay() {
   const btn = document.getElementById('replay-btn');
   if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Tayyorlanmoqda...'; }
   try {
     const res = await fetch('/typing/api/room/' + ROOM_CODE + '/reset', {
       method: 'POST',
-      headers: { 'X-CSRFToken': CSRF },
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ lang: currentLang, level: currentLevel }),
     });
-    if (res.ok) {
-      window.location.reload();
-    } else {
+    if (!res.ok) {
       if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-redo"></i> Yangi poyga'; }
     }
+    // Reload yo'q — barcha userlar polling orqali 'waiting' holatini ko'radi
   } catch {
     if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-redo"></i> Yangi poyga'; }
   }
 }
 
 // ── State polling ─────────────────────────────────────────────────────────────
+let lastState = INITIAL_STATE;
+
 async function pollState() {
   try {
     const res = await fetch('/typing/api/room/' + ROOM_CODE + '/state');
@@ -830,21 +931,85 @@ function applyState(data) {
   const state = data.state;
   if (pCountEl) pCountEl.textContent = data.participants ? data.participants.length : '';
 
+  // reset_count oshsa — barcha userlar uchun state tozalanadi
+  const serverReset = data.reset_count || 0;
+  if (serverReset > knownResetCount) {
+    knownResetCount = serverReset;
+    resetLocalState(data);
+    lastState = 'waiting';
+  }
+
   if (state === 'waiting') {
     renderWaiting(data);
   } else if (state === 'countdown') {
     renderCountdown(data);
   } else if (state === 'racing') {
-    if (!raceStarted) activateRacing();
+    if (!raceStarted) activateRacing(data);
     renderParticipantBars(data.participants);
   } else if (state === 'finished') {
-    if (!raceStarted) { activateRacing(); myFinished = true; }
-    if (document.getElementById('panel-finished').style.display === 'none'
-        || !document.getElementById('panel-finished').style.display) {
+    if (!raceStarted) { activateRacing(data); myFinished = true; }
+    if (!document.getElementById('panel-finished').style.display
+        || document.getElementById('panel-finished').style.display === 'none') {
       showFinished(data.participants);
     }
     renderParticipantBars(data.participants);
   }
+  lastState = state;
+}
+
+function updateText(newText) {
+  textVar = newText;
+  // Chars qayta quriladi
+  charsContainer.innerHTML = '';
+  for (let i = 0; i < newText.length; i++) {
+    const sp = document.createElement('span');
+    sp.className = 'char upcoming';
+    sp.dataset.i = i;
+    sp.textContent = newText[i];
+    charsContainer.appendChild(sp);
+  }
+  spans = Array.from(charsContainer.querySelectorAll('.char'));
+  buildWordStarts(newText);
+}
+
+function resetLocalState(data) {
+  cursor = 0;
+  typed = [];
+  startTime = null;
+  wpm = 0;
+  myFinished = false;
+  raceStarted = false;
+
+  statWpm.textContent = '0';
+  statPct.textContent = '0%';
+  statTimer.textContent = '0:00';
+
+  if (timerInterval)    { clearInterval(timerInterval);    timerInterval    = null; }
+  if (progressInterval) { clearInterval(progressInterval); progressInterval = null; }
+  if (countdownTimer)   { clearInterval(countdownTimer);   countdownTimer   = null; }
+  lastCountdownEnd   = null;
+  lastDisplayedCount = -1;
+
+  if (data && data.text) updateText(data.text);
+  typed = new Array(textVar.length).fill(null);
+
+  const container = document.getElementById('participants-race');
+  if (container) container.innerHTML = '';
+}
+
+function activateRacing(data) {
+  if (data && data.text) updateText(data.text);
+  typed = new Array(textVar.length).fill(null);
+  raceStarted = true;
+  document.getElementById('panel-waiting').style.display   = 'none';
+  document.getElementById('panel-countdown').style.display = 'none';
+  document.getElementById('panel-racing').style.display    = 'block';
+  document.getElementById('panel-finished').style.display  = 'none';
+
+  renderChars();
+  startTimer();
+  focusInput();
+  startProgressSend();
 }
 
 function renderWaiting(data) {
@@ -938,15 +1103,20 @@ function showFinished(participants) {
   const lb = document.getElementById('leaderboard');
   lb.innerHTML = '';
 
+  // Tugatganlar: avval WPM bo'yicha (yuqori WPM = yaxshi),
+  // WPM teng bo'lsa finish vaqti bo'yicha (birinchi tugataganlar yuqorida)
   const sorted = [...participants].sort((a, b) => {
-    if (a.finished && b.finished) return (a.rank || 99) - (b.rank || 99);
+    if (a.finished && b.finished) {
+      if (b.wpm !== a.wpm) return b.wpm - a.wpm;
+      return (a.rank || 99) - (b.rank || 99);
+    }
     if (a.finished) return -1;
     if (b.finished) return 1;
     return b.pct - a.pct;
   });
 
   sorted.forEach((p, idx) => {
-    const pos = p.rank || (idx + 1);
+    const pos = idx + 1;   // use re-sorted position (WPM-based), not server finish-order
     const medal = ['🥇','🥈','🥉'][pos - 1] || pos + '.';
     const row = document.createElement('div');
     row.className = 'lb-row' + (p.is_me ? ' me' : '');
@@ -960,8 +1130,7 @@ function showFinished(participants) {
     lb.appendChild(row);
   });
 
-  if (stateInterval) { clearInterval(stateInterval); stateInterval = null; }
-}
+}  // stateInterval davom etadi — replay aniqlash uchun
 
 // ── Copy code ─────────────────────────────────────────────────────────────────
 function copyCode() {

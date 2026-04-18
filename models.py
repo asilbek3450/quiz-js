@@ -140,6 +140,7 @@ class ArenaUser(db.Model):
     bio = db.Column(db.Text, default='')
     rating = db.Column(db.Integer, default=0)
     problems_solved = db.Column(db.Integer, default=0)
+    total_stars = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=tashkent_now)
     last_seen = db.Column(db.DateTime, default=tashkent_now)
 
@@ -169,6 +170,7 @@ class ArenaProblem(db.Model):
     output_format = db.Column(db.Text, default='')
     constraints = db.Column(db.Text, default='')
     examples = db.Column(db.Text, default='[]')  # JSON: [{input, output, explanation}]
+    hidden_tests = db.Column(db.Text, default='[]')  # JSON: [{input, output}] — foydalanuvchiga ko'rsatilmaydi
     difficulty = db.Column(db.String(10), default='easy')   # easy / medium / hard
     category = db.Column(db.String(50), default='general')
     correct_answer = db.Column(db.Text, default='')          # for auto-grading
@@ -219,6 +221,9 @@ class ArenaSubmission(db.Model):
     status = db.Column(db.String(5), default='PE')   # AC / WA / TLE / RE / CE / PE
     time_used = db.Column(db.Float, default=0.0)     # execution time in seconds
     error_msg = db.Column(db.Text, default='')       # stderr / error text
+    tests_passed = db.Column(db.Integer, default=0)  # nechta test o'tdi
+    tests_total = db.Column(db.Integer, default=0)   # jami testlar soni
+    stars = db.Column(db.Integer, default=0)         # 0–5 yulduz
     submitted_at = db.Column(db.DateTime, default=tashkent_now)
 
     __table_args__ = (

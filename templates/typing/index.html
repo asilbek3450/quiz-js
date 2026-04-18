@@ -328,25 +328,23 @@ footer span { color: #555 !important; }
            placeholder="Ismingizni kiriting" maxlength="30" autocomplete="off">
 
     <div class="mode-row">
-      <span class="mode-label">Matn:</span>
-      <button class="chip active" data-solo="t1" onclick="setSolo('t1',this)">Qisqa</button>
-      <button class="chip" data-solo="t2" onclick="setSolo('t2',this)">O'rta</button>
-      <button class="chip" data-solo="t3" onclick="setSolo('t3',this)">Uzun</button>
-      <button class="chip" data-solo="tR" onclick="setSolo('tR',this)">Tasodifiy</button>
+      <span class="mode-label">Til:</span>
+      <button class="chip active" data-lang="uz" onclick="setSetting('lang','uz',this)">Uzbek</button>
+      <button class="chip" data-lang="en" onclick="setSetting('lang','en',this)">English</button>
+      <button class="chip" data-lang="ru" onclick="setSetting('lang','ru',this)">Russian</button>
+    </div>
+
+    <div class="mode-row">
+      <span class="mode-label">Qiyinchilik:</span>
+      <button class="chip active" data-level="easy" onclick="setSetting('level','easy',this)">Oson</button>
+      <button class="chip" data-level="medium" onclick="setSetting('level','medium',this)">O'rtacha</button>
+      <button class="chip" data-level="hard" onclick="setSetting('level','hard',this)">Qiyin</button>
     </div>
 
     <button class="t-btn t-btn-solo" id="solo-btn" onclick="doSolo()">
       <i class="fas fa-bolt me-2"></i>Boshlash
     </button>
     <div class="t-error" id="solo-err"></div>
-  </div>
-
-  <!-- ── TOP 10 LEADERBOARD ── -->
-  <div class="group-section" style="margin-bottom:0;">
-    <div class="section-divider"><span>Eng yaxshi natijalar</span></div>
-    <div class="lb-card" id="lb-card">
-      <div class="lb-loading"><i class="fas fa-spinner fa-spin"></i></div>
-    </div>
   </div>
 
   <!-- ── GROUP SECTION ── -->
@@ -387,17 +385,40 @@ footer span { color: #555 !important; }
     </div>
   </div>
 
+
+
+  <!-- ── TOP 10 LEADERBOARD ── -->
+  <div class="group-section" style="margin-bottom:0;">
+    <div class="section-divider">
+      <span>Eng yaxshi natijalar</span>
+      {% if session.admin_user == 'asilbek' %}
+      <button id="btn-clear-lb" onclick="clearLeaderboard()"
+              style="margin-left:auto;background:#ef444422;border:1px solid #ef444444;
+                     color:#ef4444;border-radius:8px;padding:5px 14px;font-size:.78rem;
+                     font-weight:700;cursor:pointer;white-space:nowrap;">
+        <i class="fas fa-trash-alt me-1"></i> Hammani o'chirish
+      </button>
+      {% endif %}
+    </div>
+    <div class="lb-card" id="lb-card">
+      <div class="lb-loading"><i class="fas fa-spinner fa-spin"></i></div>
+    </div>
+  </div>
+
+
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 const CSRF = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-let soloMode = 't1';   // t1 | t2 | t3 | tR
+let soloLang = 'uz';
+let soloLevel = 'easy';
 
-function setSolo(mode, el) {
-  soloMode = mode;
-  document.querySelectorAll('[data-solo]').forEach(b => b.classList.remove('active'));
+function setSetting(type, val, el) {
+  if (type === 'lang') soloLang = val;
+  else soloLevel = val;
+  el.parentNode.querySelectorAll('.chip').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
 }
 
@@ -418,7 +439,7 @@ async function doSolo() {
     const res = await fetch('/typing/solo', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-      body: JSON.stringify({ name, mode: soloMode }),
+      body: JSON.stringify({ name, lang: soloLang, level: soloLevel }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -509,7 +530,9 @@ async function doJoin() {
 function showErr(el, msg) { el.textContent = msg; el.classList.add('show'); }
 
 // ── Leaderboard ───────────────────────────────────────────────────────────────
-(async function loadLeaderboard() {
+const IS_ADMIN = {{ 'true' if session.admin_user == 'asilbek' else 'false' }};
+
+async function loadLeaderboard() {
   const card = document.getElementById('lb-card');
   try {
     const res  = await fetch('/typing/leaderboard');
@@ -520,7 +543,7 @@ function showErr(el, msg) { el.textContent = msg; el.classList.add('show'); }
     }
     const medals = ['🥇','🥈','🥉'];
     card.innerHTML = data.map(r => `
-      <div class="lb-row">
+      <div class="lb-row" id="lb-row-${r.id || r.rank}">
         <div class="lb-pos">${medals[r.rank-1] || r.rank}</div>
         <div class="lb-name">
           ${esc(r.name)}
@@ -528,11 +551,43 @@ function showErr(el, msg) { el.textContent = msg; el.classList.add('show'); }
         </div>
         <div class="lb-acc">${r.accuracy}%</div>
         <div class="lb-wpm">${r.wpm}<small>WPM</small></div>
+        ${IS_ADMIN && r.id ? `<button onclick="deleteRow(${r.id})" title="O'chirish"
+          style="background:none;border:none;color:#ef4444;cursor:pointer;padding:0 4px;font-size:.85rem;opacity:.7;flex-shrink:0;">
+          <i class="fas fa-times"></i></button>` : ''}
       </div>`).join('');
   } catch {
     card.innerHTML = '<div class="lb-empty">Yuklanmadi</div>';
   }
-})();
+}
+
+async function deleteRow(id) {
+  if (!confirm('Bu natijani o\'chirasizmi?')) return;
+  try {
+    const res = await fetch(`/typing/leaderboard/${id}/delete`, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': CSRF },
+    });
+    if (res.ok) loadLeaderboard();
+    else alert('Xatolik yuz berdi');
+  } catch { alert('Tarmoq xatosi'); }
+}
+
+async function clearLeaderboard() {
+  if (!confirm('Barcha natijalarni o\'chirasizmi? Bu amalni bekor qilib bo\'lmaydi!')) return;
+  const btn = document.getElementById('btn-clear-lb');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch('/typing/leaderboard/clear', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': CSRF },
+    });
+    if (res.ok) loadLeaderboard();
+    else alert('Xatolik yuz berdi');
+  } catch { alert('Tarmoq xatosi'); }
+  finally { if (btn) btn.disabled = false; }
+}
+
+loadLeaderboard();
 
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');

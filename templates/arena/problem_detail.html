@@ -143,7 +143,7 @@
   /* ── Submission history ─────────────────────────────────────────────── */
   .sub-row {
     display:grid;
-    grid-template-columns:58px 1fr 70px 70px;
+    grid-template-columns:58px 1fr 80px 70px 70px;
     gap:8px 12px; align-items:center;
     padding:9px 14px;
     border-bottom:1px solid rgba(48,54,61,.5);
@@ -154,6 +154,9 @@
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     font-family:'Courier New',monospace; font-size:.76rem; color:var(--ar-muted);
   }
+  .star-rating { font-size:.8rem; letter-spacing:1px; white-space:nowrap; }
+  .star-filled { color:#f59e0b; }
+  .star-empty  { color:#3a3c40; }
 
 </style>
 {% endblock %}
@@ -163,15 +166,28 @@
   <!-- ── Left: Problem statement ─────────────────────────────────────────── -->
   <div>
     <div class="ar-card mb-3">
+      {% set prob_stars = {'easy': 10, 'medium': 25, 'hard': 50}[problem.difficulty] if problem.difficulty in ('easy','medium','hard') else 10 %}
       <div class="ar-card-header justify-content-between">
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
           <span style="font-family:'Courier New',monospace; color:var(--ar-muted); font-size:.83rem;">{{ problem.code }}</span>
           <span class="ar-badge badge-{{ problem.difficulty }}">
             {% if problem.difficulty == 'easy' %}Oson{% elif problem.difficulty == 'medium' %}O'rta{% else %}Qiyin{% endif %}
           </span>
-          <span style="font-size:.75rem; color:var(--ar-muted);">{{ problem.category }}</span>
+          {% if problem.category %}
+          <span class="ar-badge" style="background:rgba(188,140,255,.12); color:var(--ar-purple); border:1px solid rgba(188,140,255,.25);">
+            <i class="fas fa-tag" style="font-size:.6rem; margin-right:3px;"></i>{{ problem.category }}
+          </span>
+          {% endif %}
+          <span title="Bu masalani to'liq yechsangiz {{ prob_stars }} yulduz olasiz"
+                style="display:inline-flex; align-items:center; gap:4px; font-size:.8rem;
+                       color:#f59e0b; background:rgba(245,158,11,.1);
+                       border:1px solid rgba(245,158,11,.25); border-radius:20px;
+                       padding:3px 10px; font-weight:700; letter-spacing:.3px;">
+            <i class="fas fa-star" style="font-size:.7rem;"></i>
+            +{{ prob_stars }} yulduz
+          </span>
         </div>
-        <div style="font-size:.75rem; color:var(--ar-muted);">
+        <div style="font-size:.75rem; color:var(--ar-muted); white-space:nowrap;">
           <i class="fas fa-clock"></i> {{ problem.time_limit }}s &nbsp;|&nbsp;
           <i class="fas fa-memory"></i> {{ problem.memory_limit }} MB
         </div>
@@ -357,6 +373,7 @@ print(n * 2)
       </div>
       <div>
         {% for s in my_subs %}
+        {% set stars = s.stars if s.stars is defined else 0 %}
         <div class="sub-row sub-row-link" data-sid="{{ s.id }}">
           <span class="ar-badge badge-{{ s.status.lower() }}">
             {% if s.status == 'AC' %}<i class="fas fa-check"></i> AC
@@ -368,6 +385,14 @@ print(n * 2)
           </span>
           <span class="sub-code-preview" title="{{ s.code }}">
             {{ (s.code or '')[:60] }}{% if (s.code or '')|length > 60 %}…{% endif %}
+          </span>
+          <!-- Star rating -->
+          <span class="star-rating" title="{{ s.tests_passed }}/{{ s.tests_total }} test o'tdi">
+            {% if s.stars > 0 %}
+              <span class="star-filled"><i class="fas fa-star" style="font-size:.72rem;"></i> +{{ s.stars }}</span>
+            {% else %}
+              <span class="star-empty"><i class="fas fa-star" style="font-size:.72rem;"></i> 0</span>
+            {% endif %}
           </span>
           <span style="color:var(--ar-muted); font-size:.72rem; white-space:nowrap;">
             {% if s.time_used %}{{ s.time_used }}s{% endif %}
@@ -663,11 +688,27 @@ print(n * 2)
       const errMsg = isAC ? '' : (data.error || '') + extra;
       showOutput(data.verdict, data.output, errMsg, data.time, false);
 
+      // Stars display
+      if (typeof data.stars === 'number' && data.total > 0) {
+        const existingStars = document.getElementById('_submit_stars');
+        if (existingStars) existingStars.remove();
+        const starDiv = document.createElement('div');
+        starDiv.id = '_submit_stars';
+        starDiv.style.cssText = 'padding:8px 12px;border-top:1px solid var(--ar-border);display:flex;align-items:center;gap:10px;';
+        const passInfo = `${data.passed}/${data.total} test`;
+        if (data.stars > 0) {
+          starDiv.innerHTML = `<span style="color:#f59e0b;font-size:1rem;font-weight:700;"><i class="fas fa-star"></i> +${data.stars} yulduz qo'shildi!</span><span style="font-size:.75rem;color:var(--ar-muted);">${passInfo}</span>`;
+        } else {
+          starDiv.innerHTML = `<span style="color:var(--ar-muted);font-size:.82rem;"><i class="fas fa-star" style="color:#3a3c40;"></i> Yulduz yo'q</span><span style="font-size:.75rem;color:var(--ar-muted);">${passInfo}</span>`;
+        }
+        document.getElementById('outputPanel').appendChild(starDiv);
+      }
+
       if (data.verdict === 'AC') {
         if (typeof window._celebrateAC === 'function') window._celebrateAC();
         setTimeout(() => location.reload(), 3500);
       } else {
-        // SE, WA, TLE, RE, CE — reload qilinmaydi, foydalanuvchi kodini o'zgartirishi mumkin
+        // WA, TLE, RE, CE — reload qilinmaydi, foydalanuvchi kodini o'zgartirishi mumkin
         _submitting = false;
       }
     } catch (err) {
