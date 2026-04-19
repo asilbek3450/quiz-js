@@ -698,6 +698,8 @@ document.addEventListener('keydown', function(e) {
 // ── Keyboard handling ─────────────────────────────────────────────────────────
 ghostInput.addEventListener('keydown', handleKey);
 
+const normMatch = (c) => ["‘", "’", "ʻ", "ʼ"].includes(c) ? "'" : c;
+
 function handleKey(e) {
   if (!raceStarted || myFinished) return;
   if (e.ctrlKey || e.altKey || e.metaKey) return;
@@ -743,9 +745,10 @@ function handleKey(e) {
   }
 
   // Agar joriy belgi noto'g'ri urilsa — qizil bo'ladi, lekin cursor siljiydi
-  // Foydalanuvchi joriy so'zni tugatishi uchun space'gacha bora oladi, 
-  // lekin space uni to'xtatadi.
-  typed[cursor] = (e.key === textVar[cursor]) ? 'correct' : 'wrong';
+  const targetChar = textVar[cursor];
+  const inputChar  = e.key;
+  
+  typed[cursor] = (normMatch(inputChar) === normMatch(targetChar)) ? 'correct' : 'wrong';
   cursor++;
   if (!startTime) startTime = Date.now();
   renderChars();
