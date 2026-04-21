@@ -708,7 +708,8 @@ print(n * 2)
         if (typeof window._celebrateAC === 'function') window._celebrateAC();
         setTimeout(() => location.reload(), 3500);
       } else {
-        // WA, TLE, RE, CE — reload qilinmaydi, foydalanuvchi kodini o'zgartirishi mumkin
+        // WA, TLE, RE, CE — 1-marta xato ovozini chal, reload qilinmaydi
+        playFahhhSound();
         _submitting = false;
       }
     } catch (err) {
@@ -789,57 +790,28 @@ print(n * 2)
     if (event.target == modal) modal.style.display = "none";
   });
 
-  // ── 🎉 AC Celebration: confetti + fireworks sound ─────────────────────────
+  // ── 🎉 AC Celebration: firework sound + confetti ─────────────────────────
   const ALREADY_SOLVED = "{{ 'true' if already_solved else 'false' }}" === 'true';
+
+  // Tracks whether the "fahhh" sound has already been played this session
+  let _fahhhPlayed = false;
 
   function playSalyutSound() {
     try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const audio = new Audio("{{ url_for('static', filename='firework.mp3') }}");
+      audio.volume = 0.85;
+      audio.play().catch(() => {});
+    } catch(e) { /* Audio not available */ }
+  }
 
-      function boom(delay, freq, vol) {
-        const osc  = ctx.createOscillator();
-        const gain = ctx.createGain();
-        const dist = ctx.createWaveShaper();
-
-        // distortion curve for crackle
-        const curve = new Float32Array(256);
-        for (let i = 0; i < 256; i++) {
-          const x = (i * 2) / 256 - 1;
-          curve[i] = (Math.PI + 400) * x / (Math.PI + 400 * Math.abs(x));
-        }
-        dist.curve = curve;
-
-        osc.connect(dist); dist.connect(gain); gain.connect(ctx.destination);
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
-        osc.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + delay + 0.4);
-        gain.gain.setValueAtTime(vol, ctx.currentTime + delay);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.5);
-        osc.start(ctx.currentTime + delay);
-        osc.stop(ctx.currentTime + delay + 0.55);
-      }
-
-      // white-noise burst (hissing tail)
-      function noiseBurst(delay) {
-        const bufSize = ctx.sampleRate * 0.3;
-        const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
-        const data = buf.getChannelData(0);
-        for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
-        const src  = ctx.createBufferSource();
-        const gain = ctx.createGain();
-        src.buffer = buf;
-        src.connect(gain); gain.connect(ctx.destination);
-        gain.gain.setValueAtTime(0.25, ctx.currentTime + delay);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.3);
-        src.start(ctx.currentTime + delay);
-        src.stop(ctx.currentTime + delay + 0.3);
-      }
-
-      // 3 salyut shots
-      boom(0.00, 180, 0.7);  noiseBurst(0.05);
-      boom(0.35, 220, 0.6);  noiseBurst(0.38);
-      boom(0.65, 160, 0.65); noiseBurst(0.68);
-    } catch(e) { /* AudioContext not available */ }
+  function playFahhhSound() {
+    if (_fahhhPlayed) return;   // faqat 1-marta chalsin
+    _fahhhPlayed = true;
+    try {
+      const audio = new Audio("{{ url_for('static', filename='fahhh.mp3') }}");
+      audio.volume = 0.9;
+      audio.play().catch(() => {});
+    } catch(e) { /* Audio not available */ }
   }
 
   function launchConfetti() {
