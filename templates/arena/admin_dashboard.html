@@ -1,0 +1,168 @@
+{% extends "arena/base.html" %}
+{% block title %}Admin Panel{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">Admin Panel</li>{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h2 style="font-size:1.2rem; font-weight:700; margin:0;">
+      <i class="fas fa-shield-alt" style="color:var(--ar-orange);"></i> Arena Admin Panel
+    </h2>
+    <div style="font-size:.8rem; color:var(--ar-muted); margin-top:4px;">Xush kelibsiz, <strong>{{ arena_user.username }}</strong></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="ar-stat">
+      <div class="val" style="color:var(--ar-primary);">{{ total_users }}</div>
+      <div class="lbl"><i class="fas fa-users"></i> Foydalanuvchilar</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="ar-stat">
+      <div class="val" style="color:var(--ar-green);">{{ active_problems }}</div>
+      <div class="lbl"><i class="fas fa-code"></i> Faol masalalar</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="ar-stat">
+      <div class="val" style="color:var(--ar-yellow);">{{ total_subs }}</div>
+      <div class="lbl"><i class="fas fa-paper-plane"></i> Jami urinishlar</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="ar-stat">
+      <div class="val" style="color:var(--ar-green);">{{ total_ac }}</div>
+      <div class="lbl"><i class="fas fa-check-circle"></i> Qabul qilingan</div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick actions -->
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <a href="{{ url_for('arena.arena_admin_submissions') }}" class="ar-card d-flex align-items-center gap-3 p-3 text-decoration-none" style="transition:.15s;" onmouseover="this.style.borderColor='var(--ar-primary)'" onmouseout="this.style.borderColor='var(--ar-border)'">
+      <div style="width:42px;height:42px;border-radius:10px;background:rgba(88,166,255,.15);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--ar-primary);flex-shrink:0;">
+        <i class="fas fa-list-alt"></i>
+      </div>
+      <div>
+        <div style="font-weight:600; font-size:.9rem; color:var(--ar-text);">Barcha urinishlar</div>
+        <div style="font-size:.75rem; color:var(--ar-muted);">Ko'rish, bekor qilish</div>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-4">
+    <a href="{{ url_for('arena.arena_admin_problems') }}" class="ar-card d-flex align-items-center gap-3 p-3 text-decoration-none" style="transition:.15s;" onmouseover="this.style.borderColor='var(--ar-green)'" onmouseout="this.style.borderColor='var(--ar-border)'">
+      <div style="width:42px;height:42px;border-radius:10px;background:rgba(63,185,80,.15);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--ar-green);flex-shrink:0;">
+        <i class="fas fa-code"></i>
+      </div>
+      <div>
+        <div style="font-weight:600; font-size:.9rem; color:var(--ar-text);">Masalalar</div>
+        <div style="font-size:.75rem; color:var(--ar-muted);">Qo'shish, tahrirlash, o'chirish</div>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-4">
+    <a href="{{ url_for('arena.arena_admin_users') }}" class="ar-card d-flex align-items-center gap-3 p-3 text-decoration-none" style="transition:.15s;" onmouseover="this.style.borderColor='var(--ar-purple)'" onmouseout="this.style.borderColor='var(--ar-border)'">
+      <div style="width:42px;height:42px;border-radius:10px;background:rgba(188,140,255,.15);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--ar-purple);flex-shrink:0;">
+        <i class="fas fa-users-cog"></i>
+      </div>
+      <div>
+        <div style="font-weight:600; font-size:.9rem; color:var(--ar-text);">Foydalanuvchilar</div>
+        <div style="font-size:.75rem; color:var(--ar-muted);">Statistika, qayta hisoblash</div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- Recent submissions -->
+<div class="ar-card">
+  <div class="ar-card-header">
+    <i class="fas fa-clock" style="color:var(--ar-muted);"></i> So'nggi urinishlar
+    <a href="{{ url_for('arena.arena_admin_submissions') }}" class="ms-auto ar-btn ar-btn-sm ar-btn-outline">Barchasi</a>
+  </div>
+  <table class="ar-table">
+    <thead><tr>
+      <th>#</th>
+      <th>Foydalanuvchi</th>
+      <th>Masala</th>
+      <th style="text-align:center">Holat</th>
+      <th style="width:80px; text-align:right">Vaqt</th>
+      <th style="width:80px; text-align:right"></th>
+    </tr></thead>
+    <tbody>
+    {% for s in recent_subs %}
+    <tr>
+      <td style="color:var(--ar-muted); font-size:.78rem;">{{ s.id }}</td>
+      <td>
+        <a href="{{ url_for('arena.profile', username=s.user.username) }}" style="color:var(--ar-primary); text-decoration:none; font-weight:600;">{{ s.user.username }}</a>
+      </td>
+      <td>
+        <a href="{{ url_for('arena.problem_detail', pid=s.problem_id) }}" style="color:var(--ar-text); text-decoration:none;">
+          <span style="font-family:monospace; color:var(--ar-muted); font-size:.78rem;">{{ s.problem.code }}</span>
+          {{ s.problem.title }}
+        </a>
+      </td>
+      <td style="text-align:center;">
+        <span class="ar-badge badge-{{ s.status.lower() }}">{{ s.status }}</span>
+      </td>
+      <td style="text-align:right; color:var(--ar-muted); font-size:.78rem;">{{ s.submitted_at.strftime('%H:%M') }}</td>
+      <td style="text-align:right;">
+        <button onclick="viewCode({{ s.id }})" class="ar-btn ar-btn-sm ar-btn-outline" title="Ko'rish">
+          <i class="fas fa-eye"></i>
+        </button>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Code view modal -->
+<div id="subModal" class="ar-modal" style="display:none;">
+  <div class="ar-modal-content" style="max-width:800px;">
+    <div class="ar-modal-header">
+      <h3 id="modalTitle" style="margin:0; font-size:1.1rem; font-weight:700;"></h3>
+      <button onclick="closeModal()" style="background:none; border:none; color:var(--ar-muted); cursor:pointer; font-size:1.2rem;">&times;</button>
+    </div>
+    <div class="ar-modal-body">
+      <div id="modalMeta" style="margin-bottom:12px; font-size:.8rem; display:flex; gap:12px; color:var(--ar-muted); flex-wrap:wrap;"></div>
+      <pre id="modalCode" style="margin:0; background:#0d1117; padding:12px; border:1px solid var(--ar-border); border-radius:6px; font-size:.85rem; color:#e6edf3; overflow-x:auto;"></pre>
+      <div id="modalError" style="margin-top:12px; padding:10px; background:rgba(248,81,73,.1); border:1px solid rgba(248,81,73,.2); border-radius:6px; color:var(--ar-red); font-size:.8rem; display:none; white-space:pre-wrap;"></div>
+    </div>
+  </div>
+</div>
+<style>
+.ar-modal { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.7); display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px; }
+.ar-modal-content { background:#161b22; border:1px solid var(--ar-border); border-radius:10px; width:100%; max-height:90vh; display:flex; flex-direction:column; box-shadow:0 12px 30px rgba(0,0,0,.5); }
+.ar-modal-header { padding:14px 20px; border-bottom:1px solid var(--ar-border); display:flex; justify-content:space-between; align-items:center; }
+.ar-modal-body { padding:20px; overflow-y:auto; }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+async function viewCode(sid) {
+  const modal = document.getElementById('subModal');
+  const title = document.getElementById('modalTitle');
+  const meta  = document.getElementById('modalMeta');
+  const code  = document.getElementById('modalCode');
+  const err   = document.getElementById('modalError');
+  title.textContent = "Yuklanmoqda...";
+  meta.innerHTML = ""; code.textContent = ""; err.style.display = "none";
+  modal.style.display = "flex";
+  try {
+    const res  = await fetch(`/arena/submissions/${sid}/code`);
+    const data = await res.json();
+    title.innerHTML = `<span style="font-family:monospace;color:var(--ar-muted);font-size:.9rem;margin-right:8px;">${data.problem_code}</span> ${data.problem_title}`;
+    meta.innerHTML = `<span><i class="fas fa-user"></i> ${data.username || ''}</span><span><i class="fas fa-clock"></i> ${data.submitted_at}</span><span><i class="fas fa-terminal"></i> ${data.language}</span><span><i class="fas fa-tachometer-alt"></i> ${data.time_used}s</span><span class="ar-badge badge-${data.status.toLowerCase()}">${data.status}</span>`;
+    code.textContent = data.code;
+    if (data.error_msg) { err.style.display = "block"; err.textContent = "Xatolik:\n" + data.error_msg; }
+  } catch(e) { title.textContent = "Xatolik"; }
+}
+function closeModal() { document.getElementById('subModal').style.display = "none"; }
+window.onclick = e => { if (e.target == document.getElementById('subModal')) closeModal(); }
+</script>
+{% endblock %}

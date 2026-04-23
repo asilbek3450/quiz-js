@@ -1,0 +1,131 @@
+{% extends "arena/base.html" %}
+{% block title %}Foydalanuvchilar — Admin{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('arena.arena_admin_dashboard') }}">Admin</a></li>
+<li class="breadcrumb-item active">Foydalanuvchilar</li>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+  <h2 style="font-size:1.2rem; font-weight:700; margin:0;">
+    <i class="fas fa-users-cog" style="color:var(--ar-purple);"></i> Foydalanuvchilar
+  </h2>
+  <div style="font-size:.8rem; color:var(--ar-muted);">Jami: {{ users.total }}</div>
+</div>
+
+<!-- Search -->
+<form method="GET" class="ar-card p-3 mb-3">
+  <div class="row g-2 align-items-end">
+    <div class="col-sm-8">
+      <label class="ar-label">Qidirish (username yoki ism)</label>
+      <input class="ar-input" name="q" value="{{ search }}" placeholder="...">
+    </div>
+    <div class="col-sm-4 d-flex gap-2">
+      <button type="submit" class="ar-btn ar-btn-primary" style="flex:1;">
+        <i class="fas fa-search"></i> Qidirish
+      </button>
+      <a href="{{ url_for('arena.arena_admin_users') }}" class="ar-btn ar-btn-outline" title="Tozalash">
+        <i class="fas fa-times"></i>
+      </a>
+    </div>
+  </div>
+</form>
+
+<div class="ar-card">
+  <table class="ar-table">
+    <thead><tr>
+      <th style="width:40px">#</th>
+      <th>Foydalanuvchi</th>
+      <th style="width:70px; text-align:center">Hal</th>
+      <th style="width:80px; text-align:center">Rating</th>
+      <th style="width:80px; text-align:center">Urinishlar</th>
+      <th style="width:130px; text-align:center">Ro'yxatdan</th>
+      <th style="width:120px; text-align:center">Amallar</th>
+    </tr></thead>
+    <tbody>
+    {% for u in users.items %}
+    <tr>
+      <td style="color:var(--ar-muted); font-size:.78rem;">{{ loop.index + (users.page - 1) * 30 }}</td>
+      <td>
+        <div class="d-flex align-items-center gap-2">
+          <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#58a6ff,#bc8cff);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;color:#fff;flex-shrink:0;">
+            {{ u.username[0].upper() }}
+          </div>
+          <div>
+            <a href="{{ url_for('arena.profile', username=u.username) }}"
+               style="color:var(--ar-primary); text-decoration:none; font-weight:600; font-size:.9rem;">
+              {{ u.username }}
+            </a>
+            <div style="font-size:.72rem; color:var(--ar-muted);">{{ u.full_name }}</div>
+          </div>
+        </div>
+      </td>
+      <td style="text-align:center;">
+        <span style="color:var(--ar-green); font-weight:700;">{{ u.problems_solved }}</span>
+      </td>
+      <td style="text-align:center;">
+        <span style="color:var(--ar-yellow); font-weight:700;">
+          <i class="fas fa-star" style="font-size:.75rem;"></i> {{ u.rating }}
+        </span>
+      </td>
+      <td style="text-align:center; color:var(--ar-muted); font-size:.82rem;">
+        {{ u.submissions.count() }}
+      </td>
+      <td style="text-align:center; color:var(--ar-muted); font-size:.75rem; white-space:nowrap;">
+        {{ u.created_at.strftime('%d.%m.%Y') }}
+      </td>
+      <td style="text-align:center;">
+        <div class="d-flex gap-1 justify-content-center">
+          <a href="{{ url_for('arena.arena_admin_submissions') }}?user={{ u.username }}"
+             class="ar-btn ar-btn-sm ar-btn-outline" title="Urinishlarini ko'rish">
+            <i class="fas fa-list"></i>
+          </a>
+          <form method="POST"
+                action="{{ url_for('arena.arena_admin_user_recalc', uid=u.id) }}"
+                onsubmit="return confirm('{{ u.username }} statistikasini qayta hisoblaysizmi?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="ar-btn ar-btn-sm ar-btn-outline"
+                    title="Statistikani qayta hisoblash"
+                    style="color:var(--ar-orange);">
+              <i class="fas fa-sync-alt"></i>
+            </button>
+          </form>
+        </div>
+      </td>
+    </tr>
+    {% else %}
+    <tr>
+      <td colspan="7" style="text-align:center; padding:48px; color:var(--ar-muted);">
+        <i class="fas fa-users fa-3x" style="opacity:.2; display:block; margin-bottom:12px;"></i>
+        Foydalanuvchilar topilmadi
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Pagination -->
+{% if users.pages > 1 %}
+<div class="d-flex justify-content-center mt-4">
+  <div class="ar-pagination">
+    <a href="{{ url_for('arena.arena_admin_users', page=users.prev_num, q=search) }}"
+       class="ar-page-btn {% if not users.has_prev %}disabled{% endif %}">
+      <i class="fas fa-chevron-left"></i>
+    </a>
+    {% for pg in users.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+      {% if pg %}
+        <a href="{{ url_for('arena.arena_admin_users', page=pg, q=search) }}"
+           class="ar-page-btn {% if pg == users.page %}active{% endif %}">{{ pg }}</a>
+      {% else %}
+        <span class="ar-page-btn" style="pointer-events:none;">…</span>
+      {% endif %}
+    {% endfor %}
+    <a href="{{ url_for('arena.arena_admin_users', page=users.next_num, q=search) }}"
+       class="ar-page-btn {% if not users.has_next %}disabled{% endif %}">
+      <i class="fas fa-chevron-right"></i>
+    </a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

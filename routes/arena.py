@@ -38,6 +38,24 @@ def super_admin_required(f):
     return decorated
 
 
+ARENA_ADMIN_USERNAME = 'user'
+
+
+def _is_arena_admin():
+    u = _current_user()
+    return u is not None and u.username.lower() == ARENA_ADMIN_USERNAME
+
+
+def arena_admin_required(f):
+    """Faqat arena admin (username='user') uchun."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not _is_arena_admin():
+            abort(403)
+        return f(*args, **kwargs)
+    return decorated
+
+
 @arena_bp.context_processor
 def _inject():
     u = _current_user()
@@ -47,7 +65,7 @@ def _inject():
             db.session.commit()
         except Exception:
             db.session.rollback()
-    return dict(arena_user=u)
+    return dict(arena_user=u, is_arena_admin=_is_arena_admin())
 
 
 def _validate_username(username):
@@ -453,8 +471,8 @@ def submission_code(sid):
     uid = session['arena_user_id']
     sub = ArenaSubmission.query.get_or_404(sid)
     
-    # Ensure privacy: user can only see their own submissions
-    if sub.user_id != uid:
+    # Admin har qanday submissionni ko'ra oladi
+    if sub.user_id != uid and not _is_arena_admin():
         abort(403)
         
     return jsonify({
@@ -466,6 +484,7 @@ def submission_code(sid):
         'error_msg': sub.error_msg,
         'problem_code': sub.problem.code,
         'problem_title': sub.problem.title,
+        'username': sub.user.username,
         'submitted_at': sub.submitted_at.strftime('%Y-%m-%d %H:%M:%S')
     })
 
@@ -601,7 +620,7 @@ def settings():
 # ─── Admin: Arena Problem Management ─────────────────────────────────────────
 # These routes are only accessible when logged in as admin
 
-@arena_bp.route('/admin/problems')
+@arena_bp.route('/sadmin/problems')
 @super_admin_required
 def admin_problems():
     problems = (ArenaProblem.query
@@ -609,24 +628,23 @@ def admin_problems():
     return render_template('admin_arena_problems.html', problems=problems)
 
 
-@arena_bp.route('/admin/problems/new', methods=['GET', 'POST'])
+@arena_bp.route('/sadmin/problems/new', methods=['GET', 'POST'])
 @super_admin_required
 def admin_problem_new():
     return _problem_form(problem=None)
 
 
-@arena_bp.route('/admin/problems/<int:pid>/edit', methods=['GET', 'POST'])
+@arena_bp.route('/sadmin/problems/<int:pid>/edit', methods=['GET', 'POST'])
 @super_admin_required
 def admin_problem_edit(pid):
     problem = ArenaProblem.query.get_or_404(pid)
     return _problem_form(problem=problem)
 
 
-@arena_bp.route('/admin/problems/<int:pid>/delete', methods=['POST'])
+@arena_bp.route('/sadmin/problems/<int:pid>/delete', methods=['POST'])
 @super_admin_required
 def admin_problem_delete(pid):
     problem = ArenaProblem.query.get_or_404(pid)
-    # Delete submissions first
     ArenaSubmission.query.filter_by(problem_id=pid).delete()
     db.session.delete(problem)
     db.session.commit()
@@ -724,6 +742,291 @@ def _problem_form(problem):
     hidden_tests_pretty = (problem.hidden_tests or '[]') if problem else '[]'
 
     return render_template('admin_arena_problem_form.html',
+                           problem=problem,
+                           ex_list=ex_list,
+                           hidden_tests_json=hidden_tests_pretty,
+                           error=error)
+
+
+# ─── Arena Admin Panel (username='user') ──────────────────────────────────────
+
+@arena_bp.route('/admin')
+@arena_admin_required
+def arena_admin_dashboard():
+    total_users    = ArenaUser.query.count()
+    total_problems = ArenaProblem.query.count()
+    active_problems = ArenaProblem.query.filter_by(is_active=True).count()
+    total_subs     = ArenaSubmission.query.count()
+    total_ac       = ArenaSubmission.query.filter_by(status='AC').count()
+    recent_subs    = (ArenaSubmission.query
+                      .order_by(ArenaSubmission.submitted_at.desc())
+                      .limit(10).all())
+    return render_template('arena/admin_dashboard.html',
+                           total_users=total_users,
+                           total_problems=total_problems,
+                           active_problems=active_problems,
+                           total_subs=total_subs,
+                           total_ac=total_ac,
+                           recent_subs=recent_subs)
+
+
+@arena_bp.route('/admin/submissions')
+@arena_admin_required
+def arena_admin_submissions():
+    status_f  = request.args.get('status', '')
+    user_q    = request.args.get('user', '').strip()
+    problem_q = request.args.get('problem', '').strip()
+    page      = request.args.get('page', 1, type=int)
+
+    q = ArenaSubmission.query
+    if status_f in ('AC', 'WA', 'TLE', 'RE', 'CE', 'PE'):
+        q = q.filter_by(status=status_f)
+    if user_q:
+        user_obj = ArenaUser.query.filter(
+            func.lower(ArenaUser.username) == user_q.lower()).first()
+        if user_obj:
+            q = q.filter_by(user_id=user_obj.id)
+        else:
+            q = q.filter(False)
+    if problem_q:
+        prob_obj = ArenaProblem.query.filter(
+            ArenaProblem.code.ilike(f'%{problem_q}%') |
+            ArenaProblem.title.ilike(f'%{problem_q}%')).first()
+        if prob_obj:
+            q = q.filter_by(problem_id=prob_obj.id)
+        else:
+            q = q.filter(False)
+
+    q = q.order_by(ArenaSubmission.submitted_at.desc())
+    paginated = q.paginate(page=page, per_page=30, error_out=False)
+
+    return render_template('arena/admin_submissions.html',
+                           subs=paginated,
+                           current_status=status_f,
+                           user_q=user_q,
+                           problem_q=problem_q)
+
+
+@arena_bp.route('/admin/submissions/<int:sid>/delete', methods=['POST'])
+@arena_admin_required
+def arena_admin_submission_delete(sid):
+    sub     = ArenaSubmission.query.get_or_404(sid)
+    user    = ArenaUser.query.get(sub.user_id)
+    problem = ArenaProblem.query.get(sub.problem_id)
+
+    was_ac = sub.status == 'AC'
+
+    if problem:
+        if problem.submission_count > 0:
+            problem.submission_count -= 1
+        if was_ac and problem.accepted_count > 0:
+            problem.accepted_count -= 1
+
+    if was_ac and user:
+        other_ac = (ArenaSubmission.query
+                    .filter_by(user_id=sub.user_id, problem_id=sub.problem_id, status='AC')
+                    .filter(ArenaSubmission.id != sid)
+                    .first())
+        if not other_ac:
+            if user.problems_solved > 0:
+                user.problems_solved -= 1
+            pts = sub.stars or _diff_stars(problem.difficulty if problem else 'easy')
+            user.rating      = max(0, user.rating - pts)
+            user.total_stars = max(0, user.total_stars - pts)
+
+    db.session.delete(sub)
+    try:
+        db.session.commit()
+        flash('Urinish bekor qilindi va statistika yangilandi.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Xato: {e}', 'danger')
+
+    return redirect(request.referrer or url_for('arena.arena_admin_submissions'))
+
+
+@arena_bp.route('/admin/problems')
+@arena_admin_required
+def arena_admin_problems():
+    diff   = request.args.get('diff', '')
+    search = request.args.get('q', '').strip()
+    q = ArenaProblem.query
+    if diff in ('easy', 'medium', 'hard'):
+        q = q.filter_by(difficulty=diff)
+    if search:
+        q = q.filter(ArenaProblem.title.ilike(f'%{search}%') |
+                     ArenaProblem.code.ilike(f'%{search}%'))
+    problems = q.order_by(ArenaProblem.code).all()
+    return render_template('arena/admin_problems.html',
+                           problems=problems,
+                           current_diff=diff,
+                           search=search)
+
+
+@arena_bp.route('/admin/problems/new', methods=['GET', 'POST'])
+@arena_admin_required
+def arena_admin_problem_new():
+    return _arena_problem_form(problem=None)
+
+
+@arena_bp.route('/admin/problems/<int:pid>/edit', methods=['GET', 'POST'])
+@arena_admin_required
+def arena_admin_problem_edit(pid):
+    problem = ArenaProblem.query.get_or_404(pid)
+    return _arena_problem_form(problem=problem)
+
+
+@arena_bp.route('/admin/problems/<int:pid>/toggle', methods=['POST'])
+@arena_admin_required
+def arena_admin_problem_toggle(pid):
+    problem = ArenaProblem.query.get_or_404(pid)
+    problem.is_active = not problem.is_active
+    db.session.commit()
+    state = 'faollashtirildi' if problem.is_active else 'o\'chirildi'
+    flash(f'"{problem.code}" {state}.', 'success')
+    return redirect(request.referrer or url_for('arena.arena_admin_problems'))
+
+
+@arena_bp.route('/admin/problems/<int:pid>/delete', methods=['POST'])
+@arena_admin_required
+def arena_admin_problem_delete(pid):
+    problem = ArenaProblem.query.get_or_404(pid)
+    ArenaSubmission.query.filter_by(problem_id=pid).delete()
+    db.session.delete(problem)
+    db.session.commit()
+    flash('Masala o\'chirildi.', 'success')
+    return redirect(url_for('arena.arena_admin_problems'))
+
+
+@arena_bp.route('/admin/users')
+@arena_admin_required
+def arena_admin_users():
+    search = request.args.get('q', '').strip()
+    page   = request.args.get('page', 1, type=int)
+    q = ArenaUser.query
+    if search:
+        q = q.filter(ArenaUser.username.ilike(f'%{search}%') |
+                     ArenaUser.full_name.ilike(f'%{search}%'))
+    q = q.order_by(ArenaUser.rating.desc(), ArenaUser.problems_solved.desc())
+    paginated = q.paginate(page=page, per_page=30, error_out=False)
+    return render_template('arena/admin_users.html',
+                           users=paginated,
+                           search=search)
+
+
+@arena_bp.route('/admin/users/<int:uid>/recalc', methods=['POST'])
+@arena_admin_required
+def arena_admin_user_recalc(uid):
+    """Foydalanuvchi statistikasini qayta hisoblash."""
+    user = ArenaUser.query.get_or_404(uid)
+
+    solved_problem_ids = set(
+        r[0] for r in
+        db.session.query(ArenaSubmission.problem_id)
+        .filter_by(user_id=uid, status='AC').distinct().all()
+    )
+    user.problems_solved = len(solved_problem_ids)
+
+    total_pts = 0
+    for pid_ in solved_problem_ids:
+        prob = ArenaProblem.query.get(pid_)
+        if prob:
+            total_pts += _diff_stars(prob.difficulty)
+    user.rating      = total_pts
+    user.total_stars = total_pts
+
+    db.session.commit()
+    flash(f'{user.username} statistikasi yangilandi: {user.problems_solved} masala, {user.rating} ball.', 'success')
+    return redirect(request.referrer or url_for('arena.arena_admin_users'))
+
+
+def _arena_problem_form(problem):
+    """Arena admin problem form (arena layout)."""
+    error = None
+    if request.method == 'POST':
+        code        = request.form.get('code', '').strip().upper()
+        title       = request.form.get('title', '').strip()
+        description = request.form.get('description', '').strip()
+        input_fmt   = request.form.get('input_format', '').strip()
+        output_fmt  = request.form.get('output_format', '').strip()
+        constraints = request.form.get('constraints', '').strip()
+        difficulty  = request.form.get('difficulty', 'easy')
+        category    = request.form.get('category', 'general').strip()
+        correct_ans = request.form.get('correct_answer', '').strip()
+        time_lim    = request.form.get('time_limit', '1.0')
+        mem_lim     = request.form.get('memory_limit', '256')
+        is_active   = request.form.get('is_active') == '1'
+
+        examples = []
+        for i in range(1, 6):
+            inp = request.form.get(f'ex_input_{i}', '').strip()
+            out = request.form.get(f'ex_output_{i}', '').strip()
+            exp = request.form.get(f'ex_explanation_{i}', '').strip()
+            if inp or out:
+                examples.append({'input': inp, 'output': out, 'explanation': exp})
+
+        hidden_tests_raw = request.form.get('hidden_tests_json', '').strip()
+        hidden_tests = []
+        if hidden_tests_raw:
+            try:
+                parsed = json.loads(hidden_tests_raw)
+                if isinstance(parsed, list):
+                    hidden_tests = [
+                        {'input': str(t.get('input', '')), 'output': str(t.get('output', ''))}
+                        for t in parsed
+                        if isinstance(t, dict) and str(t.get('output', '')).strip()
+                    ]
+            except (ValueError, TypeError):
+                error = 'Yashirin testlar JSON formati noto\'g\'ri.'
+
+        if not error:
+            if not code:
+                error = 'Kod majburiy.'
+            elif not title:
+                error = 'Sarlavha majburiy.'
+            elif not description:
+                error = 'Tavsif majburiy.'
+            elif difficulty not in ('easy', 'medium', 'hard'):
+                error = 'Murakkablik noto\'g\'ri.'
+            elif len(hidden_tests) < 10:
+                error = f'Kamida 10 ta yashirin test talab qilinadi (hozir {len(hidden_tests)} ta).'
+            else:
+                existing = ArenaProblem.query.filter_by(code=code).first()
+                if existing and (problem is None or existing.id != problem.id):
+                    error = f'"{code}" kodi allaqachon mavjud.'
+
+        if not error:
+            if problem is None:
+                problem = ArenaProblem()
+                db.session.add(problem)
+            problem.code           = code
+            problem.title          = title
+            problem.description    = description
+            problem.input_format   = input_fmt
+            problem.output_format  = output_fmt
+            problem.constraints    = constraints
+            problem.examples       = json.dumps(examples, ensure_ascii=False)
+            problem.hidden_tests   = json.dumps(hidden_tests, ensure_ascii=False, indent=2)
+            problem.difficulty     = difficulty
+            problem.category       = category
+            problem.correct_answer = correct_ans
+            problem.time_limit     = float(time_lim) if time_lim else 1.0
+            problem.memory_limit   = int(mem_lim) if mem_lim else 256
+            problem.is_active      = is_active
+            db.session.commit()
+            flash(f'Masala saqlandi. {len(hidden_tests)} ta yashirin test.', 'success')
+            return redirect(url_for('arena.arena_admin_problems'))
+
+    try:
+        ex_list = json.loads(problem.examples) if problem and problem.examples else []
+    except (ValueError, TypeError):
+        ex_list = []
+    while len(ex_list) < 5:
+        ex_list.append({'input': '', 'output': '', 'explanation': ''})
+
+    hidden_tests_pretty = (problem.hidden_tests or '[]') if problem else '[]'
+
+    return render_template('arena/admin_problem_form.html',
                            problem=problem,
                            ex_list=ex_list,
                            hidden_tests_json=hidden_tests_pretty,

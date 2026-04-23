@@ -1,0 +1,126 @@
+{% extends "arena/base.html" %}
+{% block title %}Masalalar boshqaruvi — Admin{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('arena.arena_admin_dashboard') }}">Admin</a></li>
+<li class="breadcrumb-item active">Masalalar</li>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+  <h2 style="font-size:1.2rem; font-weight:700; margin:0;">
+    <i class="fas fa-code" style="color:var(--ar-green);"></i> Masalalar boshqaruvi
+  </h2>
+  <a href="{{ url_for('arena.arena_admin_problem_new') }}" class="ar-btn ar-btn-green">
+    <i class="fas fa-plus"></i> Yangi masala
+  </a>
+</div>
+
+<!-- Filters -->
+<form method="GET" class="ar-card p-3 mb-3">
+  <div class="row g-2 align-items-end">
+    <div class="col-sm-6">
+      <label class="ar-label">Qidirish</label>
+      <input class="ar-input" name="q" value="{{ search }}" placeholder="Kod yoki sarlavha...">
+    </div>
+    <div class="col-sm-3">
+      <label class="ar-label">Murakkablik</label>
+      <select class="ar-input" name="diff" style="padding:9px 12px;">
+        <option value="" {% if not current_diff %}selected{% endif %}>Barchasi</option>
+        <option value="easy"   {% if current_diff=='easy'   %}selected{% endif %}>🟢 Oson</option>
+        <option value="medium" {% if current_diff=='medium' %}selected{% endif %}>🟡 O'rta</option>
+        <option value="hard"   {% if current_diff=='hard'   %}selected{% endif %}>🔴 Qiyin</option>
+      </select>
+    </div>
+    <div class="col-sm-3 d-flex gap-2">
+      <button type="submit" class="ar-btn ar-btn-primary" style="flex:1;">
+        <i class="fas fa-search"></i> Filter
+      </button>
+      <a href="{{ url_for('arena.arena_admin_problems') }}" class="ar-btn ar-btn-outline" title="Tozalash">
+        <i class="fas fa-times"></i>
+      </a>
+    </div>
+  </div>
+</form>
+
+<div class="ar-card">
+  <table class="ar-table">
+    <thead><tr>
+      <th style="width:80px">Kod</th>
+      <th>Sarlavha</th>
+      <th style="width:80px; text-align:center">Murakkablik</th>
+      <th style="width:70px; text-align:center">Holat</th>
+      <th style="width:80px; text-align:center">Urinish</th>
+      <th style="width:70px; text-align:center">AC</th>
+      <th style="width:140px; text-align:center">Amallar</th>
+    </tr></thead>
+    <tbody>
+    {% for p in problems %}
+    <tr>
+      <td>
+        <a href="{{ url_for('arena.problem_detail', pid=p.id) }}"
+           style="font-family:monospace; font-weight:700; color:var(--ar-primary); text-decoration:none;">
+          {{ p.code }}
+        </a>
+      </td>
+      <td style="font-weight:500;">{{ p.title }}</td>
+      <td style="text-align:center;">
+        <span class="ar-badge badge-{{ p.difficulty }}">
+          {% if p.difficulty=='easy' %}Oson{% elif p.difficulty=='medium' %}O'rta{% else %}Qiyin{% endif %}
+        </span>
+      </td>
+      <td style="text-align:center;">
+        {% if p.is_active %}
+          <span class="ar-badge" style="background:rgba(63,185,80,.15);color:var(--ar-green);border:1px solid rgba(63,185,80,.3);">Faol</span>
+        {% else %}
+          <span class="ar-badge" style="background:rgba(139,148,158,.1);color:var(--ar-muted);border:1px solid var(--ar-border);">Yashirin</span>
+        {% endif %}
+      </td>
+      <td style="text-align:center; color:var(--ar-muted); font-size:.82rem;">{{ p.submission_count }}</td>
+      <td style="text-align:center;">
+        <span style="color:var(--ar-green); font-size:.82rem; font-weight:600;">{{ p.accepted_count }}</span>
+        {% if p.submission_count > 0 %}
+        <span style="color:var(--ar-muted); font-size:.72rem;"> ({{ (p.accepted_count / p.submission_count * 100) | int }}%)</span>
+        {% endif %}
+      </td>
+      <td style="text-align:center;">
+        <div class="d-flex gap-1 justify-content-center">
+          <a href="{{ url_for('arena.arena_admin_problem_edit', pid=p.id) }}"
+             class="ar-btn ar-btn-sm ar-btn-outline" title="Tahrirlash">
+            <i class="fas fa-edit"></i>
+          </a>
+          <form method="POST" action="{{ url_for('arena.arena_admin_problem_toggle', pid=p.id) }}"
+                style="display:inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="ar-btn ar-btn-sm ar-btn-outline"
+                    title="{% if p.is_active %}Yashirish{% else %}Faollashtirish{% endif %}"
+                    style="color:{% if p.is_active %}var(--ar-yellow){% else %}var(--ar-green){% endif %};">
+              <i class="fas fa-{% if p.is_active %}eye-slash{% else %}eye{% endif %}"></i>
+            </button>
+          </form>
+          <form method="POST" action="{{ url_for('arena.arena_admin_problem_delete', pid=p.id) }}"
+                onsubmit="return confirm('{{ p.code }} — {{ p.title }} masalasini o\'chirasizmi? Barcha urinishlar ham o\'chadi!')"
+                style="display:inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="ar-btn ar-btn-sm ar-btn-danger" title="O'chirish">
+              <i class="fas fa-trash"></i>
+            </button>
+          </form>
+        </div>
+      </td>
+    </tr>
+    {% else %}
+    <tr>
+      <td colspan="7" style="text-align:center; padding:48px; color:var(--ar-muted);">
+        <i class="fas fa-code fa-3x" style="opacity:.2; display:block; margin-bottom:12px;"></i>
+        Masalalar topilmadi
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div style="margin-top:12px; font-size:.78rem; color:var(--ar-muted);">
+  Jami: <strong>{{ problems|length }}</strong> ta masala
+</div>
+{% endblock %}

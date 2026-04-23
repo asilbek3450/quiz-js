@@ -1,0 +1,196 @@
+{% extends "arena/base.html" %}
+{% block title %}Barcha urinishlar — Admin{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('arena.arena_admin_dashboard') }}">Admin</a></li>
+<li class="breadcrumb-item active">Urinishlar</li>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+  <h2 style="font-size:1.2rem; font-weight:700; margin:0;">
+    <i class="fas fa-list-alt" style="color:var(--ar-primary);"></i> Barcha urinishlar
+  </h2>
+  <div style="font-size:.8rem; color:var(--ar-muted);">Jami: {{ subs.total }}</div>
+</div>
+
+<!-- Filters -->
+<form method="GET" class="ar-card p-3 mb-3">
+  <div class="row g-2 align-items-end">
+    <div class="col-sm-4">
+      <label class="ar-label">Foydalanuvchi (username)</label>
+      <input class="ar-input" name="user" value="{{ user_q }}" placeholder="username...">
+    </div>
+    <div class="col-sm-4">
+      <label class="ar-label">Masala (kod yoki sarlavha)</label>
+      <input class="ar-input" name="problem" value="{{ problem_q }}" placeholder="A001 yoki nom...">
+    </div>
+    <div class="col-sm-2">
+      <label class="ar-label">Holat</label>
+      <select class="ar-input" name="status" style="padding:9px 12px;">
+        <option value="" {% if not current_status %}selected{% endif %}>Barchasi</option>
+        {% for s in ['AC','WA','TLE','RE','CE','PE'] %}
+        <option value="{{ s }}" {% if current_status == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-sm-2 d-flex gap-2">
+      <button type="submit" class="ar-btn ar-btn-primary" style="flex:1;">
+        <i class="fas fa-search"></i> Filter
+      </button>
+      <a href="{{ url_for('arena.arena_admin_submissions') }}" class="ar-btn ar-btn-outline" title="Tozalash">
+        <i class="fas fa-times"></i>
+      </a>
+    </div>
+  </div>
+</form>
+
+<div class="ar-card">
+  <table class="ar-table">
+    <thead><tr>
+      <th style="width:60px">#</th>
+      <th>Foydalanuvchi</th>
+      <th>Masala</th>
+      <th style="width:70px; text-align:center">Holat</th>
+      <th style="width:90px; text-align:center">Testlar</th>
+      <th style="width:90px; text-align:center">Til</th>
+      <th style="width:110px; text-align:right">Sana</th>
+      <th style="width:100px; text-align:center">Amallar</th>
+    </tr></thead>
+    <tbody>
+    {% for s in subs.items %}
+    <tr>
+      <td style="color:var(--ar-muted); font-size:.78rem;">{{ s.id }}</td>
+      <td>
+        <a href="{{ url_for('arena.profile', username=s.user.username) }}"
+           style="color:var(--ar-primary); text-decoration:none; font-weight:600;">
+          {{ s.user.username }}
+        </a>
+        {% if s.user.full_name %}
+        <div style="font-size:.72rem; color:var(--ar-muted);">{{ s.user.full_name }}</div>
+        {% endif %}
+      </td>
+      <td>
+        <a href="{{ url_for('arena.problem_detail', pid=s.problem_id) }}"
+           style="color:var(--ar-text); text-decoration:none;">
+          <span style="font-family:monospace; color:var(--ar-muted); font-size:.78rem; margin-right:5px;">{{ s.problem.code }}</span>
+          {{ s.problem.title }}
+        </a>
+        <div style="font-size:.72rem; margin-top:2px;">
+          <span class="ar-badge badge-{{ s.problem.difficulty }}" style="padding:1px 6px; font-size:.65rem;">
+            {% if s.problem.difficulty=='easy' %}Oson{% elif s.problem.difficulty=='medium' %}O'rta{% else %}Qiyin{% endif %}
+          </span>
+        </div>
+      </td>
+      <td style="text-align:center;">
+        <span class="ar-badge badge-{{ s.status.lower() }}">{{ s.status }}</span>
+      </td>
+      <td style="text-align:center; font-size:.8rem; color:var(--ar-muted);">
+        {{ s.tests_passed }}/{{ s.tests_total }}
+      </td>
+      <td style="text-align:center; font-size:.8rem; color:var(--ar-muted);">{{ s.language }}</td>
+      <td style="text-align:right; color:var(--ar-muted); font-size:.75rem; white-space:nowrap;">
+        {{ s.submitted_at.strftime('%d.%m.%Y %H:%M') }}
+      </td>
+      <td style="text-align:center;">
+        <div class="d-flex gap-1 justify-content-center">
+          <button onclick="viewCode({{ s.id }})" class="ar-btn ar-btn-sm ar-btn-outline" title="Ko'rish">
+            <i class="fas fa-eye"></i>
+          </button>
+          <form method="POST" action="{{ url_for('arena.arena_admin_submission_delete', sid=s.id) }}"
+                onsubmit="return confirm('{{ s.user.username }} ning {{ s.problem.code }} urinishini bekor qilasizmi?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="ar-btn ar-btn-sm ar-btn-danger" title="Bekor qilish">
+              <i class="fas fa-trash"></i>
+            </button>
+          </form>
+        </div>
+      </td>
+    </tr>
+    {% else %}
+    <tr>
+      <td colspan="8" style="text-align:center; padding:48px; color:var(--ar-muted);">
+        <i class="fas fa-inbox fa-3x" style="opacity:.2; display:block; margin-bottom:12px;"></i>
+        Urinishlar topilmadi
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Pagination -->
+{% if subs.pages > 1 %}
+<div class="d-flex justify-content-center mt-4">
+  <div class="ar-pagination">
+    <a href="{{ url_for('arena.arena_admin_submissions', page=subs.prev_num, status=current_status, user=user_q, problem=problem_q) }}"
+       class="ar-page-btn {% if not subs.has_prev %}disabled{% endif %}">
+      <i class="fas fa-chevron-left"></i>
+    </a>
+    {% for pg in subs.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+      {% if pg %}
+        <a href="{{ url_for('arena.arena_admin_submissions', page=pg, status=current_status, user=user_q, problem=problem_q) }}"
+           class="ar-page-btn {% if pg == subs.page %}active{% endif %}">{{ pg }}</a>
+      {% else %}
+        <span class="ar-page-btn" style="pointer-events:none;">…</span>
+      {% endif %}
+    {% endfor %}
+    <a href="{{ url_for('arena.arena_admin_submissions', page=subs.next_num, status=current_status, user=user_q, problem=problem_q) }}"
+       class="ar-page-btn {% if not subs.has_next %}disabled{% endif %}">
+      <i class="fas fa-chevron-right"></i>
+    </a>
+  </div>
+</div>
+{% endif %}
+
+<!-- Code view modal -->
+<div id="subModal" class="ar-modal" style="display:none;">
+  <div class="ar-modal-content" style="max-width:820px;">
+    <div class="ar-modal-header">
+      <h3 id="modalTitle" style="margin:0; font-size:1.1rem; font-weight:700;"></h3>
+      <button onclick="closeModal()" style="background:none; border:none; color:var(--ar-muted); cursor:pointer; font-size:1.2rem;">&times;</button>
+    </div>
+    <div class="ar-modal-body">
+      <div id="modalMeta" style="margin-bottom:12px; font-size:.8rem; display:flex; gap:12px; color:var(--ar-muted); flex-wrap:wrap;"></div>
+      <pre id="modalCode" style="margin:0; background:#0d1117; padding:12px; border:1px solid var(--ar-border); border-radius:6px; font-size:.85rem; color:#e6edf3; overflow-x:auto;"></pre>
+      <div id="modalError" style="margin-top:12px; padding:10px; background:rgba(248,81,73,.1); border:1px solid rgba(248,81,73,.2); border-radius:6px; color:var(--ar-red); font-size:.8rem; display:none; white-space:pre-wrap;"></div>
+    </div>
+  </div>
+</div>
+
+<style>
+.ar-modal { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.7); display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px; }
+.ar-modal-content { background:#161b22; border:1px solid var(--ar-border); border-radius:10px; width:100%; max-height:90vh; display:flex; flex-direction:column; box-shadow:0 12px 30px rgba(0,0,0,.5); }
+.ar-modal-header { padding:14px 20px; border-bottom:1px solid var(--ar-border); display:flex; justify-content:space-between; align-items:center; }
+.ar-modal-body { padding:20px; overflow-y:auto; }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+async function viewCode(sid) {
+  const modal = document.getElementById('subModal');
+  const title = document.getElementById('modalTitle');
+  const meta  = document.getElementById('modalMeta');
+  const code  = document.getElementById('modalCode');
+  const err   = document.getElementById('modalError');
+  title.textContent = "Yuklanmoqda...";
+  meta.innerHTML = ""; code.textContent = ""; err.style.display = "none";
+  modal.style.display = "flex";
+  try {
+    const res  = await fetch(`/arena/submissions/${sid}/code`);
+    const data = await res.json();
+    title.innerHTML = `<span style="font-family:monospace;color:var(--ar-muted);font-size:.9rem;margin-right:8px;">${data.problem_code}</span> ${data.problem_title}`;
+    meta.innerHTML = `
+      <span><i class="fas fa-user"></i> <strong>${data.username}</strong></span>
+      <span><i class="fas fa-clock"></i> ${data.submitted_at}</span>
+      <span><i class="fas fa-terminal"></i> ${data.language}</span>
+      <span><i class="fas fa-tachometer-alt"></i> ${data.time_used}s</span>
+      <span class="ar-badge badge-${data.status.toLowerCase()}">${data.status}</span>`;
+    code.textContent = data.code;
+    if (data.error_msg) { err.style.display = "block"; err.textContent = "Xatolik:\n" + data.error_msg; }
+  } catch(e) { title.textContent = "Xatolik yuz berdi"; }
+}
+function closeModal() { document.getElementById('subModal').style.display = "none"; }
+window.onclick = e => { if (e.target == document.getElementById('subModal')) closeModal(); }
+</script>
+{% endblock %}

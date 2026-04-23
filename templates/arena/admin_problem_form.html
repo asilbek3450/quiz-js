@@ -1,0 +1,290 @@
+{% extends "arena/base.html" %}
+{% block title %}{% if problem %}Masalani tahrirlash{% else %}Yangi masala{% endif %} — Admin{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('arena.arena_admin_dashboard') }}">Admin</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('arena.arena_admin_problems') }}">Masalalar</a></li>
+<li class="breadcrumb-item active">{% if problem %}Tahrirlash{% else %}Yangi{% endif %}</li>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.af-section {
+  background: var(--ar-card);
+  border: 1px solid var(--ar-border);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.af-section-header {
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--ar-border);
+  font-weight: 700;
+  font-size: .85rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ar-muted);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.af-section-body { padding: 18px; }
+.af-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.af-col { flex: 1; min-width: 140px; }
+.af-col-2 { flex: 2; }
+.af-col-3 { flex: 3; }
+.af-col-full { flex: 1 0 100%; }
+textarea.ar-input { resize: vertical; font-family: 'Courier New', monospace; }
+.ex-box {
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--ar-border);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.ex-box-num {
+  font-size: .72rem; font-weight: 700; color: var(--ar-muted);
+  text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px;
+}
+.ht-badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 10px; border-radius: 20px;
+  font-size: .72rem; font-weight: 700;
+}
+.ht-badge.ok   { background: rgba(63,185,80,.15);  color: var(--ar-green);  border: 1px solid rgba(63,185,80,.3); }
+.ht-badge.warn { background: rgba(210,153,34,.15); color: var(--ar-yellow); border: 1px solid rgba(210,153,34,.3); }
+.ht-badge.bad  { background: rgba(248,81,73,.15);  color: var(--ar-red);    border: 1px solid rgba(248,81,73,.3); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:900px;">
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a href="{{ url_for('arena.arena_admin_problems') }}" class="ar-btn ar-btn-outline ar-btn-sm">
+      <i class="fas fa-arrow-left"></i>
+    </a>
+    <h2 style="font-size:1.2rem; font-weight:700; margin:0;">
+      {% if problem %}
+        Masalani tahrirlash: <code style="color:var(--ar-primary);">{{ problem.code }}</code>
+      {% else %}
+        <i class="fas fa-plus" style="color:var(--ar-green);"></i> Yangi masala
+      {% endif %}
+    </h2>
+  </div>
+
+  {% if error %}
+  <div class="ar-alert ar-alert-danger"><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
+  {% endif %}
+
+  <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <!-- Basic info -->
+    <div class="af-section">
+      <div class="af-section-header"><i class="fas fa-info-circle"></i> Asosiy ma'lumotlar</div>
+      <div class="af-section-body">
+        <div class="af-row">
+          <div class="af-col" style="max-width:130px;">
+            <label class="ar-label">Kod <span style="color:var(--ar-red);">*</span></label>
+            <input class="ar-input" type="text" name="code"
+                   value="{{ problem.code if problem else '' }}"
+                   placeholder="A001" required
+                   style="font-family:monospace; text-transform:uppercase;">
+            <div style="font-size:.7rem; color:var(--ar-muted); margin-top:4px;">A001, M010, H005</div>
+          </div>
+          <div class="af-col af-col-3">
+            <label class="ar-label">Sarlavha <span style="color:var(--ar-red);">*</span></label>
+            <input class="ar-input" type="text" name="title"
+                   value="{{ problem.title if problem else '' }}" required
+                   placeholder="Masala nomi">
+          </div>
+          <div class="af-col">
+            <label class="ar-label">Murakkablik</label>
+            <select class="ar-input" name="difficulty" style="padding:9px 12px;">
+              <option value="easy"   {% if problem and problem.difficulty=='easy'   %}selected{% endif %}>🟢 Oson (+10)</option>
+              <option value="medium" {% if problem and problem.difficulty=='medium' %}selected{% elif not problem %}selected{% endif %}>🟡 O'rta (+25)</option>
+              <option value="hard"   {% if problem and problem.difficulty=='hard'   %}selected{% endif %}>🔴 Qiyin (+50)</option>
+            </select>
+          </div>
+        </div>
+        <div class="af-row">
+          <div class="af-col af-col-2">
+            <label class="ar-label">Toifa / Mavzu</label>
+            <input class="ar-input" type="text" name="category"
+                   value="{{ problem.category if problem else 'general' }}"
+                   placeholder="matematika, saralash, dp...">
+          </div>
+          <div class="af-col">
+            <label class="ar-label">Vaqt limiti (s)</label>
+            <input class="ar-input" type="number" name="time_limit" step="0.5" min="0.5"
+                   value="{{ problem.time_limit if problem else '1.0' }}">
+          </div>
+          <div class="af-col">
+            <label class="ar-label">Xotira (MB)</label>
+            <input class="ar-input" type="number" name="memory_limit" min="16"
+                   value="{{ problem.memory_limit if problem else '256' }}">
+          </div>
+          <div class="af-col">
+            <label class="ar-label">Holat</label>
+            <select class="ar-input" name="is_active" style="padding:9px 12px;">
+              <option value="1" {% if not problem or problem.is_active %}selected{% endif %}>✅ Faol</option>
+              <option value="0" {% if problem and not problem.is_active %}selected{% endif %}>🔒 Yashirin</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Description -->
+    <div class="af-section">
+      <div class="af-section-header"><i class="fas fa-align-left"></i> Masala matni</div>
+      <div class="af-section-body">
+        <div class="mb-3">
+          <label class="ar-label">Tavsif <span style="color:var(--ar-red);">*</span></label>
+          <textarea class="ar-input" name="description" rows="7" required
+                    placeholder="Masalaning to'liq tavsifi...">{{ problem.description if problem else '' }}</textarea>
+        </div>
+        <div class="af-row">
+          <div class="af-col">
+            <label class="ar-label">Kirish formati</label>
+            <textarea class="ar-input" name="input_format" rows="3"
+                      placeholder="Kirish ma'lumotlari qanday keladi...">{{ problem.input_format if problem else '' }}</textarea>
+          </div>
+          <div class="af-col">
+            <label class="ar-label">Chiqish formati</label>
+            <textarea class="ar-input" name="output_format" rows="3"
+                      placeholder="Kutilgan chiqish formati...">{{ problem.output_format if problem else '' }}</textarea>
+          </div>
+        </div>
+        <div>
+          <label class="ar-label">Cheklovlar</label>
+          <input class="ar-input" type="text" name="constraints"
+                 value="{{ problem.constraints if problem else '' }}"
+                 placeholder="1 ≤ n ≤ 10⁹, 1 ≤ T ≤ 100"
+                 style="font-family:monospace;">
+        </div>
+      </div>
+    </div>
+
+    <!-- Examples -->
+    <div class="af-section">
+      <div class="af-section-header">
+        <i class="fas fa-eye" style="color:var(--ar-primary);"></i> Namunalar
+        <span style="font-weight:400; font-size:.75rem; margin-left:4px;">(foydalanuvchiga ko'rinadi, 5 tagacha)</span>
+      </div>
+      <div class="af-section-body">
+        {% for i in range(5) %}
+        <div class="ex-box">
+          <div class="ex-box-num">Namuna {{ i+1 }}</div>
+          <div class="af-row" style="margin-bottom:8px;">
+            <div class="af-col">
+              <label class="ar-label">Kirish</label>
+              <textarea class="ar-input" name="ex_input_{{ i+1 }}" rows="2"
+                        placeholder="stdin...">{{ ex_list[i].input }}</textarea>
+            </div>
+            <div class="af-col">
+              <label class="ar-label">Chiqish</label>
+              <textarea class="ar-input" name="ex_output_{{ i+1 }}" rows="2"
+                        placeholder="stdout...">{{ ex_list[i].output }}</textarea>
+            </div>
+            <div class="af-col af-col-2">
+              <label class="ar-label">Tushuntirish (ixtiyoriy)</label>
+              <textarea class="ar-input" name="ex_explanation_{{ i+1 }}" rows="2"
+                        placeholder="Nima uchun bu javob to'g'ri...">{{ ex_list[i].explanation }}</textarea>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Hidden tests -->
+    <div class="af-section" style="border-color: rgba(210,153,34,.4);">
+      <div class="af-section-header" style="border-bottom-color: rgba(210,153,34,.2);">
+        <i class="fas fa-eye-slash" style="color:var(--ar-yellow);"></i>
+        Yashirin testlar — foydalanuvchiga ko'rinmaydi
+        <span id="ht-badge" class="ht-badge bad ms-2">0 ta test</span>
+        <span id="ht-min-warn" class="ht-badge bad ms-1" style="display:none;">
+          <i class="fas fa-exclamation-triangle"></i> Kamida 10 ta!
+        </span>
+      </div>
+      <div class="af-section-body">
+        <div class="ar-alert ar-alert-warning" style="margin-bottom:14px; font-size:.8rem;">
+          <i class="fas fa-info-circle"></i>
+          JSON massiv: <code style="color:var(--ar-yellow);">[{"input": "3\n4", "output": "7"}, ...]</code> &nbsp;|&nbsp;
+          <strong>Majburiy: kamida 10 ta test bo'lishi kerak.</strong>
+        </div>
+        <textarea class="ar-input" name="hidden_tests_json" id="hidden-tests-field"
+                  rows="14" style="font-size:.82rem; font-family:'Courier New',monospace;"
+                  placeholder='[&#10;  {"input": "kirish1", "output": "chiqish1"},&#10;  {"input": "kirish2", "output": "chiqish2"}&#10;]'
+                  oninput="updateHTCount(this.value)">{{ hidden_tests_json }}</textarea>
+        <div class="d-flex gap-2 mt-2 flex-wrap align-items-center">
+          <button type="button" class="ar-btn ar-btn-sm ar-btn-outline" onclick="fmtHT()">
+            <i class="fas fa-indent"></i> JSON formatlash
+          </button>
+          <button type="button" class="ar-btn ar-btn-sm ar-btn-danger" onclick="clearHT()">
+            <i class="fas fa-trash"></i> Tozalash
+          </button>
+          <span id="ht-err" style="font-size:.75rem; color:var(--ar-red);"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2 mb-5">
+      <button type="submit" class="ar-btn ar-btn-green">
+        <i class="fas fa-save"></i> Saqlash
+      </button>
+      <a href="{{ url_for('arena.arena_admin_problems') }}" class="ar-btn ar-btn-outline">
+        Bekor qilish
+      </a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function updateHTCount(val) {
+  const badge = document.getElementById('ht-badge');
+  const warn  = document.getElementById('ht-min-warn');
+  const err   = document.getElementById('ht-err');
+  try {
+    const arr   = JSON.parse(val || '[]');
+    const valid = Array.isArray(arr) ? arr.filter(t => t && t.output && String(t.output).trim()) : [];
+    const n     = valid.length;
+    badge.textContent = n + ' ta test';
+    err.textContent = '';
+    if (n >= 10) {
+      badge.className = 'ht-badge ok ms-2';
+      warn.style.display = 'none';
+    } else if (n > 0) {
+      badge.className = 'ht-badge warn ms-2';
+      warn.style.display = 'inline-flex';
+    } else {
+      badge.className = 'ht-badge bad ms-2';
+      warn.style.display = 'none';
+    }
+  } catch(e) {
+    badge.textContent = 'JSON xato';
+    badge.className = 'ht-badge bad ms-2';
+    warn.style.display = 'inline-flex';
+    err.textContent = e.message;
+  }
+}
+function fmtHT() {
+  const el = document.getElementById('hidden-tests-field');
+  try {
+    el.value = JSON.stringify(JSON.parse(el.value || '[]'), null, 2);
+    updateHTCount(el.value);
+  } catch(e) {
+    document.getElementById('ht-err').textContent = 'JSON xato: ' + e.message;
+  }
+}
+function clearHT() {
+  if (confirm('Barcha yashirin testlarni o\'chirasizmi?')) {
+    document.getElementById('hidden-tests-field').value = '[]';
+    updateHTCount('[]');
+  }
+}
+updateHTCount(document.getElementById('hidden-tests-field').value);
+</script>
+{% endblock %}

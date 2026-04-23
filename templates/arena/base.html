@@ -489,10 +489,33 @@
 
     {% if session.get('admin_id') %}
     <div class="ar-nav-sep"></div>
-    <div class="ar-nav-label">Admin</div>
+    <div class="ar-nav-label">Super Admin</div>
     <a class="ar-nav-link {% if request.endpoint == 'arena.admin_problems' %}active{% endif %}"
        href="{{ url_for('arena.admin_problems') }}">
       <i class="fas fa-tasks"></i> Masalalarni boshqarish
+    </a>
+    {% endif %}
+
+    {% if is_arena_admin %}
+    <div class="ar-nav-sep"></div>
+    <div class="ar-nav-label" style="color:var(--ar-orange);">
+      <i class="fas fa-shield-alt" style="margin-right:4px;"></i> Arena Admin
+    </div>
+    <a class="ar-nav-link {% if request.endpoint == 'arena.arena_admin_dashboard' %}active{% endif %}"
+       href="{{ url_for('arena.arena_admin_dashboard') }}">
+      <i class="fas fa-tachometer-alt"></i> Panel
+    </a>
+    <a class="ar-nav-link {% if request.endpoint in ('arena.arena_admin_submissions',) %}active{% endif %}"
+       href="{{ url_for('arena.arena_admin_submissions') }}">
+      <i class="fas fa-list-alt"></i> Barcha urinishlar
+    </a>
+    <a class="ar-nav-link {% if request.endpoint in ('arena.arena_admin_problems','arena.arena_admin_problem_new','arena.arena_admin_problem_edit') %}active{% endif %}"
+       href="{{ url_for('arena.arena_admin_problems') }}">
+      <i class="fas fa-code"></i> Masalalar
+    </a>
+    <a class="ar-nav-link {% if request.endpoint == 'arena.arena_admin_users' %}active{% endif %}"
+       href="{{ url_for('arena.arena_admin_users') }}">
+      <i class="fas fa-users-cog"></i> Foydalanuvchilar
     </a>
     {% endif %}
   </nav>
