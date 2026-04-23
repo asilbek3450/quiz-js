@@ -162,8 +162,8 @@ def join_room_req():
         room = ROOMS[code]
         if room['state'] != 'waiting':
             return jsonify({'error': "Poyga boshlangan. Keyingi poyga kuting."}), 400
-        if len(room['participants']) >= 20:
-            return jsonify({'error': "Xona to'ldi (max 20 kishi)."}), 400
+        if len(room['participants']) >= 50:
+            return jsonify({'error': "Xona to'ldi (max 50 kishi)."}), 400
 
         uid = _get_uid()
         session['typing_name'] = name
