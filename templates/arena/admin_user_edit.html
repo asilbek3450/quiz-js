@@ -1,0 +1,224 @@
+{% extends "arena/base.html" %}
+{% block title %}{{ u.username }} — Tahrirlash{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('arena.arena_admin_dashboard') }}">Admin</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('arena.arena_admin_users') }}">Foydalanuvchilar</a></li>
+<li class="breadcrumb-item active">{{ u.username }}</li>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.af-section {
+  background: var(--ar-card);
+  border: 1px solid var(--ar-border);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.af-section-header {
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--ar-border);
+  font-weight: 700;
+  font-size: .85rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ar-muted);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.af-section-body { padding: 18px; }
+.af-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.af-col { flex: 1; min-width: 180px; }
+.af-col-full { flex: 1 0 100%; }
+textarea.ar-input { resize: vertical; }
+.danger-zone { border-color: rgba(248,81,73,.45); }
+.danger-zone .af-section-header { color: var(--ar-red); border-bottom-color: rgba(248,81,73,.25); }
+.user-meta { display:flex; gap:14px; flex-wrap:wrap; font-size:.8rem; color:var(--ar-muted); }
+.user-meta b { color: var(--ar-text); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 820px;">
+
+  {% if error %}
+  <div class="ar-alert ar-alert-danger">
+    <i class="fas fa-exclamation-circle"></i> {{ error }}
+  </div>
+  {% endif %}
+  {% if success %}
+  <div class="ar-alert ar-alert-success">
+    <i class="fas fa-check-circle"></i> {{ success }}
+  </div>
+  {% endif %}
+
+  <!-- Header -->
+  <div class="ar-card mb-3 p-3 d-flex align-items-center gap-3 flex-wrap">
+    <div style="width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#58a6ff,#bc8cff);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.4rem;color:#fff;flex-shrink:0;">
+      {{ u.username[0].upper() }}
+    </div>
+    <div style="flex:1; min-width:200px;">
+      <div style="font-size:1.1rem; font-weight:700;">{{ u.username }}</div>
+      <div style="font-size:.82rem; color:var(--ar-muted);">{{ u.full_name }}</div>
+      <div class="user-meta mt-1">
+        <span><i class="fas fa-check-circle" style="color:var(--ar-green);"></i> <b>{{ u.problems_solved }}</b> hal</span>
+        <span><i class="fas fa-star" style="color:var(--ar-yellow);"></i> <b>{{ u.rating }}</b> ball</span>
+        <span><i class="fas fa-paper-plane"></i> <b>{{ u.submissions.count() }}</b> urinish</span>
+        <span><i class="fas fa-calendar"></i> {{ u.created_at.strftime('%d.%m.%Y') }}</span>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('arena.profile', username=u.username) }}"
+         class="ar-btn ar-btn-sm ar-btn-outline" target="_blank">
+        <i class="fas fa-user"></i> Profil
+      </a>
+      <a href="{{ url_for('arena.arena_admin_submissions') }}?user={{ u.username }}"
+         class="ar-btn ar-btn-sm ar-btn-outline">
+        <i class="fas fa-list"></i> Urinishlari
+      </a>
+    </div>
+  </div>
+
+  <!-- Profile edit -->
+  <form method="POST" action="{{ url_for('arena.arena_admin_user_edit', uid=u.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="af-section">
+      <div class="af-section-header">
+        <i class="fas fa-user-edit"></i> Profil ma'lumotlari
+      </div>
+      <div class="af-section-body">
+        <div class="af-row">
+          <div class="af-col">
+            <label class="ar-label">Username</label>
+            <input class="ar-input" name="username" value="{{ u.username }}" required
+                   {% if u.username.lower() == 'user' %}readonly title="Admin akkaunt username'i o'zgartirilmaydi"{% endif %}>
+          </div>
+          <div class="af-col">
+            <label class="ar-label">Ism-familiya</label>
+            <input class="ar-input" name="full_name" value="{{ u.full_name }}" required>
+          </div>
+          <div class="af-col" style="max-width:140px;">
+            <label class="ar-label">Yosh</label>
+            <input class="ar-input" name="age" type="number" min="5" max="100" value="{{ u.age or '' }}">
+          </div>
+        </div>
+        <div class="af-row">
+          <div class="af-col-full">
+            <label class="ar-label">Bio</label>
+            <textarea class="ar-input" name="bio" rows="3" maxlength="500" placeholder="...">{{ u.bio or '' }}</textarea>
+          </div>
+        </div>
+        <div class="d-flex gap-2 justify-content-end">
+          <a href="{{ url_for('arena.arena_admin_users') }}" class="ar-btn ar-btn-outline">
+            <i class="fas fa-times"></i> Bekor qilish
+          </a>
+          <button type="submit" class="ar-btn ar-btn-primary">
+            <i class="fas fa-save"></i> Saqlash
+          </button>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <!-- Password reset -->
+  <form method="POST" action="{{ url_for('arena.arena_admin_user_reset_password', uid=u.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="af-section">
+      <div class="af-section-header">
+        <i class="fas fa-key"></i> Parolni tiklash
+      </div>
+      <div class="af-section-body">
+        <div style="font-size:.82rem; color:var(--ar-muted); margin-bottom:12px;">
+          <i class="fas fa-info-circle"></i>
+          Foydalanuvchi parolini unutgan bo'lsa, bu yerdan yangi parol o'rnatishingiz mumkin.
+          Yangi parolni foydalanuvchiga shaxsiy yo'l bilan etkazing.
+        </div>
+        <div class="af-row">
+          <div class="af-col">
+            <label class="ar-label">Yangi parol</label>
+            <input class="ar-input" type="text" name="new_password"
+                   minlength="6" required placeholder="kamida 6 ta belgi" autocomplete="new-password">
+          </div>
+          <div class="af-col">
+            <label class="ar-label">Tasdiqlash</label>
+            <input class="ar-input" type="text" name="confirm_password"
+                   minlength="6" required placeholder="qaytaring" autocomplete="new-password">
+          </div>
+        </div>
+        <div class="d-flex justify-content-end">
+          <button type="submit" class="ar-btn ar-btn-primary"
+                  onclick="return confirm('{{ u.username }} parolini yangilashni tasdiqlaysizmi?')">
+            <i class="fas fa-key"></i> Parolni yangilash
+          </button>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <!-- Stats / actions -->
+  <div class="af-section">
+    <div class="af-section-header">
+      <i class="fas fa-tools"></i> Statistika va amallar
+    </div>
+    <div class="af-section-body">
+      <div class="d-flex gap-2 flex-wrap">
+        <form method="POST" action="{{ url_for('arena.arena_admin_user_recalc', uid=u.id) }}"
+              onsubmit="return confirm('{{ u.username }} statistikasini qayta hisoblaysizmi?')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="ar-btn ar-btn-outline" style="color:var(--ar-orange);">
+            <i class="fas fa-sync-alt"></i> Statistikani qayta hisoblash
+          </button>
+        </form>
+        <form method="POST" action="{{ url_for('arena.arena_admin_user_clear_subs', uid=u.id) }}"
+              onsubmit="return confirm('{{ u.username }} foydalanuvchining BARCHA urinishlarini o\'chirasizmi? Akkaunt qoladi, lekin reyting nolga tushadi.')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="ar-btn ar-btn-outline" style="color:var(--ar-yellow);">
+            <i class="fas fa-eraser"></i> Urinishlarni tozalash
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Danger zone — delete -->
+  {% if u.username.lower() != 'user' and (not me or me.id != u.id) %}
+  <div class="af-section danger-zone">
+    <div class="af-section-header">
+      <i class="fas fa-skull-crossbones"></i> Xavfli zona
+    </div>
+    <div class="af-section-body">
+      <div style="font-size:.85rem; margin-bottom:14px; color:var(--ar-text);">
+        Foydalanuvchini o'chirsangiz, uning barcha urinishlari ham qaytarib bo'lmas tarzda
+        o'chiriladi. Tasdiqlash uchun pastga foydalanuvchi username'ini yozing:
+        <code style="color:var(--ar-red); font-weight:700;">{{ u.username }}</code>
+      </div>
+      <form method="POST" action="{{ url_for('arena.arena_admin_user_delete', uid=u.id) }}"
+            onsubmit="return confirm('Haqiqatan ham {{ u.username }} foydalanuvchisini O\'CHIRMOQCHIMISIZ? Bu amalni bekor qilib bo\'lmaydi!')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="d-flex gap-2 align-items-end flex-wrap">
+          <div style="flex:1; min-width:200px;">
+            <label class="ar-label">Username'ni yozing</label>
+            <input class="ar-input" name="confirm_username"
+                   placeholder="{{ u.username }}" autocomplete="off" required>
+          </div>
+          <button type="submit" class="ar-btn ar-btn-danger">
+            <i class="fas fa-trash-alt"></i> Foydalanuvchini o'chirish
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% else %}
+  <div class="ar-alert ar-alert-warning">
+    <i class="fas fa-info-circle"></i>
+    {% if u.username.lower() == 'user' %}
+      Admin akkaunti himoyalangan — uni o'chirib bo'lmaydi.
+    {% else %}
+      O'zingizning akkauntingizni o'chira olmaysiz.
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

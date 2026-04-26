@@ -940,6 +940,149 @@ def arena_admin_user_recalc(uid):
     return redirect(request.referrer or url_for('arena.arena_admin_users'))
 
 
+@arena_bp.route('/admin/users/<int:uid>/edit', methods=['GET', 'POST'])
+@arena_admin_required
+def arena_admin_user_edit(uid):
+    """Admin: foydalanuvchini tahrirlash (username, full_name, age, bio)."""
+    user = ArenaUser.query.get_or_404(uid)
+    me   = _current_user()
+    error = None
+    success = None
+
+    if request.method == 'POST':
+        username  = request.form.get('username', '').strip()
+        full_name = request.form.get('full_name', '').strip()
+        age_raw   = request.form.get('age', '').strip()
+        bio       = request.form.get('bio', '').strip()[:500]
+
+        if not _validate_username(username):
+            error = 'Username 3-30 ta harf/raqam/pastki chiziq (_) bo\'lishi kerak.'
+        elif not full_name or len(full_name) < 3:
+            error = 'Ism-familiya kamida 3 ta belgi bo\'lishi kerak.'
+        elif age_raw and (not age_raw.isdigit() or not (5 <= int(age_raw) <= 100)):
+            error = 'Yosh 5 dan 100 gacha bo\'lishi kerak.'
+        else:
+            # Username uniqueness (case-insensitive) — must not collide with another user
+            dup = ArenaUser.query.filter(
+                func.lower(ArenaUser.username) == username.lower(),
+                ArenaUser.id != user.id
+            ).first()
+            if dup:
+                error = f'"{username}" username allaqachon band.'
+            # Admin o'z username'ini o'zgartira olmaydi (admin login = "user")
+            elif user.username.lower() == ARENA_ADMIN_USERNAME and username.lower() != ARENA_ADMIN_USERNAME:
+                error = 'Admin akkauntining username\'ini o\'zgartirib bo\'lmaydi.'
+            else:
+                user.username  = username
+                user.full_name = full_name
+                user.age       = int(age_raw) if age_raw else None
+                user.bio       = bio
+                db.session.commit()
+                success = 'Foydalanuvchi yangilandi.'
+
+    return render_template('arena/admin_user_edit.html',
+                           u=user, me=me, error=error, success=success)
+
+
+@arena_bp.route('/admin/users/<int:uid>/reset_password', methods=['POST'])
+@arena_admin_required
+def arena_admin_user_reset_password(uid):
+    """Admin: foydalanuvchi parolini tiklash (yangi parol o'rnatish)."""
+    user = ArenaUser.query.get_or_404(uid)
+    new_pw     = request.form.get('new_password', '')
+    confirm_pw = request.form.get('confirm_password', '')
+
+    if len(new_pw) < 6:
+        flash('Yangi parol kamida 6 ta belgidan iborat bo\'lishi kerak.', 'danger')
+    elif new_pw != confirm_pw:
+        flash('Parollar mos kelmadi.', 'danger')
+    else:
+        user.set_password(new_pw)
+        db.session.commit()
+        flash(f'{user.username} uchun parol yangilandi.', 'success')
+
+    return redirect(url_for('arena.arena_admin_user_edit', uid=uid))
+
+
+@arena_bp.route('/admin/users/<int:uid>/clear_subs', methods=['POST'])
+@arena_admin_required
+def arena_admin_user_clear_subs(uid):
+    """Admin: foydalanuvchining barcha urinishlarini o'chirish (akkaunt qoladi)."""
+    user = ArenaUser.query.get_or_404(uid)
+
+    subs = ArenaSubmission.query.filter_by(user_id=uid).all()
+    # Update problem counters
+    for s in subs:
+        prob = ArenaProblem.query.get(s.problem_id)
+        if prob:
+            if prob.submission_count > 0:
+                prob.submission_count -= 1
+            if s.status == 'AC' and prob.accepted_count > 0:
+                prob.accepted_count -= 1
+
+    ArenaSubmission.query.filter_by(user_id=uid).delete()
+
+    # Reset user stats
+    user.problems_solved = 0
+    user.rating          = 0
+    user.total_stars     = 0
+
+    try:
+        db.session.commit()
+        flash(f'{user.username} foydalanuvchining barcha urinishlari o\'chirildi.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Xato: {e}', 'danger')
+
+    return redirect(url_for('arena.arena_admin_user_edit', uid=uid))
+
+
+@arena_bp.route('/admin/users/<int:uid>/delete', methods=['POST'])
+@arena_admin_required
+def arena_admin_user_delete(uid):
+    """Admin: foydalanuvchini va uning urinishlarini butunlay o'chirish."""
+    user = ArenaUser.query.get_or_404(uid)
+    me   = _current_user()
+
+    # Adminni o'zini o'chirib bo'lmaydi
+    if me and user.id == me.id:
+        flash('O\'zingizni o\'chira olmaysiz.', 'danger')
+        return redirect(url_for('arena.arena_admin_user_edit', uid=uid))
+    if user.username.lower() == ARENA_ADMIN_USERNAME:
+        flash('Admin akkauntini o\'chirib bo\'lmaydi.', 'danger')
+        return redirect(url_for('arena.arena_admin_user_edit', uid=uid))
+
+    # Confirm typing
+    typed = request.form.get('confirm_username', '').strip()
+    if typed != user.username:
+        flash('Tasdiqlash uchun username noto\'g\'ri kiritildi.', 'danger')
+        return redirect(url_for('arena.arena_admin_user_edit', uid=uid))
+
+    # Decrement problem counters for each submission
+    subs = ArenaSubmission.query.filter_by(user_id=uid).all()
+    for s in subs:
+        prob = ArenaProblem.query.get(s.problem_id)
+        if prob:
+            if prob.submission_count > 0:
+                prob.submission_count -= 1
+            if s.status == 'AC' and prob.accepted_count > 0:
+                prob.accepted_count -= 1
+
+    ArenaSubmission.query.filter_by(user_id=uid).delete()
+    uname = user.username
+    db.session.delete(user)
+
+    try:
+        db.session.commit()
+        flash(f'"{uname}" foydalanuvchisi va uning barcha urinishlari o\'chirildi.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Xato: {e}', 'danger')
+        return redirect(url_for('arena.arena_admin_user_edit', uid=uid))
+
+    return redirect(url_for('arena.arena_admin_users'))
+
+
 def _arena_problem_form(problem):
     """Arena admin problem form (arena layout)."""
     error = None
