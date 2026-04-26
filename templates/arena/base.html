@@ -55,6 +55,12 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="icon" href="{{ url_for('static', filename='img/logo.png') }}" type="image/png">
+  <script>
+    (function() {
+      var savedTheme = localStorage.getItem('arena-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    })();
+  </script>
   <style>
     :root {
       --ar-bg:      #0d1117;
@@ -69,7 +75,53 @@
       --ar-yellow:  #d29922;
       --ar-purple:  #bc8cff;
       --ar-orange:  #ffa657;
+      --ar-hover-bg: rgba(255,255,255,0.04);
+      --ar-soft-bg: rgba(255,255,255,0.04);
+      --ar-soft-bg-strong: rgba(255,255,255,0.07);
+      --ar-primary-soft: rgba(88,166,255,0.08);
+      --ar-primary-soft-border: rgba(88,166,255,0.25);
+      --ar-code-bg: #0d1117;
+      --ar-code-text: #e6edf3;
+      --ar-overlay-bg: rgba(0,0,0,0.5);
+      --ar-modal-backdrop: rgba(0,0,0,.7);
+      --ar-shadow: 0 12px 30px rgba(0,0,0,.25);
+      --ar-avatar-gradient: linear-gradient(135deg, #58a6ff, #bc8cff);
+      --ar-hero-gradient: linear-gradient(135deg, rgba(88,166,255,.08), rgba(188,140,255,.08));
+      --ar-secondary-text: #c9d1d9;
+      --ar-silver: #b0b8c1;
+      --ar-btn-primary-text: #0d1117;
+      --ar-btn-green-text: #0d1117;
       --sidebar-w:  240px;
+    }
+    html[data-theme="light"] {
+      --ar-bg: #f8fafc;
+      --ar-surface: rgba(255,255,255,0.92);
+      --ar-card: #ffffff;
+      --ar-border: #d8e5d6;
+      --ar-text: #0f172a;
+      --ar-muted: #64748b;
+      --ar-primary: #0d9410;
+      --ar-green: #16a34a;
+      --ar-red: #dc2626;
+      --ar-yellow: #d97706;
+      --ar-purple: #7c3aed;
+      --ar-orange: #ea580c;
+      --ar-hover-bg: rgba(13,148,16,0.06);
+      --ar-soft-bg: rgba(13,148,16,0.05);
+      --ar-soft-bg-strong: rgba(13,148,16,0.10);
+      --ar-primary-soft: rgba(13,148,16,0.08);
+      --ar-primary-soft-border: rgba(13,148,16,0.18);
+      --ar-code-bg: #f3f8f2;
+      --ar-code-text: #16301a;
+      --ar-overlay-bg: rgba(15,23,42,0.35);
+      --ar-modal-backdrop: rgba(15,23,42,.45);
+      --ar-shadow: 0 16px 40px rgba(15,23,42,.08);
+      --ar-avatar-gradient: linear-gradient(135deg, #0d9410, #10b981);
+      --ar-hero-gradient: linear-gradient(135deg, rgba(13,148,16,.10), rgba(16,185,129,.12));
+      --ar-secondary-text: #334155;
+      --ar-silver: #94a3b8;
+      --ar-btn-primary-text: #ffffff;
+      --ar-btn-green-text: #ffffff;
     }
     * { box-sizing: border-box; }
     body {
@@ -78,6 +130,7 @@
       color: var(--ar-text);
       min-height: 100vh;
       margin: 0;
+      transition: background .2s ease, color .2s ease;
     }
 
     /* ── Sidebar ─────────────────────────────────────────── */
@@ -92,6 +145,7 @@
       flex-direction: column;
       z-index: 100;
       overflow-y: auto;
+      box-shadow: var(--ar-shadow);
     }
     .ar-sidebar-logo {
       display: flex;
@@ -108,7 +162,7 @@
       color: var(--ar-text);
     }
     .ar-sidebar-logo .badge-arena {
-      background: linear-gradient(135deg, #58a6ff, #bc8cff);
+      background: var(--ar-avatar-gradient);
       color: #fff;
       font-size: 0.6rem;
       font-weight: 700;
@@ -128,7 +182,7 @@
     .ar-user-card .av {
       width: 40px; height: 40px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #58a6ff, #bc8cff);
+      background: var(--ar-avatar-gradient);
       display: flex; align-items: center; justify-content: center;
       font-weight: 700; font-size: 1rem; color: #fff;
       flex-shrink: 0;
@@ -156,12 +210,12 @@
     }
     .ar-nav-link:hover {
       color: var(--ar-text);
-      background: rgba(255,255,255,0.04);
+      background: var(--ar-hover-bg);
     }
     .ar-nav-link.active {
       color: var(--ar-primary);
       border-left-color: var(--ar-primary);
-      background: rgba(88,166,255,0.08);
+      background: var(--ar-primary-soft);
     }
     .ar-nav-link i { width: 18px; text-align: center; font-size: 0.9rem; }
     .ar-nav-sep {
@@ -194,7 +248,7 @@
       border-radius: 8px;
       transition: all 0.15s;
     }
-    .ar-sidebar-footer a:hover { color: var(--ar-red); background: rgba(248,81,73,0.08); }
+    .ar-sidebar-footer a:hover { color: var(--ar-red); background: color-mix(in srgb, var(--ar-red) 10%, transparent); }
 
     /* ── Main content ──────────────────────────────────── */
     .ar-main {
@@ -214,6 +268,7 @@
       position: sticky;
       top: 0;
       z-index: 50;
+      box-shadow: var(--ar-shadow);
     }
     .ar-topbar .breadcrumb {
       margin: 0;
@@ -232,6 +287,7 @@
       border: 1px solid var(--ar-border);
       border-radius: 12px;
       overflow: hidden;
+      box-shadow: var(--ar-shadow);
     }
     .ar-card-header {
       padding: 14px 18px;
@@ -245,13 +301,13 @@
     .ar-card-body { padding: 18px; }
 
     /* ── Status badges ─────────────────────────────────── */
-    .badge-ac  { background: rgba(63,185,80,.15); color: var(--ar-green); border: 1px solid rgba(63,185,80,.3); }
-    .badge-wa  { background: rgba(248,81,73,.15); color: var(--ar-red);   border: 1px solid rgba(248,81,73,.3); }
-    .badge-pe  { background: rgba(210,153,34,.15); color: var(--ar-yellow); border: 1px solid rgba(210,153,34,.3); }
+    .badge-ac  { background: color-mix(in srgb, var(--ar-green) 15%, transparent); color: var(--ar-green); border: 1px solid color-mix(in srgb, var(--ar-green) 30%, transparent); }
+    .badge-wa  { background: color-mix(in srgb, var(--ar-red) 15%, transparent); color: var(--ar-red);   border: 1px solid color-mix(in srgb, var(--ar-red) 30%, transparent); }
+    .badge-pe  { background: color-mix(in srgb, var(--ar-yellow) 15%, transparent); color: var(--ar-yellow); border: 1px solid color-mix(in srgb, var(--ar-yellow) 30%, transparent); }
 
-    .badge-easy   { background: rgba(63,185,80,.15); color: var(--ar-green); border: 1px solid rgba(63,185,80,.3); }
-    .badge-medium { background: rgba(210,153,34,.15); color: var(--ar-yellow); border: 1px solid rgba(210,153,34,.3); }
-    .badge-hard   { background: rgba(248,81,73,.15); color: var(--ar-red);   border: 1px solid rgba(248,81,73,.3); }
+    .badge-easy   { background: color-mix(in srgb, var(--ar-green) 15%, transparent); color: var(--ar-green); border: 1px solid color-mix(in srgb, var(--ar-green) 30%, transparent); }
+    .badge-medium { background: color-mix(in srgb, var(--ar-yellow) 15%, transparent); color: var(--ar-yellow); border: 1px solid color-mix(in srgb, var(--ar-yellow) 30%, transparent); }
+    .badge-hard   { background: color-mix(in srgb, var(--ar-red) 15%, transparent); color: var(--ar-red);   border: 1px solid color-mix(in srgb, var(--ar-red) 30%, transparent); }
 
     .ar-badge {
       display: inline-flex;
@@ -281,7 +337,7 @@
       vertical-align: middle;
     }
     .ar-table tr:last-child td { border-bottom: none; }
-    .ar-table tr:hover td { background: rgba(255,255,255,.025); }
+    .ar-table tr:hover td { background: var(--ar-hover-bg); }
 
     /* ── Form controls ─────────────────────────────────── */
     .ar-input {
@@ -296,7 +352,7 @@
       outline: none;
       transition: border-color 0.15s;
     }
-    .ar-input:focus { border-color: var(--ar-primary); box-shadow: 0 0 0 3px rgba(88,166,255,.15); }
+    .ar-input:focus { border-color: var(--ar-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ar-primary) 15%, transparent); }
     .ar-input::placeholder { color: var(--ar-muted); }
     .ar-label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--ar-muted); margin-bottom: 6px; }
 
@@ -314,8 +370,8 @@
       transition: all 0.15s;
     }
     .ar-btn:hover { opacity: .85; transform: translateY(-1px); }
-    .ar-btn-primary { background: var(--ar-primary); color: #0d1117; }
-    .ar-btn-green   { background: var(--ar-green);   color: #0d1117; }
+    .ar-btn-primary { background: var(--ar-primary); color: var(--ar-btn-primary-text); }
+    .ar-btn-green   { background: var(--ar-green);   color: var(--ar-btn-green-text); }
     .ar-btn-outline {
       background: transparent;
       border: 1px solid var(--ar-border);
@@ -353,9 +409,9 @@
       margin-bottom: 18px;
       display: flex; align-items: center; gap: 9px;
     }
-    .ar-alert-success { background: rgba(63,185,80,.12); border: 1px solid rgba(63,185,80,.3); color: var(--ar-green); }
-    .ar-alert-danger  { background: rgba(248,81,73,.12); border: 1px solid rgba(248,81,73,.3); color: var(--ar-red); }
-    .ar-alert-warning { background: rgba(210,153,34,.12); border: 1px solid rgba(210,153,34,.3); color: var(--ar-yellow); }
+    .ar-alert-success { background: color-mix(in srgb, var(--ar-green) 12%, transparent); border: 1px solid color-mix(in srgb, var(--ar-green) 30%, transparent); color: var(--ar-green); }
+    .ar-alert-danger  { background: color-mix(in srgb, var(--ar-red) 12%, transparent); border: 1px solid color-mix(in srgb, var(--ar-red) 30%, transparent); color: var(--ar-red); }
+    .ar-alert-warning { background: color-mix(in srgb, var(--ar-yellow) 12%, transparent); border: 1px solid color-mix(in srgb, var(--ar-yellow) 30%, transparent); color: var(--ar-yellow); }
 
     /* ── Progress bar ──────────────────────────────────── */
     .ar-progress { height: 6px; background: var(--ar-border); border-radius: 99px; overflow: hidden; }
@@ -376,7 +432,7 @@
     }
     .ar-page-btn:hover, .ar-page-btn.active {
       border-color: var(--ar-primary); color: var(--ar-primary);
-      background: rgba(88,166,255,.08);
+      background: var(--ar-primary-soft);
     }
     .ar-page-btn.disabled { opacity: .4; pointer-events: none; }
 
@@ -396,12 +452,36 @@
       border: 1px solid transparent;
     }
     .sm-cell:hover { transform: scale(1.08); }
-    .sm-cell.sm-ac   { background: rgba(63,185,80,.2); color: var(--ar-green); border-color: rgba(63,185,80,.4); }
-    .sm-cell.sm-wa   { background: rgba(248,81,73,.15); color: var(--ar-red);  border-color: rgba(248,81,73,.35); }
-    .sm-cell.sm-none { background: rgba(255,255,255,.04); color: var(--ar-muted); border-color: var(--ar-border); }
+    .sm-cell.sm-ac   { background: color-mix(in srgb, var(--ar-green) 20%, transparent); color: var(--ar-green); border-color: color-mix(in srgb, var(--ar-green) 40%, transparent); }
+    .sm-cell.sm-wa   { background: color-mix(in srgb, var(--ar-red) 15%, transparent); color: var(--ar-red);  border-color: color-mix(in srgb, var(--ar-red) 35%, transparent); }
+    .sm-cell.sm-none { background: var(--ar-soft-bg); color: var(--ar-muted); border-color: var(--ar-border); }
 
     /* ── Hamburger (mobile) ────────────────────────────── */
     .ar-ham { display: none; background: none; border: none; color: var(--ar-text); font-size: 1.2rem; cursor: pointer; }
+    .ar-theme-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border: 1px solid var(--ar-border);
+      border-radius: 999px;
+      background: var(--ar-card);
+      color: var(--ar-text);
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      transition: all .15s ease;
+    }
+    .ar-theme-toggle:hover {
+      border-color: var(--ar-primary);
+      color: var(--ar-primary);
+      background: var(--ar-primary-soft);
+    }
+    .ar-theme-toggle i {
+      width: 16px;
+      text-align: center;
+    }
 
     @media (max-width: 768px) {
       .ar-sidebar { transform: translateX(-100%); transition: transform .25s ease; }
@@ -409,6 +489,7 @@
       .ar-main { margin-left: 0; }
       .ar-ham { display: block; }
       .ar-content { padding: 16px; }
+      .ar-theme-toggle .label { display: none; }
     }
   </style>
   {% block extra_head %}{% endblock %}
@@ -539,7 +620,11 @@
         {% block breadcrumb %}{% endblock %}
       </ol>
     </nav>
-    <div class="ms-auto" style="font-size:0.8rem; color:var(--ar-muted);">
+    <div class="ms-auto d-flex align-items-center gap-2" style="font-size:0.8rem; color:var(--ar-muted);">
+      <button type="button" class="ar-theme-toggle" id="arenaThemeToggle" onclick="toggleArenaTheme()" aria-label="Rang rejimini almashtirish">
+        <i class="fas fa-moon"></i>
+        <span class="label">Tun rejimi</span>
+      </button>
       {% if arena_user %}
       <a href="{{ url_for('arena.profile', username=arena_user.username) }}"
          style="color:var(--ar-primary); text-decoration:none; font-weight:600;">
@@ -569,7 +654,7 @@
 
 <!-- Overlay for mobile sidebar -->
 <div id="arOverlay" onclick="toggleSidebar()"
-     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:99;"></div>
+     style="display:none; position:fixed; inset:0; background:var(--ar-overlay-bg); z-index:99;"></div>
 
 <script>
 function toggleSidebar() {
@@ -578,6 +663,30 @@ function toggleSidebar() {
   const open = sb.classList.toggle('open');
   ov.style.display = open ? 'block' : 'none';
 }
+
+function applyArenaTheme(theme) {
+  const html = document.documentElement;
+  const btn = document.getElementById('arenaThemeToggle');
+  const icon = btn ? btn.querySelector('i') : null;
+  const label = btn ? btn.querySelector('.label') : null;
+
+  html.setAttribute('data-theme', theme);
+  localStorage.setItem('arena-theme', theme);
+
+  if (icon) {
+    icon.className = theme === 'light' ? 'fas fa-sun' : 'fas fa-moon';
+  }
+  if (label) {
+    label.textContent = theme === 'light' ? 'Kun rejimi' : 'Tun rejimi';
+  }
+}
+
+function toggleArenaTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  applyArenaTheme(current === 'light' ? 'dark' : 'light');
+}
+
+applyArenaTheme(document.documentElement.getAttribute('data-theme') || 'dark');
 </script>
 
 {% if not session.get('admin_id') %}

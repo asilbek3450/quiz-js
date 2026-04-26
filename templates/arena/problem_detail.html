@@ -15,7 +15,7 @@
 
   /* ── Problem statement ──────────────────────────────────────────────── */
   .problem-body h3 { font-size:.88rem; font-weight:700; color:var(--ar-primary); margin:18px 0 6px; }
-  .problem-body p  { color:#c9d1d9; font-size:.88rem; line-height:1.75; margin-bottom:8px; }
+  .problem-body p  { color:var(--ar-secondary-text); font-size:.88rem; line-height:1.75; margin-bottom:8px; }
   .example-box {
     background: var(--ar-bg);
     border: 1px solid var(--ar-border);
@@ -25,7 +25,7 @@
   }
   .example-box .ex-head {
     padding: 5px 12px;
-    background: rgba(255,255,255,.04);
+    background: var(--ar-soft-bg);
     border-bottom: 1px solid var(--ar-border);
     font-size: .68rem; font-weight:700;
     text-transform:uppercase; letter-spacing:.5px; color:var(--ar-muted);
@@ -41,8 +41,8 @@
   .editor-panel { position:sticky; top:76px; }
   #codeEditor {
     width:100%; box-sizing:border-box;
-    background:#0d1117;
-    color:#e6edf3;
+    background:var(--ar-code-bg);
+    color:var(--ar-code-text);
     border:1px solid var(--ar-border);
     border-radius:0 0 8px 8px;
     font-family:'Courier New',Consolas,monospace;
@@ -58,7 +58,7 @@
   #codeEditor:focus { border-color:var(--ar-primary); }
 
   .editor-toolbar {
-    background:rgba(255,255,255,.04);
+    background:var(--ar-soft-bg);
     border:1px solid var(--ar-border);
     border-bottom:none;
     border-radius:8px 8px 0 0;
@@ -67,12 +67,12 @@
   }
   .lang-badge {
     display:inline-flex; align-items:center; gap:6px;
-    background:rgba(88,166,255,.12); border:1px solid rgba(88,166,255,.25);
+    background:var(--ar-primary-soft); border:1px solid var(--ar-primary-soft-border);
     border-radius:6px; padding:4px 10px; font-size:.78rem;
     color:var(--ar-primary); font-weight:700;
   }
   #langSelect {
-    background:#161b22; border:1px solid var(--ar-border);
+    background:var(--ar-surface); border:1px solid var(--ar-border);
     color:var(--ar-text); border-radius:5px; font-size:.8rem;
     padding:4px 8px; cursor:pointer;
   }
@@ -81,12 +81,12 @@
   .action-row { display:flex; gap:8px; margin-top:10px; }
   .btn-run {
     flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;
-    background:rgba(255,255,255,.07); border:1px solid var(--ar-border);
+    background:var(--ar-soft-bg-strong); border:1px solid var(--ar-border);
     color:var(--ar-text); border-radius:7px;
     padding:9px 14px; font-size:.85rem; font-weight:600; cursor:pointer;
     transition:background .15s, border-color .15s;
   }
-  .btn-run:hover { background:rgba(255,255,255,.12); border-color:var(--ar-muted); }
+  .btn-run:hover { background:var(--ar-hover-bg); border-color:var(--ar-muted); }
   .btn-submit {
     flex:2; display:inline-flex; align-items:center; justify-content:center; gap:6px;
     background:var(--ar-green); border:none;
@@ -107,7 +107,7 @@
   }
   .out-header {
     padding:7px 12px;
-    background:rgba(255,255,255,.04);
+    background:var(--ar-soft-bg);
     border-bottom:1px solid var(--ar-border);
     display:flex; align-items:center; justify-content:between; gap:10px;
     font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px;
@@ -231,7 +231,7 @@
             </div>
             {% if ex.explanation %}
             <div class="col-12">
-              <div style="background:rgba(88,166,255,.07); border:1px solid rgba(88,166,255,.2); border-radius:8px; padding:9px 12px; font-size:.8rem; color:#c9d1d9;">
+              <div style="background:var(--ar-primary-soft); border:1px solid var(--ar-primary-soft-border); border-radius:8px; padding:9px 12px; font-size:.8rem; color:var(--ar-secondary-text);">
                 <strong style="color:var(--ar-primary);">Tushuntirish:</strong> {{ ex.explanation }}
               </div>
             </div>
@@ -339,7 +339,7 @@ print(n * 2)
           <i class="fas fa-terminal" style="color:var(--ar-yellow);"></i> Test kirish (ixtiyoriy)
         </div>
         <textarea id="stdinField" rows="3"
-                  style="width:100%; background:#0d1117; border:1px solid var(--ar-border);
+                  style="width:100%; background:var(--ar-code-bg); border:1px solid var(--ar-border);
                          color:var(--ar-green); border-radius:6px; padding:8px 10px;
                          font-family:'Courier New',monospace; font-size:.82rem; resize:vertical;"
                   placeholder="Masalan: 5"></textarea>
@@ -417,7 +417,7 @@ print(n * 2)
         </div>
         <div class="ar-modal-body">
             <div id="modalMeta" style="margin-bottom:12px; font-size:.8rem; display:flex; gap:12px; color:var(--ar-muted);"></div>
-            <pre id="modalCode" style="margin:0; background:#0d1117; padding:12px; border:1px solid var(--ar-border); border-radius:6px; font-size:.85rem; color:#e6edf3; overflow-x:auto;"></pre>
+            <pre id="modalCode" style="margin:0; background:var(--ar-code-bg); padding:12px; border:1px solid var(--ar-border); border-radius:6px; font-size:.85rem; color:var(--ar-code-text); overflow-x:auto;"></pre>
             <div id="modalError" style="margin-top:12px; padding:10px; background:rgba(248,81,73,.1); border:1px solid rgba(248,81,73,.2); border-radius:6px; color:var(--ar-red); font-size:.8rem; display:none; white-space:pre-wrap;"></div>
         </div>
     </div>
@@ -430,9 +430,9 @@ print(n * 2)
     z-index: 1000; padding:20px;
 }
 .ar-modal-content {
-    background: #161b22; border:1px solid var(--ar-border);
+    background: var(--ar-surface); border:1px solid var(--ar-border);
     border-radius: 10px; width:100%; max-height:90vh; display:flex; flex-direction:column;
-    box-shadow: 0 12px 30px rgba(0,0,0,.5);
+    box-shadow: var(--ar-shadow);
 }
 .ar-modal-header {
     padding: 14px 20px; border-bottom: 1px solid var(--ar-border);
@@ -442,7 +442,7 @@ print(n * 2)
     padding: 20px; overflow-y:auto;
 }
 .sub-row-link { cursor:pointer; transition: background .1s; }
-.sub-row-link:hover { background: rgba(255,255,255,.03); }
+.sub-row-link:hover { background: var(--ar-hover-bg); }
 </style>
 {% endblock %}
 

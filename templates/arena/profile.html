@@ -11,7 +11,7 @@
   <div class="col-lg-3">
     <div class="ar-card text-center" style="padding:28px 20px;">
       <div style="width:80px;height:80px;border-radius:50%;
-                  background:linear-gradient(135deg,#58a6ff,#bc8cff);
+                  background:var(--ar-avatar-gradient);
                   display:inline-flex;align-items:center;justify-content:center;
                   font-size:2rem;font-weight:800;color:#fff;margin-bottom:14px;">
         {{ u.username[0].upper() }}
@@ -31,7 +31,7 @@
       </div>
 
       {% if u.bio %}
-      <div style="font-size:.83rem; color:#c9d1d9; background:var(--ar-bg); border:1px solid var(--ar-border);
+      <div style="font-size:.83rem; color:var(--ar-secondary-text); background:var(--ar-code-bg); border:1px solid var(--ar-border);
                   border-radius:8px; padding:10px 12px; text-align:left; margin-bottom:12px; line-height:1.5;">
         {{ u.bio }}
       </div>
