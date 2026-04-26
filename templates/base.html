@@ -869,58 +869,9 @@
             }
         }, true);
 
-        // ── 3. DevTools open detection (window size difference) ────────────────
-        // Works even when DevTools was already open on a different tab
-        var _devToolsOpen = false;
-
-        function _showDevToolsWarning() {
-            if (document.getElementById('_dt_overlay')) return;
-            var ov = document.createElement('div');
-            ov.id = '_dt_overlay';
-            ov.style.cssText = [
-                'position:fixed','top:0','left:0','width:100vw','height:100vh',
-                'background:#000','z-index:2147483647',
-                'display:flex','flex-direction:column',
-                'align-items:center','justify-content:center',
-                'color:#fff','font-family:sans-serif','text-align:center','padding:24px'
-            ].join(';');
-            ov.innerHTML = '<div style="font-size:3rem;margin-bottom:16px;">🚫</div>'
-                + '<div style="font-size:1.4rem;font-weight:700;margin-bottom:10px;">Developer Tools aniqlandi</div>'
-                + '<div style="color:#aaa;font-size:.95rem;">Iltimos, Developer Tools ni yopib sahifani yangilang.</div>';
-            document.body.appendChild(ov);
-        }
-
-        function _hideDevToolsWarning() {
-            var ov = document.getElementById('_dt_overlay');
-            if (ov) ov.remove();
-        }
-
-        function _checkDevTools() {
-            var W_THRESHOLD = 200;   // side panel
-            var H_THRESHOLD = 200;   // bottom panel
-            var widthDiff  = window.outerWidth  - window.innerWidth;
-            var heightDiff = window.outerHeight - window.innerHeight;
-            // Extra slack on mobile (browser chrome, address bar, etc.)
-            var isMobile = window.innerWidth < 768;
-            if (!isMobile && (widthDiff > W_THRESHOLD || heightDiff > H_THRESHOLD)) {
-                if (!_devToolsOpen) {
-                    _devToolsOpen = true;
-                    _showDevToolsWarning();
-                }
-            } else {
-                if (_devToolsOpen) {
-                    _devToolsOpen = false;
-                    _hideDevToolsWarning();
-                }
-            }
-        }
-
-        // Check immediately (catches already-open DevTools on page load)
-        _checkDevTools();
-        // Poll every 800 ms
-        setInterval(_checkDevTools, 800);
-        // Also check on resize (undocking/docking DevTools triggers resize)
-        window.addEventListener('resize', _checkDevTools);
+        // ── 3. Resize-based DevTools detection removed ─────────────────────────
+        // `outerWidth/innerWidth` farqi oddiy window resize holatlarida ham
+        // false positive berayotgani uchun bu tekshiruv o'chirildi.
 
         // ── 4. Disable text selection globally (non-input elements) ────────────
         document.addEventListener('selectstart', function(e) {
