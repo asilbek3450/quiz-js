@@ -40,7 +40,7 @@
       <th style="width:80px; text-align:center">Rating</th>
       <th style="width:80px; text-align:center">Urinishlar</th>
       <th style="width:130px; text-align:center">Ro'yxatdan</th>
-      <th style="width:230px; text-align:center">Amallar</th>
+      <th style="width:160px; text-align:center">Amallar</th>
     </tr></thead>
     <tbody>
     {% for u in users.items %}
@@ -81,31 +81,10 @@
             <i class="fas fa-list"></i>
           </a>
           <a href="{{ url_for('arena.arena_admin_user_edit', uid=u.id) }}"
-             class="ar-btn ar-btn-sm ar-btn-outline" title="Tahrirlash" style="color:var(--ar-primary);">
-            <i class="fas fa-user-edit"></i>
+             class="ar-btn ar-btn-sm ar-btn-outline" title="Tahrirlash / boshqarish"
+             style="color:var(--ar-primary);">
+            <i class="fas fa-user-edit"></i> Boshqarish
           </a>
-          <form method="POST"
-                action="{{ url_for('arena.arena_admin_user_recalc', uid=u.id) }}"
-                onsubmit="return confirm('{{ u.username }} statistikasini qayta hisoblaysizmi?')">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="ar-btn ar-btn-sm ar-btn-outline"
-                    title="Statistikani qayta hisoblash"
-                    style="color:var(--ar-orange);">
-              <i class="fas fa-sync-alt"></i>
-            </button>
-          </form>
-          {% if u.username.lower() != 'user' and u.id != arena_user.id %}
-          <form method="POST"
-                action="{{ url_for('arena.arena_admin_user_delete', uid=u.id) }}"
-                onsubmit="return promptDelete(this, '{{ u.username }}')">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="hidden" name="confirm_username" value="">
-            <button type="submit" class="ar-btn ar-btn-sm ar-btn-outline"
-                    title="O'chirish" style="color:var(--ar-red);">
-              <i class="fas fa-trash-alt"></i>
-            </button>
-          </form>
-          {% endif %}
         </div>
       </td>
     </tr>
@@ -144,21 +123,4 @@
   </div>
 </div>
 {% endif %}
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-function promptDelete(form, uname) {
-  const typed = prompt(
-    `"${uname}" foydalanuvchini o'chirish uchun username'ni qaytadan yozing:`
-  );
-  if (typed === null) return false;
-  if (typed.trim() !== uname) {
-    alert("Username noto'g'ri kiritildi. O'chirish bekor qilindi.");
-    return false;
-  }
-  form.querySelector('input[name="confirm_username"]').value = typed.trim();
-  return confirm(`Haqiqatan ham "${uname}" foydalanuvchisini O'CHIRMOQCHIMISIZ? Bu amalni bekor qilib bo'lmaydi!`);
-}
-</script>
 {% endblock %}

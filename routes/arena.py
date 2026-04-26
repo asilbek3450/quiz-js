@@ -56,6 +56,17 @@ def arena_admin_required(f):
     return decorated
 
 
+def _check_admin_password(pw: str) -> bool:
+    """Hozirgi admin (username='user') paroli to'g'riligini tekshiradi."""
+    if not pw:
+        return False
+    uid = session.get('arena_user_id')
+    if not uid:
+        return False
+    me = ArenaUser.query.get(uid)
+    return bool(me and me.check_password(pw))
+
+
 @arena_bp.context_processor
 def _inject():
     u = _current_user()
@@ -918,6 +929,10 @@ def arena_admin_users():
 @arena_admin_required
 def arena_admin_user_recalc(uid):
     """Foydalanuvchi statistikasini qayta hisoblash."""
+    if not _check_admin_password(request.form.get('admin_password', '')):
+        flash('Admin paroli noto\'g\'ri. Amal bekor qilindi.', 'danger')
+        return redirect(request.referrer or url_for('arena.arena_admin_users'))
+
     user = ArenaUser.query.get_or_404(uid)
 
     solved_problem_ids = set(
@@ -980,8 +995,128 @@ def arena_admin_user_edit(uid):
                 db.session.commit()
                 success = 'Foydalanuvchi yangilandi.'
 
+    # Per-problem stats: list of problems this user has worked on
+    sub_rows = (db.session.query(
+                    ArenaSubmission.problem_id,
+                    func.count(ArenaSubmission.id).label('total'),
+                    func.max(ArenaSubmission.submitted_at).label('last_at'),
+                )
+                .filter(ArenaSubmission.user_id == user.id)
+                .group_by(ArenaSubmission.problem_id)
+                .all())
+
+    ac_problem_ids = _accepted_set(user.id)
+
+    prob_ids = [r.problem_id for r in sub_rows]
+    probs_by_id = {p.id: p for p in
+                   ArenaProblem.query.filter(ArenaProblem.id.in_(prob_ids)).all()} if prob_ids else {}
+
+    prob_stats = []
+    for r in sub_rows:
+        p = probs_by_id.get(r.problem_id)
+        if not p:
+            continue
+        prob_stats.append({
+            'problem': p,
+            'total': r.total,
+            'is_solved': r.problem_id in ac_problem_ids,
+            'last_at': r.last_at,
+        })
+    prob_stats.sort(key=lambda x: x['last_at'] or 0, reverse=True)
+
     return render_template('arena/admin_user_edit.html',
-                           u=user, me=me, error=error, success=success)
+                           u=user, me=me, error=error, success=success,
+                           prob_stats=prob_stats)
+
+
+@arena_bp.route('/admin/users/<int:uid>/problems/<int:pid>/unsolve', methods=['POST'])
+@arena_admin_required
+def arena_admin_user_unsolve_problem(uid, pid):
+    """Foydalanuvchining berilgan masaladagi yechimini bekor qilish (faqat AC urinishlar o'chiriladi)."""
+    if not _check_admin_password(request.form.get('admin_password', '')):
+        flash('Admin paroli noto\'g\'ri. Amal bekor qilindi.', 'danger')
+        return redirect(url_for('arena.arena_admin_user_edit', uid=uid))
+
+    user    = ArenaUser.query.get_or_404(uid)
+    problem = ArenaProblem.query.get_or_404(pid)
+
+    ac_subs = ArenaSubmission.query.filter_by(
+        user_id=uid, problem_id=pid, status='AC'
+    ).all()
+
+    if not ac_subs:
+        flash(f'"{problem.code}" uchun AC urinish topilmadi.', 'warning')
+        return redirect(url_for('arena.arena_admin_user_edit', uid=uid))
+
+    # Each AC sub also counted in submission_count
+    for s in ac_subs:
+        if problem.submission_count > 0:
+            problem.submission_count -= 1
+        if problem.accepted_count > 0:
+            problem.accepted_count -= 1
+
+    # User stats: only one solve per problem was counted
+    pts = _diff_stars(problem.difficulty)
+    if user.problems_solved > 0:
+        user.problems_solved -= 1
+    user.rating      = max(0, user.rating - pts)
+    user.total_stars = max(0, user.total_stars - pts)
+
+    for s in ac_subs:
+        db.session.delete(s)
+
+    try:
+        db.session.commit()
+        flash(f'"{problem.code}" uchun yechim bekor qilindi ({len(ac_subs)} ta AC urinish o\'chirildi).', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Xato: {e}', 'danger')
+
+    return redirect(url_for('arena.arena_admin_user_edit', uid=uid))
+
+
+@arena_bp.route('/admin/users/<int:uid>/problems/<int:pid>/clear', methods=['POST'])
+@arena_admin_required
+def arena_admin_user_clear_problem(uid, pid):
+    """Foydalanuvchining berilgan masala bo'yicha BARCHA urinishlarini o'chirish."""
+    if not _check_admin_password(request.form.get('admin_password', '')):
+        flash('Admin paroli noto\'g\'ri. Amal bekor qilindi.', 'danger')
+        return redirect(url_for('arena.arena_admin_user_edit', uid=uid))
+
+    user    = ArenaUser.query.get_or_404(uid)
+    problem = ArenaProblem.query.get_or_404(pid)
+
+    subs = ArenaSubmission.query.filter_by(user_id=uid, problem_id=pid).all()
+    if not subs:
+        flash(f'"{problem.code}" uchun urinishlar topilmadi.', 'warning')
+        return redirect(url_for('arena.arena_admin_user_edit', uid=uid))
+
+    had_ac = any(s.status == 'AC' for s in subs)
+
+    for s in subs:
+        if problem.submission_count > 0:
+            problem.submission_count -= 1
+        if s.status == 'AC' and problem.accepted_count > 0:
+            problem.accepted_count -= 1
+
+    if had_ac:
+        pts = _diff_stars(problem.difficulty)
+        if user.problems_solved > 0:
+            user.problems_solved -= 1
+        user.rating      = max(0, user.rating - pts)
+        user.total_stars = max(0, user.total_stars - pts)
+
+    for s in subs:
+        db.session.delete(s)
+
+    try:
+        db.session.commit()
+        flash(f'"{problem.code}" bo\'yicha {len(subs)} ta urinish o\'chirildi.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Xato: {e}', 'danger')
+
+    return redirect(url_for('arena.arena_admin_user_edit', uid=uid))
 
 
 @arena_bp.route('/admin/users/<int:uid>/reset_password', methods=['POST'])
@@ -1008,6 +1143,10 @@ def arena_admin_user_reset_password(uid):
 @arena_admin_required
 def arena_admin_user_clear_subs(uid):
     """Admin: foydalanuvchining barcha urinishlarini o'chirish (akkaunt qoladi)."""
+    if not _check_admin_password(request.form.get('admin_password', '')):
+        flash('Admin paroli noto\'g\'ri. Amal bekor qilindi.', 'danger')
+        return redirect(url_for('arena.arena_admin_user_edit', uid=uid))
+
     user = ArenaUser.query.get_or_404(uid)
 
     subs = ArenaSubmission.query.filter_by(user_id=uid).all()
@@ -1050,6 +1189,11 @@ def arena_admin_user_delete(uid):
         return redirect(url_for('arena.arena_admin_user_edit', uid=uid))
     if user.username.lower() == ARENA_ADMIN_USERNAME:
         flash('Admin akkauntini o\'chirib bo\'lmaydi.', 'danger')
+        return redirect(url_for('arena.arena_admin_user_edit', uid=uid))
+
+    # Admin password
+    if not _check_admin_password(request.form.get('admin_password', '')):
+        flash('Admin paroli noto\'g\'ri. Amal bekor qilindi.', 'danger')
         return redirect(url_for('arena.arena_admin_user_edit', uid=uid))
 
     # Confirm typing
