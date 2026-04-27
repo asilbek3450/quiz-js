@@ -488,6 +488,34 @@
             }
         }
 
+        @media (max-width: 1199.98px) {
+            .main-container {
+                max-width: 100%;
+                padding: 18px;
+            }
+
+            .navbar .container {
+                max-width: 100%;
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+        }
+
+        @media (min-width: 768px) and (max-width: 1199.98px) {
+            .main-container {
+                padding: 24px 20px;
+            }
+
+            .navbar-nav {
+                gap: 0.5rem !important;
+            }
+
+            .nav-link,
+            .lang-btn {
+                font-size: 0.95rem;
+            }
+        }
+
         /* Navbar Dropdown on Hover */
         @media (min-width: 992px) {
             .nav-item.dropdown:hover .dropdown-menu {

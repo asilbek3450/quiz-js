@@ -4,7 +4,7 @@
 <div class="row justify-content-center no-select-zone">
     <div class="col-lg-8">
         <!-- Progress Info -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-4 test-progress-head">
             <div>
                 <span class="text-muted small text-uppercase fw-bold">{{ _('Savol') }}</span>
                 <div class="h3 mb-0 fw-bold">{{ current }} <span class="text-muted h5">/ {{ total }}</span></div>
@@ -23,7 +23,7 @@
         <!-- Question Card -->
         <div class="card border-0 shadow-lg mb-4 animate-scale-in">
             <div class="card-body p-4 p-md-5">
-                <div class="d-flex justify-content-between align-items-start mb-4">
+                <div class="d-flex justify-content-between align-items-start mb-4 question-header-row">
                     <div class="question-text text-dark user-select-none flex-grow-1">
                         <div class="lh-base fw-bold fs-5 math-render" id="question-text-render">{{ question_text | markdown | safe }}</div>
                         {% if question_image_url %}
@@ -87,7 +87,7 @@
     </div>
 
     <!-- Navigation Sidebar (Desktop) -->
-    <div class="col-lg-4 d-none d-lg-block">
+    <div class="col-xl-4 d-none d-xl-block">
         <div class="card border-0 shadow-lg sticky-top" style="top: 2rem;">
             <div class="card-header bg-white border-0 py-3">
                 <h5 class="mb-0 fw-bold text-uppercase small text-muted"><i class="fas fa-th me-2"></i> {{ _('Savollar
@@ -145,8 +145,65 @@
     </div>
 </div>
 
+<div class="d-none d-md-block d-xl-none mt-4">
+    <div class="card border-0 shadow-lg">
+        <div class="card-header bg-white border-0 py-3">
+            <h5 class="mb-0 fw-bold text-uppercase small text-muted">
+                <i class="fas fa-th me-2"></i> {{ _('Savollar xaritasi') }}
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-2 row-cols-4 row-cols-lg-6">
+                {% for i in range(total) %}
+                {% set q_id = question_ids[i] | string %}
+                {% set is_current = (i + 1) == current %}
+                {% set is_answered = q_id in answers %}
+                {% set is_marked = question_ids[i] in marked_questions %}
+
+                <div class="col">
+                    <a href="{{ url_for('student.jump', index=i) }}"
+                        class="btn w-100 p-2 fw-bold position-relative
+                           {{ 'btn-primary text-white shadow' if is_current else
+                              ('btn-warning text-dark' if is_marked else
+                              ('btn-success text-white' if is_answered else 'btn-outline-light text-dark border-2')) }}"
+                        style="{{ 'border-color: #e2e8f0;' if not is_current and not is_answered and not is_marked }}">
+                        {{ i + 1 }}
+                        {% if is_marked %}
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                            style="padding: 0.35em 0.5em; font-size: 0.6em; z-index: 1;">
+                            <i class="fas fa-bookmark"></i>
+                        </span>
+                        {% endif %}
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="mt-4 pt-3 border-top test-map-legend">
+                <div class="d-flex align-items-center mb-2">
+                    <span class="badge bg-primary rounded-circle p-1 me-2" style="width:12px; height:12px;"></span>
+                    <small class="text-muted">{{ _('Joriy savol') }}</small>
+                </div>
+                <div class="d-flex align-items-center mb-2">
+                    <span class="badge bg-success rounded-circle p-1 me-2" style="width:12px; height:12px;"></span>
+                    <small class="text-muted">{{ _('Belgilangan') }}</small>
+                </div>
+                <div class="d-flex align-items-center mb-2">
+                    <span class="badge bg-warning rounded-circle p-1 me-2" style="width:12px; height:12px;"></span>
+                    <small class="text-muted">{{ _('Qayta ko\'rish uchun') }}</small>
+                </div>
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-light border rounded-circle p-1 me-2"
+                        style="width:12px; height:12px;"></span>
+                    <small class="text-muted">{{ _('Belgilanmagan') }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Mobile Navigation Toggle -->
-<div class="d-lg-none fixed-bottom p-3" style="z-index: 1000; pointer-events: none;">
+<div class="d-md-none fixed-bottom p-3" style="z-index: 1000; pointer-events: none;">
     <button class="btn btn-dark shadow-lg rounded-circle p-3" style="pointer-events: auto; float: right;" type="button"
         data-bs-toggle="offcanvas" data-bs-target="#mobileMap">
         <i class="fas fa-th fa-lg"></i>
@@ -256,6 +313,86 @@
         border-radius: 24px;
         backdrop-filter: blur(10px);
         background: rgba(255, 255, 255, 0.95);
+    }
+
+    @media (max-width: 1199.98px) {
+        .question-text .fs-5,
+        .option-text.fs-5 {
+            font-size: 1.05rem !important;
+        }
+
+        .question-image {
+            max-height: 360px;
+        }
+    }
+
+    @media (max-width: 991.98px) {
+        .test-progress-head {
+            gap: 1rem;
+        }
+
+        .question-header-row {
+            gap: 1rem;
+        }
+
+        .test-map-legend {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.5rem 1rem;
+        }
+
+        .test-map-legend .d-flex {
+            margin-bottom: 0 !important;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .test-progress-head,
+        .question-header-row {
+            flex-direction: column;
+            align-items: flex-start !important;
+        }
+
+        .question-header-row #mark-btn {
+            margin-left: 0 !important;
+        }
+
+        .option-label {
+            padding: 1rem !important;
+        }
+
+        .option-label:hover {
+            transform: none;
+        }
+
+        .option-text.fs-5,
+        .question-text .fs-5 {
+            font-size: 1rem !important;
+        }
+
+        .question-image-wrap {
+            padding: 10px;
+        }
+
+        .question-image {
+            max-height: 280px;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .test-map-legend {
+            grid-template-columns: 1fr;
+        }
+
+        .d-flex.justify-content-between.mt-4 {
+            gap: 0.75rem;
+            flex-direction: column;
+        }
+
+        .d-flex.justify-content-between.mt-4 .btn,
+        .d-flex.justify-content-between.mt-4 > div {
+            width: 100%;
+        }
     }
 </style>
 

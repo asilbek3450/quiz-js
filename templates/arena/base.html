@@ -483,11 +483,45 @@
       text-align: center;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 1100px) {
       .ar-sidebar { transform: translateX(-100%); transition: transform .25s ease; }
       .ar-sidebar.open { transform: translateX(0); }
       .ar-main { margin-left: 0; }
       .ar-ham { display: block; }
+      body.ar-sidebar-open { overflow: hidden; }
+      .ar-topbar {
+        padding: 0 16px;
+      }
+      .ar-content { padding: 18px; }
+      .ar-theme-toggle .label { display: none; }
+    }
+
+    @media (min-width: 769px) and (max-width: 1100px) {
+      .ar-sidebar {
+        width: 300px;
+        z-index: 130;
+      }
+
+      .ar-topbar {
+        gap: 10px;
+      }
+
+      .ar-topbar .breadcrumb {
+        font-size: 0.82rem;
+        flex-wrap: wrap;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .ar-topbar {
+        min-height: 56px;
+        height: auto;
+        flex-wrap: wrap;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        align-items: flex-start;
+      }
+
       .ar-content { padding: 16px; }
       .ar-theme-toggle .label { display: none; }
     }
@@ -653,7 +687,7 @@
 </div>
 
 <!-- Overlay for mobile sidebar -->
-<div id="arOverlay" onclick="toggleSidebar()"
+<div id="arOverlay" onclick="closeSidebar()"
      style="display:none; position:fixed; inset:0; background:var(--ar-overlay-bg); z-index:99;"></div>
 
 <script>
@@ -662,6 +696,15 @@ function toggleSidebar() {
   const ov = document.getElementById('arOverlay');
   const open = sb.classList.toggle('open');
   ov.style.display = open ? 'block' : 'none';
+  document.body.classList.toggle('ar-sidebar-open', open);
+}
+
+function closeSidebar() {
+  const sb = document.getElementById('arSidebar');
+  const ov = document.getElementById('arOverlay');
+  sb.classList.remove('open');
+  ov.style.display = 'none';
+  document.body.classList.remove('ar-sidebar-open');
 }
 
 function applyArenaTheme(theme) {
@@ -687,6 +730,12 @@ function toggleArenaTheme() {
 }
 
 applyArenaTheme(document.documentElement.getAttribute('data-theme') || 'dark');
+
+window.addEventListener('resize', function() {
+  if (window.innerWidth > 1100) {
+    closeSidebar();
+  }
+});
 </script>
 
 {% if not session.get('admin_id') %}
@@ -715,45 +764,11 @@ applyArenaTheme(document.documentElement.getAttribute('data-theme') || 'dark');
         }
     }, true);
 
-    // ── 3. DevTools open detection (window size difference) ────────────────
-    var _devToolsOpen = false;
-
-    function _showDevToolsWarning() {
-        if (document.getElementById('_dt_overlay')) return;
-        var ov = document.createElement('div');
-        ov.id = '_dt_overlay';
-        ov.style.cssText = [
-            'position:fixed','top:0','left:0','width:100vw','height:100vh',
-            'background:#0d1117','z-index:2147483647',
-            'display:flex','flex-direction:column',
-            'align-items:center','justify-content:center',
-            'color:#e6edf3','font-family:sans-serif','text-align:center','padding:24px'
-        ].join(';');
-        ov.innerHTML = '<div style="font-size:3rem;margin-bottom:16px;">🚫</div>'
-            + '<div style="font-size:1.4rem;font-weight:700;margin-bottom:10px;">Developer Tools aniqlandi</div>'
-            + '<div style="color:#8b949e;font-size:.95rem;">Iltimos, Developer Tools ni yopib sahifani yangilang.</div>';
-        document.body.appendChild(ov);
-    }
-
-    function _hideDevToolsWarning() {
-        var ov = document.getElementById('_dt_overlay');
-        if (ov) ov.remove();
-    }
-
-    function _checkDevTools() {
-        var widthDiff  = window.outerWidth  - window.innerWidth;
-        var heightDiff = window.outerHeight - window.innerHeight;
-        var isMobile = window.innerWidth < 768;
-        if (!isMobile && (widthDiff > 200 || heightDiff > 200)) {
-            if (!_devToolsOpen) { _devToolsOpen = true; _showDevToolsWarning(); }
-        } else {
-            if (_devToolsOpen) { _devToolsOpen = false; _hideDevToolsWarning(); }
-        }
-    }
-
-    _checkDevTools();
-    setInterval(_checkDevTools, 800);
-    window.addEventListener('resize', _checkDevTools);
+    // ── 3. Resize-based DevTools detection removed ─────────────────────────
+    // Brauzerni kattalashtirish/kichiklashtirish (Ctrl +/-) yoki oddiy resize
+    // paytida `outerWidth/innerWidth` farqi false positive berib, ekranni
+    // "Developer Tools aniqlandi" overlayi bilan bloklayotgan edi. Shuning
+    // uchun bu tekshiruv olib tashlandi.
 
     // ── 4. Disable text selection (non-input elements) ─────────────────────
     document.addEventListener('selectstart', function(e) {
