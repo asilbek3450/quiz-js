@@ -211,18 +211,25 @@
                                     question.correct_answer }}</span>
                             </td>
                             <td class="text-center">
+                                {% if is_admin_role() and question.creator %}
+                                <div class="small text-muted mb-1">
+                                    <i class="fas fa-user-tie"></i> {{ question.creator.full_name }}
+                                </div>
+                                {% endif %}
                                 <div class="btn-group btn-group-sm shadow-sm" role="group">
+                                    {% if can_manage_question(question) %}
                                     <a href="{{ url_for('admin.question_edit', id=question.id) }}"
                                         class="btn btn-light border" data-bs-toggle="tooltip"
                                         title="{{ _('Tahrirlash') }}">
                                         <i class="fas fa-edit text-primary"></i>
                                     </a>
-                                    {% if session.admin_role == 'admin' %}
                                     <button type="button" class="btn btn-light border text-danger"
                                         onclick="deleteQuestion({{ question.id }}, this)" data-bs-toggle="tooltip"
                                         title="{{ _('O\'chirish') }}">
                                         <i class="fas fa-trash"></i>
                                     </button>
+                                    {% else %}
+                                    <span class="text-muted small px-2"><i class="fas fa-lock"></i></span>
                                     {% endif %}
                                 </div>
                             </td>

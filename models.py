@@ -54,6 +54,10 @@ class Subject(db.Model):
     time_limit = db.Column(db.Integer, default=30)
     show_results = db.Column(db.Boolean, default=True)
     is_visible = db.Column(db.Boolean, default=True)
+    creator_id = db.Column(db.Integer, db.ForeignKey('admin.id'), nullable=True, index=True)
+    created_at = db.Column(db.DateTime, default=tashkent_now)
+
+    creator = db.relationship('Admin', backref='subjects', foreign_keys=[creator_id])
 
 
 class Question(db.Model):
@@ -79,12 +83,16 @@ class Question(db.Model):
     option_d_ru = db.Column(db.String(200))
     option_d_en = db.Column(db.String(200))
     correct_answer = db.Column(db.String(1), nullable=False)  # A, B, C, or D
+    creator_id = db.Column(db.Integer, db.ForeignKey('admin.id'), nullable=True, index=True)
+    created_at = db.Column(db.DateTime, default=tashkent_now)
 
     subject = db.relationship('Subject', backref='questions')
+    creator = db.relationship('Admin', backref='questions', foreign_keys=[creator_id])
 
     __table_args__ = (
         db.Index('ix_question_subject_grade_quarter', 'subject_id', 'grade', 'quarter'),
         db.Index('ix_question_difficulty', 'difficulty'),
+        db.Index('ix_question_creator', 'creator_id'),
     )
 
 

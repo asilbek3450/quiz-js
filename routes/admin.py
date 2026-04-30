@@ -70,6 +70,69 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+
+# ── Ownership helpers ─────────────────────────────────────────────────────────
+def is_admin_role():
+    """True if current session belongs to an admin (super-user)."""
+    return session.get('admin_role') == 'admin'
+
+
+def current_admin_id():
+    """Currently logged-in staff ID (admin or teacher)."""
+    return session.get('admin_id')
+
+
+def can_manage_subject(subject):
+    if subject is None:
+        return False
+    return is_admin_role() or subject.creator_id == current_admin_id()
+
+
+def can_manage_question(question):
+    if question is None:
+        return False
+    return is_admin_role() or question.creator_id == current_admin_id()
+
+
+def scoped_subjects_query():
+    """Subjects visible to the current user (admin sees all, teacher only own)."""
+    q = Subject.query
+    if not is_admin_role():
+        q = q.filter(Subject.creator_id == current_admin_id())
+    return q
+
+
+def scoped_questions_query():
+    """Questions visible to the current user."""
+    q = Question.query
+    if not is_admin_role():
+        q = q.filter(Question.creator_id == current_admin_id())
+    return q
+
+
+def scoped_subject_ids():
+    """List of subject IDs the current user owns (admin → all)."""
+    return [s.id for s in scoped_subjects_query().with_entities(Subject.id).all()]
+
+
+def _forbidden_response(msg=None):
+    msg = msg or _('Sizda bu amalni bajarish huquqi yo‘q')
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json
+    if is_ajax:
+        return jsonify({'success': False, 'error': msg}), 403
+    flash(msg, 'danger')
+    return redirect(url_for('admin.dashboard'))
+
+
+@admin_bp.app_context_processor
+def _inject_perms():
+    """Make ownership helpers available inside Jinja templates."""
+    return dict(
+        is_admin_role=is_admin_role,
+        can_manage_subject=can_manage_subject,
+        can_manage_question=can_manage_question,
+    )
+
 @admin_bp.route('/feedbacks')
 @admin_bp.route('/feedbacks/<user_uuid>')
 @staff_required
@@ -333,11 +396,24 @@ def logout():
     return redirect(url_for('main.index'))
 
 @admin_bp.route('/dashboard')
+@staff_required
 def dashboard():
-    total_questions = Question.query.count()
-    subjects = Subject.query.all()
-    recent_results = TestResult.query.order_by(TestResult.test_date.desc()).limit(10).all()
-    result_stats = TestResult.query.with_entities(TestResult.subject_id, TestResult.percentage).all()
+    subjects = scoped_subjects_query().all()
+    subject_ids = [s.id for s in subjects]
+
+    questions_query = scoped_questions_query()
+    total_questions = questions_query.count()
+
+    results_base = TestResult.query
+    if not is_admin_role():
+        if subject_ids:
+            results_base = results_base.filter(TestResult.subject_id.in_(subject_ids))
+        else:
+            # Teacher with no subjects yet — empty result set
+            results_base = results_base.filter(db.false())
+
+    recent_results = results_base.order_by(TestResult.test_date.desc()).limit(10).all()
+    result_stats = results_base.with_entities(TestResult.subject_id, TestResult.percentage).all()
     total_results = len(result_stats)
 
     for result in recent_results:
@@ -350,18 +426,23 @@ def dashboard():
     )
     pass_rate = (passing_results_count / total_results * 100) if total_results > 0 else 0
 
-    # Subject Analytics using aggregation
-    subject_stats_raw = db.session.query(
+    # Subject Analytics using aggregation (scoped)
+    subject_stats_q = db.session.query(
         TestResult.subject_id,
         func.count(TestResult.id)
-    ).group_by(TestResult.subject_id).all()
-    
+    )
+    if not is_admin_role():
+        subject_stats_q = subject_stats_q.filter(
+            TestResult.subject_id.in_(subject_ids) if subject_ids else db.false()
+        )
+    subject_stats_raw = subject_stats_q.group_by(TestResult.subject_id).all()
+
     res_counts_map = {sid: count for sid, count in subject_stats_raw}
-    
-    # N+1 oldini olish: bitta aggregation query bilan barcha subject uchun question count
-    q_counts_raw = db.session.query(
-        Question.subject_id, func.count(Question.id)
-    ).group_by(Question.subject_id).all()
+
+    q_counts_q = db.session.query(Question.subject_id, func.count(Question.id))
+    if not is_admin_role():
+        q_counts_q = q_counts_q.filter(Question.creator_id == current_admin_id())
+    q_counts_raw = q_counts_q.group_by(Question.subject_id).all()
     q_counts_map = {sid: cnt for sid, cnt in q_counts_raw}
 
     subject_names = [s.name for s in subjects]
@@ -371,7 +452,8 @@ def dashboard():
     # Analytics: Top 5 Difficult Questions (Limit to last 500 results for performance)
     difficult_questions_data = []
     try:
-        recent_analytics_results = TestResult.query.order_by(TestResult.test_date.desc()).limit(500).all()
+        analytics_query = results_base.order_by(TestResult.test_date.desc()).limit(500)
+        recent_analytics_results = analytics_query.all()
         
         if recent_analytics_results:
             question_stats = {} # {question_id: {'wrong': 0, 'total': 0}}
@@ -448,6 +530,7 @@ def dashboard():
                          difficult_questions=difficult_questions_data)
 
 @admin_bp.route('/questions')
+@staff_required
 def questions():
     subject_id = request.args.get('subject_id', type=int)
     grade = request.args.get('grade', type=int)
@@ -455,14 +538,14 @@ def questions():
     page = request.args.get('page', 1, type=int)
     per_page = 25
 
-    query = Question.query
+    query = scoped_questions_query()
     if subject_id:
         query = query.filter_by(subject_id=subject_id)
     if grade:
         query = query.filter_by(grade=grade)
     if quarter:
         query = query.filter_by(quarter=quarter)
-        
+
     is_control_work = request.args.get('is_control_work')
     if is_control_work == '1':
         query = query.filter(Question.control_works.any())
@@ -474,27 +557,29 @@ def questions():
         search_term = f"%{search}%"
         query = query.filter(Question.question_text.ilike(search_term))
 
-    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    pagination = query.order_by(Question.id.desc()).paginate(page=page, per_page=per_page, error_out=False)
     questions = pagination.items
     for question in questions:
         attach_question_media(question)
 
-    # Efficiently get statistics using aggregation
-    stats_raw = db.session.query(
-        Question.subject_id, 
-        Question.grade, 
-        Question.quarter, 
+    # Stats query is scoped too
+    stats_q = db.session.query(
+        Question.subject_id,
+        Question.grade,
+        Question.quarter,
         func.count(Question.id)
-    ).group_by(Question.subject_id, Question.grade, Question.quarter).all()
+    )
+    if not is_admin_role():
+        stats_q = stats_q.filter(Question.creator_id == current_admin_id())
+    stats_raw = stats_q.group_by(Question.subject_id, Question.grade, Question.quarter).all()
 
-    # Convert to a dictionary for easier access in template
     stats_dict = {}
     for sid, grade, quarter, count in stats_raw:
         if sid not in stats_dict: stats_dict[sid] = {}
         if grade not in stats_dict[sid]: stats_dict[sid][grade] = {}
         stats_dict[sid][grade][quarter] = count
 
-    subjects = Subject.query.all()
+    subjects = scoped_subjects_query().all()
 
     return render_template('admin_questions.html',
                          questions=questions,
@@ -503,6 +588,7 @@ def questions():
                          subjects=subjects)
 
 @admin_bp.route('/question/add', methods=['GET', 'POST'])
+@staff_required
 def question_add():
     if request.method == 'POST':
         uploaded_image = request.files.get('question_image')
@@ -528,6 +614,11 @@ def question_add():
                 flash(_('Fan topilmadi'), 'danger')
                 return redirect(url_for('admin.question_add'))
 
+            # Teachers can only add questions to subjects they own
+            if not can_manage_subject(subject):
+                flash(_('Siz faqat o‘zingiz qo‘shgan fanlarga savol qo‘sha olasiz'), 'danger')
+                return redirect(url_for('admin.question_add'))
+
             question = Question(
                 subject_id=subject_id,
                 grade=grade,
@@ -547,7 +638,8 @@ def question_add():
                 option_d=opt_d,
                 option_d_ru=auto_translate(opt_d, 'ru'),
                 option_d_en=auto_translate(opt_d, 'en'),
-                correct_answer=correct
+                correct_answer=correct,
+                creator_id=current_admin_id(),
             )
             db.session.add(question)
             db.session.flush()
@@ -568,12 +660,15 @@ def question_add():
             flash(_('Xatolik yuz berdi: {}').format(str(e)), 'danger')
             return redirect(url_for('admin.question_add'))
 
-    subjects = Subject.query.all()
+    subjects = scoped_subjects_query().all()
     return render_template('admin_question_form.html', subjects=subjects, question=None, question_image_url=None)
 
 @admin_bp.route('/question/edit/<int:id>', methods=['GET', 'POST'])
+@staff_required
 def question_edit(id):
     question = Question.query.get_or_404(id)
+    if not can_manage_question(question):
+        return _forbidden_response(_('Bu savol sizga tegishli emas'))
     attach_question_media(question)
 
     if request.method == 'POST':
@@ -584,7 +679,13 @@ def question_edit(id):
         image_store_updated = False
 
         try:
-            question.subject_id = int(request.form['subject_id'])
+            new_subject_id = int(request.form['subject_id'])
+            new_subject = Subject.query.get(new_subject_id)
+            if not new_subject or not can_manage_subject(new_subject):
+                flash(_('Tanlangan fan sizga tegishli emas'), 'danger')
+                return redirect(url_for('admin.question_edit', id=id))
+
+            question.subject_id = new_subject_id
             question.grade = int(request.form['grade'])
             question.quarter = int(request.form['quarter'])
 
@@ -643,7 +744,7 @@ def question_edit(id):
                     remove_question_image(question.id)
             flash(_('Xatolik yuz berdi: {}').format(str(e)), 'danger')
             return redirect(url_for('admin.question_edit', id=id))
-    subjects = Subject.query.all()
+    subjects = scoped_subjects_query().all()
     return render_template(
         'admin_question_form.html',
         subjects=subjects,
@@ -652,6 +753,7 @@ def question_edit(id):
     )
 
 @admin_bp.route('/questions/translate_missing', methods=['POST'])
+@staff_required
 def translate_missing_questions():
     try:
         data = request.get_json(silent=True) or {}
@@ -661,7 +763,7 @@ def translate_missing_questions():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
-    q_filter = Question.query
+    q_filter = scoped_questions_query()
     if subject_id:
         q_filter = q_filter.filter_by(subject_id=subject_id)
     if grade:
@@ -686,9 +788,11 @@ def translate_missing_questions():
 
 
 @admin_bp.route('/question/delete/<int:id>', methods=['GET'])
-@admin_required
+@staff_required
 def question_delete(id):
     question = Question.query.get_or_404(id)
+    if not can_manage_question(question):
+        return _forbidden_response(_('Bu savolni o‘chirishga huquqingiz yo‘q'))
     existing_image_path = get_question_image_relative_path(question.id)
     db.session.delete(question)
     db.session.commit()
@@ -707,6 +811,7 @@ def question_delete(id):
     return redirect(url_for('admin.questions'))
 
 @admin_bp.route('/import/questions', methods=['POST'])
+@staff_required
 def import_questions():
     try:
         if 'file' not in request.files:
@@ -733,6 +838,10 @@ def import_questions():
         subject = Subject.query.get(subject_id)
         if not subject:
             flash(_('Fan topilmadi'), 'danger')
+            return redirect(url_for('admin.questions'))
+
+        if not can_manage_subject(subject):
+            flash(_('Siz faqat o‘zingiz qo‘shgan fanlarga import qila olasiz'), 'danger')
             return redirect(url_for('admin.questions'))
 
         import pandas as pd
@@ -782,7 +891,8 @@ def import_questions():
                 option_b=opt_b,
                 option_c=opt_c,
                 option_d=opt_d,
-                correct_answer=correct
+                correct_answer=correct,
+                creator_id=current_admin_id(),
             )
             # Translations are now LAZY or BATCHED to avoid timeouts during import
             db.session.add(question)
@@ -856,7 +966,8 @@ def download_template():
     )
 
 def _build_results_query(args):
-    """export_results va results uchun umumiy filter/sort query builder."""
+    """export_results va results uchun umumiy filter/sort query builder.
+    Scope: teacher faqat o‘ziga tegishli fanlarning natijalarini ko‘radi."""
     subject_id = args.get('subject_id', type=int)
     grade = args.get('grade', type=int)
     quarter = args.get('quarter', type=int)
@@ -865,6 +976,12 @@ def _build_results_query(args):
     sort_by = args.get('sort_by', 'newest')
 
     query = TestResult.query.options(joinedload(TestResult.subject))
+    if not is_admin_role():
+        owned_ids = scoped_subject_ids()
+        if owned_ids:
+            query = query.filter(TestResult.subject_id.in_(owned_ids))
+        else:
+            query = query.filter(db.false())
     if subject_id:
         query = query.filter_by(subject_id=subject_id)
     if grade:
@@ -892,6 +1009,7 @@ def _build_results_query(args):
 
 
 @admin_bp.route('/export/results')
+@staff_required
 def export_results():
     import pandas as pd
     from io import BytesIO
@@ -933,6 +1051,7 @@ def export_results():
     )
 
 @admin_bp.route('/results')
+@staff_required
 def results():
     query = _build_results_query(request.args)
 
@@ -961,8 +1080,12 @@ def results():
         result.grade_info = get_grade_info(result.percentage, result.subject_id)
         result.display_grade_text = result.grade_info['label']
 
-    subjects = Subject.query.all()
-    control_works_list = ControlWork.query.order_by(ControlWork.created_at.desc()).all()
+    subjects = scoped_subjects_query().all()
+    cw_query = ControlWork.query
+    if not is_admin_role():
+        owned_ids = [s.id for s in subjects]
+        cw_query = cw_query.filter(ControlWork.subject_id.in_(owned_ids)) if owned_ids else cw_query.filter(db.false())
+    control_works_list = cw_query.order_by(ControlWork.created_at.desc()).all()
 
     return render_template('admin_results.html',
                          results=results,
@@ -975,9 +1098,13 @@ def results():
                          avg_score=round(avg_score, 1))
 
 @admin_bp.route('/result/delete/<int:id>', methods=['POST'])
-@admin_required
+@staff_required
 def result_delete(id):
     result = TestResult.query.get_or_404(id)
+    if not is_admin_role():
+        # Teacher can delete only results for subjects they own
+        if result.subject_id not in scoped_subject_ids():
+            return _forbidden_response(_('Bu natijani o‘chirishga huquqingiz yo‘q'))
     db.session.delete(result)
     db.session.commit()
     
@@ -988,7 +1115,7 @@ def result_delete(id):
     return redirect(url_for('admin.results'))
 
 @admin_bp.route('/results/delete-by-date', methods=['POST'])
-@admin_required
+@staff_required
 def results_delete_by_date():
     date_str = request.form['delete_date']
     try:
@@ -996,7 +1123,14 @@ def results_delete_by_date():
         start_dt = datetime.combine(target_date, datetime.min.time())
         end_dt = datetime.combine(target_date, datetime.max.time())
 
-        deleted_count = TestResult.query.filter(
+        delete_q = TestResult.query
+        if not is_admin_role():
+            owned_ids = scoped_subject_ids()
+            if not owned_ids:
+                flash(_('Sizga tegishli natijalar yo‘q'), 'warning')
+                return redirect(url_for('admin.results'))
+            delete_q = delete_q.filter(TestResult.subject_id.in_(owned_ids))
+        deleted_count = delete_q.filter(
             TestResult.test_date >= start_dt,
             TestResult.test_date <= end_dt
         ).delete()
@@ -1009,13 +1143,15 @@ def results_delete_by_date():
     return redirect(url_for('admin.results'))
 
 @admin_bp.route('/subjects')
+@staff_required
 def subjects():
-    subjects = Subject.query.all()
+    subjects = scoped_subjects_query().order_by(Subject.id.asc()).all()
     for subject in subjects:
         subject.grade_settings = get_subject_grade_settings(subject.id)
     return render_template('admin_subjects.html', subjects=subjects)
 
 @admin_bp.route('/subject/add', methods=['GET', 'POST'])
+@staff_required
 def subject_add():
     if request.method == 'POST':
         subject_id = None
@@ -1041,6 +1177,19 @@ def subject_add():
                 flash(validation_error, 'warning')
                 return redirect(url_for('admin.subject_add'))
 
+            # Default — fan qo‘shgan staffning o‘zi egasi
+            creator_id = current_admin_id()
+            # Admin xohlasa egasini boshqa staff’ga belgilashi mumkin
+            if is_admin_role():
+                raw = request.form.get('creator_id')
+                if raw:
+                    try:
+                        candidate = int(raw)
+                        if Admin.query.get(candidate):
+                            creator_id = candidate
+                    except ValueError:
+                        pass
+
             subject = Subject(
                 name=name,
                 grades=grades,
@@ -1050,7 +1199,8 @@ def subject_add():
                 question_count=question_count,
                 time_limit=time_limit, # Added time_limit
                 show_results=show_results,
-                is_visible=is_visible
+                is_visible=is_visible,
+                creator_id=creator_id,
             )
             db.session.add(subject)
             db.session.flush()
@@ -1066,15 +1216,20 @@ def subject_add():
             flash(_('Xatolik yuz berdi: {}').format(str(e)), 'danger')
             return redirect(url_for('admin.subject_add'))
 
+    staff_list = Admin.query.order_by(Admin.role.asc(), Admin.full_name.asc()).all() if is_admin_role() else []
     return render_template(
         'admin_subject_form.html',
         subject=None,
         grading_settings=get_subject_grade_settings(None),
+        staff_list=staff_list,
     )
 
 @admin_bp.route('/subject/edit/<int:id>', methods=['GET', 'POST'])
+@staff_required
 def subject_edit(id):
     subject = Subject.query.get_or_404(id)
+    if not can_manage_subject(subject):
+        return _forbidden_response(_('Bu fan sizga tegishli emas'))
     grading_settings = get_subject_grade_settings(subject.id)
 
     if request.method == 'POST':
@@ -1100,6 +1255,25 @@ def subject_edit(id):
             subject.show_results = 'show_results' in request.form
             subject.is_visible = 'is_visible' in request.form
 
+            # Faqat admin (super-user) fan egasini boshqa staff’ga o‘tkaza oladi
+            if is_admin_role():
+                new_creator_raw = request.form.get('creator_id')
+                if new_creator_raw:
+                    try:
+                        new_creator_id = int(new_creator_raw)
+                    except ValueError:
+                        new_creator_id = None
+                    new_owner = Admin.query.get(new_creator_id) if new_creator_id else None
+                    if new_owner and new_creator_id != subject.creator_id:
+                        subject.creator_id = new_creator_id
+                        # Fan egasi o‘zgartirilsa — shu fandagi BARCHA savollar yangi egaga o‘tadi
+                        moved = Question.query.filter_by(subject_id=subject.id).update(
+                            {Question.creator_id: new_creator_id}, synchronize_session=False
+                        )
+                        flash(_('Fan egasi {} ga o‘tkazildi ({} ta savol ham yangi egaga ko‘chirildi)').format(
+                            new_owner.full_name, moved
+                        ), 'info')
+
             set_subject_grade_settings(subject.id, excellent_min, good_min, satisfactory_min, fail_max)
             db.session.commit()
             flash(_('Fan muvaffaqiyatli o\'zgartirildi'), 'success')
@@ -1116,12 +1290,21 @@ def subject_edit(id):
             flash(_('Xatolik yuz berdi: {}').format(str(e)), 'danger')
             return redirect(url_for('admin.subject_edit', id=id))
 
-    return render_template('admin_subject_form.html', subject=subject, grading_settings=grading_settings)
+    # Egasi tanlash uchun barcha staff ro‘yxati (admin-only UI ko‘rinishi uchun)
+    staff_list = Admin.query.order_by(Admin.role.asc(), Admin.full_name.asc()).all() if is_admin_role() else []
+    return render_template(
+        'admin_subject_form.html',
+        subject=subject,
+        grading_settings=grading_settings,
+        staff_list=staff_list,
+    )
 
 @admin_bp.route('/subject/delete/<int:id>')
-@admin_required
+@staff_required
 def subject_delete(id):
     subject = Subject.query.get_or_404(id)
+    if not can_manage_subject(subject):
+        return _forbidden_response(_('Bu fanni o‘chirishga huquqingiz yo‘q'))
     if subject.questions or subject.results:
         flash(_('Bu fanga tegishli savollar yoki natijalar mavjud. Oldin ularni o\'chiring.'), 'danger')
         return redirect(url_for('admin.subjects'))
@@ -1139,11 +1322,17 @@ def subject_delete(id):
 # --- Nazorat Ishlari (Control Works) ---
 
 @admin_bp.route('/control_works')
+@staff_required
 def control_works():
-    cws = ControlWork.query.order_by(ControlWork.created_at.desc()).all()
+    cw_q = ControlWork.query
+    if not is_admin_role():
+        owned_ids = scoped_subject_ids()
+        cw_q = cw_q.filter(ControlWork.subject_id.in_(owned_ids)) if owned_ids else cw_q.filter(db.false())
+    cws = cw_q.order_by(ControlWork.created_at.desc()).all()
     return render_template('admin_control_works.html', control_works=cws)
 
 @admin_bp.route('/control_work/add', methods=['GET', 'POST'])
+@staff_required
 def control_work_add():
     if request.method == 'POST':
         try:
@@ -1159,6 +1348,11 @@ def control_work_add():
                 flash(_('Barcha majburiy maydonlarni to\'ldiring'), 'warning')
                 return redirect(url_for('admin.control_work_add'))
 
+            subject = Subject.query.get(subject_id)
+            if not subject or not can_manage_subject(subject):
+                flash(_('Tanlangan fan sizga tegishli emas'), 'danger')
+                return redirect(url_for('admin.control_work_add'))
+
             new_cw = ControlWork(
                 title=title,
                 subject_id=subject_id,
@@ -1167,90 +1361,106 @@ def control_work_add():
                 time_limit=time_limit,
                 is_active=is_active
             )
-            
-            # Attach selected questions
+
+            # Attach selected questions — only ones the user can manage
             if question_ids:
-                questions = Question.query.filter(Question.id.in_(question_ids)).all()
+                q_filter = Question.query.filter(Question.id.in_(question_ids))
+                if not is_admin_role():
+                    q_filter = q_filter.filter(Question.creator_id == current_admin_id())
+                questions = q_filter.all()
                 new_cw.questions.extend(questions)
 
             db.session.add(new_cw)
             db.session.commit()
             flash(_('Nazorat ishi muvaffaqiyatli qo\'shildi'), 'success')
             return redirect(url_for('admin.control_works'))
-            
+
         except Exception as e:
             db.session.rollback()
             flash(_('Xatolik yuz berdi: {}').format(str(e)), 'danger')
             return redirect(url_for('admin.control_work_add'))
 
-    subjects = Subject.query.all()
+    subjects = scoped_subjects_query().all()
     return render_template('admin_control_work_form.html', subjects=subjects, control_work=None)
 
 @admin_bp.route('/control_work/edit/<int:id>', methods=['GET', 'POST'])
+@staff_required
 def control_work_edit(id):
     cw = ControlWork.query.get_or_404(id)
+    if not is_admin_role() and not can_manage_subject(cw.subject):
+        return _forbidden_response(_('Bu nazorat ishi sizga tegishli emas'))
 
     if request.method == 'POST':
         try:
             cw.title = request.form.get('title', '').strip()
-            cw.subject_id = request.form.get('subject_id', type=int)
+            new_subject_id = request.form.get('subject_id', type=int)
+            new_subject = Subject.query.get(new_subject_id)
+            if not new_subject or not can_manage_subject(new_subject):
+                flash(_('Tanlangan fan sizga tegishli emas'), 'danger')
+                return redirect(url_for('admin.control_work_edit', id=id))
+            cw.subject_id = new_subject_id
             cw.grade = request.form.get('grade', type=int)
             cw.quarter = request.form.get('quarter', type=int)
             cw.time_limit = request.form.get('time_limit', type=int, default=40)
             cw.is_active = 'is_active' in request.form
-            
+
             question_ids = request.form.getlist('question_ids')
 
-            # Update assigned questions
+            # Update assigned questions, scoped
             cw.questions = []
             if question_ids:
-                questions = Question.query.filter(Question.id.in_(question_ids)).all()
+                q_filter = Question.query.filter(Question.id.in_(question_ids))
+                if not is_admin_role():
+                    q_filter = q_filter.filter(Question.creator_id == current_admin_id())
+                questions = q_filter.all()
                 cw.questions.extend(questions)
 
             db.session.commit()
             flash(_('Nazorat ishi muvaffaqiyatli o\'zgartirildi'), 'success')
             return redirect(url_for('admin.control_works'))
-            
+
         except Exception as e:
             db.session.rollback()
             flash(_('Xatolik yuz berdi: {}').format(str(e)), 'danger')
             return redirect(url_for('admin.control_work_edit', id=id))
 
-    subjects = Subject.query.all()
+    subjects = scoped_subjects_query().all()
     return render_template('admin_control_work_form.html', subjects=subjects, control_work=cw)
 
 @admin_bp.route('/control_work/delete/<int:id>')
-@admin_required
+@staff_required
 def control_work_delete(id):
     cw = ControlWork.query.get_or_404(id)
-    # Removing relations with results (set to NULL via db behavior, or cascade depending on schema)
-    # Actually, SQLAlchemy might not set to null automatically unless specified. Let's do it:
+    if not is_admin_role() and not can_manage_subject(cw.subject):
+        return _forbidden_response(_('Bu nazorat ishini o‘chirishga huquqingiz yo‘q'))
     for result in cw.results:
         result.control_work_id = None
-        
+
     db.session.delete(cw)
     db.session.commit()
-    
+
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return {'success': True}
-        
+
     flash(_('Nazorat ishi o\'chirildi'), 'success')
     return redirect(url_for('admin.control_works'))
 
 @admin_bp.route('/api/questions')
+@staff_required
 def api_get_questions():
     subject_id = request.args.get('subject_id', type=int)
     grade = request.args.get('grade', type=int)
     quarter = request.args.get('quarter', type=int)
-    
+
     if not all([subject_id, grade, quarter]):
         return jsonify({'questions': []})
-        
-    questions = Question.query.filter_by(
+
+    q = scoped_questions_query().filter_by(
         subject_id=subject_id,
         grade=grade,
         quarter=quarter
-    ).all()
+    )
+    questions = q.all()
     
     data = []
     for q in questions:

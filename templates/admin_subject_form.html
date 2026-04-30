@@ -168,6 +168,35 @@
                         </div>
                     </div>
 
+                    {% if is_admin_role() and staff_list %}
+                    <div class="mb-4">
+                        <label for="creator_id" class="form-label fw-bold small text-uppercase text-muted">
+                            <i class="fas fa-user-tie me-1"></i> {{ _('Fan egasi (o\'qituvchi)') }}
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="fas fa-user-tie"></i></span>
+                            <select class="form-select border-start-0 ps-0" id="creator_id" name="creator_id">
+                                {% for u in staff_list %}
+                                <option value="{{ u.id }}"
+                                    {% if subject and subject.creator_id == u.id %}selected
+                                    {% elif not subject and session.admin_id == u.id %}selected
+                                    {% endif %}>
+                                    {{ u.full_name }} ({{ u.username }}){% if u.role == 'admin' %} — {{ _('Admin') }}{% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-text mt-2"><i class="fas fa-info-circle me-1"></i>
+                            {{ _('Tanlangan o\'qituvchi shu fanni va uning savollarini o\'z dashboardida ko\'radi va boshqaradi.') }}
+                            {% if subject %}
+                            <br>
+                            <span class="text-warning">{{ _('Eslatma') }}:</span>
+                            {{ _('egasi o\'zgartirilsa, shu fandagi BARCHA savollar (kim qo\'shganidan qat\'i nazar) yangi egaga ko\'chadi.') }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary py-3">
                             <i class="fas fa-save me-2"></i> {{ _('Saqlash') }}

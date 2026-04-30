@@ -337,6 +337,31 @@ def create_app():
             with db.engine.connect() as conn:
                 conn.execute(db.text("ALTER TABLE question ADD COLUMN lesson INTEGER"))
                 conn.commit()
+        if 'creator_id' not in question_columns:
+            print("Migrating database: Adding creator_id to Question table...")
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE question ADD COLUMN creator_id INTEGER REFERENCES admin(id)"))
+                conn.commit()
+        if 'created_at' not in question_columns:
+            print("Migrating database: Adding created_at to Question table...")
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE question ADD COLUMN created_at DATETIME"))
+                conn.commit()
+
+        # Subject — creator_id / created_at
+        subject_columns_now = [c['name'] for c in inspector.get_columns('subject')]
+        subject_creator_added = False
+        if 'creator_id' not in subject_columns_now:
+            print("Migrating database: Adding creator_id to Subject table...")
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE subject ADD COLUMN creator_id INTEGER REFERENCES admin(id)"))
+                conn.commit()
+            subject_creator_added = True
+        if 'created_at' not in subject_columns_now:
+            print("Migrating database: Adding created_at to Subject table...")
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE subject ADD COLUMN created_at DATETIME"))
+                conn.commit()
 
         # Init default admin/subjects if empty
         if not Admin.query.first():
@@ -359,12 +384,36 @@ def create_app():
                 first_admin.role = 'admin'
                 db.session.commit()
 
+        # Find primary admin to use as default owner for legacy data
+        primary_admin = Admin.query.filter_by(role='admin').first() or Admin.query.first()
+        primary_admin_id = primary_admin.id if primary_admin else None
+
         if not Subject.query.first():
-            informatika = Subject(name='Informatika', grades='5,6', is_protected=True)
-            python = Subject(name='Python', grades='7,8,9', is_protected=True)
+            informatika = Subject(name='Informatika', grades='5,6', is_protected=True, creator_id=primary_admin_id)
+            python = Subject(name='Python', grades='7,8,9', is_protected=True, creator_id=primary_admin_id)
             db.session.add(informatika)
             db.session.add(python)
             db.session.commit()
+
+        # Backfill ownership: assign legacy subjects/questions to the primary admin
+        if primary_admin_id is not None:
+            try:
+                db.session.execute(db.text(
+                    "UPDATE subject SET creator_id = :aid WHERE creator_id IS NULL"
+                ), {"aid": primary_admin_id})
+                # Question creator inherits from its subject's creator (or primary admin as fallback)
+                db.session.execute(db.text(
+                    "UPDATE question SET creator_id = ("
+                    "  SELECT s.creator_id FROM subject s WHERE s.id = question.subject_id"
+                    ") WHERE creator_id IS NULL"
+                ))
+                db.session.execute(db.text(
+                    "UPDATE question SET creator_id = :aid WHERE creator_id IS NULL"
+                ), {"aid": primary_admin_id})
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                print(f"Ownership backfill warning: {e}")
 
         # ── Arena migrations (idempotent) ─────────────────────────────────────
         # arena_users

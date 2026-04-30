@@ -41,17 +41,19 @@
                             {% endif %}
                         </td>
                         <td class="text-end pe-4">
+                            {% if can_manage_subject(cw.subject) %}
                             <a href="{{ url_for('admin.control_work_edit', id=cw.id) }}"
                                 class="btn btn-sm btn-outline-primary rounded-circle me-1"
                                 title="{{ _('Tahrirlash') }}">
                                 <i class="fas fa-edit"></i>
                             </a>
-                            {% if session.admin_role == 'admin' %}
                             <button type="button" class="btn btn-sm btn-outline-danger rounded-circle"
                                 onclick="deleteControlWork({{ cw.id }}, this, {{ cw.title|tojson }})"
                                 title="{{ _('O\'chirish') }}">
                                 <i class="fas fa-trash"></i>
                             </button>
+                            {% else %}
+                            <span class="text-muted small"><i class="fas fa-lock"></i></span>
                             {% endif %}
                         </td>
                     </tr>
