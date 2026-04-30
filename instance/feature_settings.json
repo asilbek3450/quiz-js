@@ -11,5 +11,12 @@
     "18617": "uploads/questions/question_14a0640850b64bb95db5f6ee675cbcb8.jpg",
     "18618": "uploads/questions/question_e12bb6ec529c4a6ffe9d7e2ba2a56b6f.jpg"
   },
-  "subject_grading": {}
+  "subject_grading": {
+    "28": {
+      "excellent_min": 85,
+      "good_min": 70,
+      "satisfactory_min": 55,
+      "fail_max": 54
+    }
+  }
 }
