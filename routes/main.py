@@ -30,6 +30,10 @@ def blog():
     return render_template("page.html", page_title="Blog", h1=_("Blog"),
                            seo_description=_("Ta'lim, informatika va dasturlash bo'yicha maqolalar va yangiliklar."))
 
+@main_bp.get("/privacy")
+def privacy():
+    return render_template("privacy.html")
+
 @main_bp.route('/set_language/<lang>')
 def set_language(lang):
     if lang in ['uz', 'ru', 'en']:

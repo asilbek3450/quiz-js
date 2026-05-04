@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Maxfiylik siyosati') }} — Jahon School Test Platformasi{% endblock %}
+{% block meta_description %}Jahon School test platformasining maxfiylik siyosati. Shaxsiy ma'lumotlaringiz qanday yig'iladi, saqlanadi va himoya qilinadi.{% endblock %}
+{% block meta_keywords %}maxfiylik siyosati, privacy policy, jahon school, shaxsiy ma'lumotlar, ma'lumotlar himoyasi{% endblock %}
+
+{% block extra_css %}
+<style>
+    .privacy-hero {
+        text-align: center;
+        padding: 40px 0 30px;
+    }
+    .privacy-hero-icon {
+        width: 80px; height: 80px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        border-radius: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+        margin-bottom: 20px;
+        box-shadow: 0 10px 30px rgba(13, 148, 16, 0.3);
+    }
+    .privacy-hero h1 {
+        font-size: 2.2rem;
+        font-weight: 800;
+        margin-bottom: 10px;
+    }
+    .privacy-hero .subtitle {
+        color: #64748b;
+        font-size: 1.05rem;
+    }
+    .privacy-updated {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(13, 148, 16, 0.06);
+        color: var(--primary-dark);
+        padding: 8px 18px;
+        border-radius: 50px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-top: 16px;
+    }
+    .privacy-card {
+        background: white;
+        border-radius: 20px;
+        padding: 35px 40px;
+        margin-bottom: 24px;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        transition: box-shadow 0.3s ease;
+    }
+    .privacy-card:hover {
+        box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+    }
+    .privacy-card h2 {
+        font-size: 1.35rem;
+        font-weight: 700;
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .privacy-card h2 .section-icon {
+        width: 40px; height: 40px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+    .privacy-card p, .privacy-card li {
+        color: #475569;
+        line-height: 1.8;
+        font-size: 0.95rem;
+    }
+    .privacy-card ul {
+        padding-left: 0;
+        list-style: none;
+    }
+    .privacy-card ul li {
+        position: relative;
+        padding-left: 28px;
+        margin-bottom: 10px;
+    }
+    .privacy-card ul li::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 10px;
+        width: 8px; height: 8px;
+        background: var(--primary);
+        border-radius: 50%;
+        opacity: 0.6;
+    }
+    .icon-blue { background: rgba(59,130,246,0.1); color: #3b82f6; }
+    .icon-green { background: rgba(16,185,129,0.1); color: #10b981; }
+    .icon-purple { background: rgba(139,92,246,0.1); color: #8b5cf6; }
+    .icon-orange { background: rgba(249,115,22,0.1); color: #f97316; }
+    .icon-red { background: rgba(239,68,68,0.1); color: #ef4444; }
+    .icon-teal { background: rgba(20,184,166,0.1); color: #14b8a6; }
+    .icon-pink { background: rgba(236,72,153,0.1); color: #ec4899; }
+    .icon-indigo { background: rgba(99,102,241,0.1); color: #6366f1; }
+
+    .privacy-toc {
+        background: #f8fafc;
+        border-radius: 16px;
+        padding: 24px 30px;
+        margin-bottom: 30px;
+        border: 1px solid #e2e8f0;
+    }
+    .privacy-toc h3 {
+        font-size: 1rem;
+        font-weight: 700;
+        margin-bottom: 14px;
+        color: var(--dark);
+    }
+    .privacy-toc a {
+        display: block;
+        color: #64748b;
+        text-decoration: none;
+        padding: 6px 0;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    .privacy-toc a:hover {
+        color: var(--primary);
+        padding-left: 8px;
+    }
+    .privacy-toc a i {
+        width: 20px;
+        text-align: center;
+        margin-right: 8px;
+        font-size: 0.8rem;
+    }
+
+    .privacy-contact-box {
+        background: linear-gradient(135deg, rgba(13,148,16,0.05), rgba(100,116,139,0.05));
+        border: 1px solid rgba(13,148,16,0.1);
+        border-radius: 16px;
+        padding: 24px 30px;
+        text-align: center;
+    }
+    .privacy-contact-box h3 {
+        font-weight: 700;
+        font-size: 1.1rem;
+        margin-bottom: 8px;
+    }
+    .privacy-contact-box p {
+        color: #64748b;
+        font-size: 0.9rem;
+        margin-bottom: 4px;
+    }
+    .privacy-contact-box a {
+        color: var(--primary);
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        .privacy-card { padding: 24px 20px; }
+        .privacy-hero h1 { font-size: 1.7rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+
+        <!-- Hero -->
+        <div class="privacy-hero animate-fade-in-up">
+            <div class="privacy-hero-icon">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <h1>{{ _('Maxfiylik siyosati') }}</h1>
+            <p class="subtitle">{{ _('Shaxsiy ma\'lumotlaringiz bizda xavfsiz') }}</p>
+            <div class="privacy-updated">
+                <i class="fas fa-calendar-check"></i>
+                {{ _('Oxirgi yangilanish') }}: 04.05.2026
+            </div>
+        </div>
+
+        <!-- Table of Contents -->
+        <div class="privacy-toc animate-fade-in-up" style="animation-delay:0.1s">
+            <h3><i class="fas fa-list me-2"></i>{{ _('Mundarija') }}</h3>
+            <a href="#section-1"><i class="fas fa-chevron-right"></i>{{ _('Umumiy qoidalar') }}</a>
+            <a href="#section-2"><i class="fas fa-chevron-right"></i>{{ _('Qanday ma\'lumotlar yig\'iladi') }}</a>
+            <a href="#section-3"><i class="fas fa-chevron-right"></i>{{ _('Ma\'lumotlardan foydalanish') }}</a>
+            <a href="#section-4"><i class="fas fa-chevron-right"></i>{{ _('Cookie fayllar') }}</a>
+            <a href="#section-5"><i class="fas fa-chevron-right"></i>{{ _('Ma\'lumotlar himoyasi') }}</a>
+            <a href="#section-6"><i class="fas fa-chevron-right"></i>{{ _('Uchinchi tomonlar') }}</a>
+            <a href="#section-7"><i class="fas fa-chevron-right"></i>{{ _('Mobil ilova') }}</a>
+            <a href="#section-8"><i class="fas fa-chevron-right"></i>{{ _('Foydalanuvchi huquqlari') }}</a>
+            <a href="#section-9"><i class="fas fa-chevron-right"></i>{{ _('Bog\'lanish') }}</a>
+        </div>
+
+        <!-- Section 1 -->
+        <div class="privacy-card animate-fade-in-up" style="animation-delay:0.15s" id="section-1">
+            <h2>
+                <span class="section-icon icon-blue"><i class="fas fa-info-circle"></i></span>
+                1. {{ _('Umumiy qoidalar') }}
+            </h2>
+            <p>{{ _('Ushbu Maxfiylik siyosati Jahon School Test Platformasi veb-sayti va mobil ilovasi (keyingi o\'rinlarda "Platforma") foydalanuvchilarining shaxsiy ma\'lumotlarini yig\'ish, saqlash, qayta ishlash va himoya qilish tartibini belgilaydi.') }}</p>
+            <p>{{ _('Platformadan — veb-sayt yoki mobil ilova orqali — foydalanish orqali siz ushbu Maxfiylik siyosati shartlariga rozilik bildirasiz. Agar siz ushbu shartlarga rozi bo\'lmasangiz, Platformadan foydalanmasligingizni so\'raymiz.') }}</p>
+            <p>{{ _('Platforma O\'zbekiston Respublikasining "Shaxsiy ma\'lumotlar to\'g\'risida"gi Qonuniga muvofiq ishlaydi.') }}</p>
+        </div>
+
+        <!-- Section 2 -->
+        <div class="privacy-card animate-fade-in-up" style="animation-delay:0.2s" id="section-2">
+            <h2>
+                <span class="section-icon icon-green"><i class="fas fa-database"></i></span>
+                2. {{ _('Qanday ma\'lumotlar yig\'iladi') }}
+            </h2>
+            <p>{{ _('Platformadan foydalanish davomida quyidagi ma\'lumotlar yig\'ilishi mumkin:') }}</p>
+            <ul>
+                <li>{{ _('Ism va familiya — test topshirish paytida kiritiladi') }}</li>
+                <li>{{ _('Sinf va guruh raqami — test natijalarini aniqlash uchun') }}</li>
+                <li>{{ _('Test natijalari — ball, foiz, baho va javoblar') }}</li>
+                <li>{{ _('Arena foydalanuvchi nomi — dasturlash bo\'limiga ro\'yxatdan o\'tish uchun') }}</li>
+                <li>{{ _('Typing natijalar — yozish tezligi va aniqlik ko\'rsatkichlari') }}</li>
+                <li>{{ _('Feedback xabarlari — anonim UUID orqali saqlanadi') }}</li>
+                <li>{{ _('Cookie fayllar — session boshqaruvi va til sozlamalari uchun') }}</li>
+            </ul>
+            <p><strong>{{ _('Muhim:') }}</strong> {{ _('Biz parol, elektron pochta, telefon raqami yoki boshqa maxfiy shaxsiy ma\'lumotlarni o\'quvchilardan yig\'maymiz.') }}</p>
+        </div>
+
+        <!-- Section 3 -->
+        <div class="privacy-card animate-fade-in-up" style="animation-delay:0.25s" id="section-3">
+            <h2>
+                <span class="section-icon icon-purple"><i class="fas fa-cogs"></i></span>
+                3. {{ _('Ma\'lumotlardan foydalanish') }}
+            </h2>
+            <p>{{ _('Yig\'ilgan ma\'lumotlar quyidagi maqsadlarda ishlatiladi:') }}</p>
+            <ul>
+                <li>{{ _('Test natijalarini hisoblash va saqlash') }}</li>
+                <li>{{ _('O\'qituvchilarga o\'quvchilar progressini ko\'rsatish') }}</li>
+                <li>{{ _('Platformani takomillashtirish va xatolarni tuzatish') }}</li>
+                <li>{{ _('Arena reytingini hisoblash') }}</li>
+                <li>{{ _('Foydalanuvchi tajribasini yaxshilash') }}</li>
+            </ul>
+            <p>{{ _('Ma\'lumotlar hech qachon reklama yoki marketing maqsadlarida ishlatilmaydi.') }}</p>
+        </div>
+
+        <!-- Section 4 -->
+        <div class="privacy-card animate-fade-in-up" style="animation-delay:0.3s" id="section-4">
+            <h2>
+                <span class="section-icon icon-orange"><i class="fas fa-cookie-bite"></i></span>
+                4. {{ _('Cookie fayllar') }}
+            </h2>
+            <p>{{ _('Platforma quyidagi maqsadlarda cookie fayllardan foydalanadi:') }}</p>
+            <ul>
+                <li>{{ _('Session cookie — tizimga kirish holatini saqlash (HttpOnly, SameSite himoyalangan)') }}</li>
+                <li>{{ _('Til sozlamasi — foydalanuvchi tanlagan tilni eslab qolish') }}</li>
+                <li>{{ _('CSRF token — xavfsizlik hujumlaridan himoya') }}</li>
+            </ul>
+            <p>{{ _('Biz uchinchi tomon tracking cookie lardan foydalanmaymiz. Barcha cookie fayllar faqat texnik zaruriyat uchun ishlatiladi.') }}</p>
+        </div>
+
+        <!-- Section 5 -->
+        <div class="privacy-card animate-fade-in-up" style="animation-delay:0.35s" id="section-5">
+            <h2>
+                <span class="section-icon icon-red"><i class="fas fa-lock"></i></span>
+                5. {{ _('Ma\'lumotlar himoyasi') }}
+            </h2>
+            <p>{{ _('Biz foydalanuvchilarning ma\'lumotlarini himoya qilish uchun quyidagi choralarni ko\'ramiz:') }}</p>
+            <ul>
+                <li>{{ _('Parollar xash (hash) ko\'rinishida saqlanadi — hech kim, hatto adminlar ham asl parolni ko\'ra olmaydi') }}</li>
+                <li>{{ _('CSRF himoya — barcha formalar Cross-Site Request Forgery hujumlaridan himoyalangan') }}</li>
+                <li>{{ _('HttpOnly cookie — JavaScript orqali cookie larni o\'qish imkonsiz') }}</li>
+                <li>{{ _('X-Frame-Options: DENY — clickjacking hujumlaridan himoya') }}</li>
+                <li>{{ _('Content Security headers — brauzer xavfsizlik sarlavhalari qo\'llanilgan') }}</li>
+                <li>{{ _('IDOR himoya — foydalanuvchilar faqat o\'z ma\'lumotlariga kira oladi') }}</li>
+            </ul>
+        </div>
+
+        <!-- Section 6 -->
+        <div class="privacy-card animate-fade-in-up" style="animation-delay:0.4s" id="section-6">
+            <h2>
+                <span class="section-icon icon-teal"><i class="fas fa-share-alt"></i></span>
+                6. {{ _('Uchinchi tomonlar') }}
+            </h2>
+            <p>{{ _('Platforma quyidagi uchinchi tomon xizmatlaridan foydalanadi:') }}</p>
+            <ul>
+                <li><strong>Bootstrap CDN</strong> — {{ _('dizayn kutubxonasi') }}</li>
+                <li><strong>Font Awesome CDN</strong> — {{ _('ikonkalar') }}</li>
+                <li><strong>Google Fonts</strong> — {{ _('shriftlar (Outfit)') }}</li>
+                <li><strong>MathJax CDN</strong> — {{ _('matematik formulalar') }}</li>
+            </ul>
+            <p>{{ _('Bu xizmatlar texnik maqsadlarda ishlatiladi va foydalanuvchilarning shaxsiy ma\'lumotlari ularga uzatilmaydi. Biz foydalanuvchilarning shaxsiy ma\'lumotlarini hech qanday uchinchi tomonga sotmaymiz yoki uzatmaymiz.') }}</p>
+        </div>
+
+        <!-- Section 7: Mobile App -->
+        <div class="privacy-card animate-fade-in-up" style="animation-delay:0.42s" id="section-7">
+            <h2>
+                <span class="section-icon icon-indigo"><i class="fas fa-mobile-alt"></i></span>
+                7. {{ _('Mobil ilova') }}
+            </h2>
+            <p>{{ _('Jahon School mobil ilovasi (Android) veb-platformaning mobil versiyasi hisoblanadi. Ilova WebView texnologiyasi orqali ishlaydi va quyidagi xususiyatlarga ega:') }}</p>
+            <ul>
+                <li>{{ _('Ilova faqat INTERNET ruxsatidan foydalanadi — serverga ulanish uchun') }}</li>
+                <li>{{ _('Ilova qurilmangizdan hech qanday qo\'shimcha ma\'lumot yig\'maydi (kontaktlar, joylashuv, kamera va h.k.)') }}</li>
+                <li>{{ _('Barcha ma\'lumotlar almashinuvi faqat veb-platforma serveri orqali amalga oshiriladi') }}</li>
+                <li>{{ _('Ilova ichida uchinchi tomon reklama yoki analytics SDK lari ishlatilmaydi') }}</li>
+                <li>{{ _('Cookie va session ma\'lumotlari veb-saytdagi kabi xavfsiz tarzda boshqariladi') }}</li>
+            </ul>
+            <p>{{ _('Mobil ilova orqali yig\'ilgan ma\'lumotlar veb-platformadagi kabi himoya qilinadi va ushbu Maxfiylik siyosatining barcha shartlari mobil ilovaga ham taalluqli.') }}</p>
+        </div>
+
+        <!-- Section 8 -->
+        <div class="privacy-card animate-fade-in-up" style="animation-delay:0.48s" id="section-8">
+            <h2>
+                <span class="section-icon icon-pink"><i class="fas fa-user-shield"></i></span>
+                8. {{ _('Foydalanuvchi huquqlari') }}
+            </h2>
+            <p>{{ _('Har bir foydalanuvchi quyidagi huquqlarga ega:') }}</p>
+            <ul>
+                <li>{{ _('O\'z ma\'lumotlarini ko\'rish va nusxa olish huquqi') }}</li>
+                <li>{{ _('Ma\'lumotlarini o\'chirtirishni so\'rash huquqi') }}</li>
+                <li>{{ _('Ma\'lumotlarni qayta ishlashga rozilikni qaytarib olish huquqi') }}</li>
+                <li>{{ _('Maxfiylik siyosati bo\'yicha savol berish huquqi') }}</li>
+            </ul>
+            <p>{{ _('Ushbu huquqlardan foydalanish uchun quyidagi bog\'lanish ma\'lumotlari orqali murojaat qiling.') }}</p>
+        </div>
+
+        <!-- Section 8 — Contact -->
+        <div class="privacy-card animate-fade-in-up" style="animation-delay:0.55s" id="section-9">
+            <h2>
+                <span class="section-icon icon-blue"><i class="fas fa-envelope"></i></span>
+                9. {{ _('Bog\'lanish') }}
+            </h2>
+            <div class="privacy-contact-box">
+                <h3><i class="fas fa-headset me-2"></i>{{ _('Savollaringiz bormi?') }}</h3>
+                <p><strong>{{ _('Platforma') }}:</strong> Jahon School Test Platformasi</p>
+                <p><strong>{{ _('Ishlab chiquvchi') }}:</strong> Asilbek Mirolimov</p>
+                <p><strong>{{ _('Veb-sayt') }}:</strong> <a href="https://jahonschool.pythonanywhere.com">jahonschool.pythonanywhere.com</a></p>
+                <p class="mt-3 text-muted small">{{ _('Maxfiylik siyosati oxirgi marta 2026-yil 4-may kuni yangilangan.') }}</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    .animate-fade-in-up {
+        animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    @keyframes fadeInUp {
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+{% endblock %}

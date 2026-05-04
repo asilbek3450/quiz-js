@@ -856,9 +856,22 @@
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="py-4">
-        <div class="container text-center small text-muted">
-            <span>&copy; Asilbek Mirolimov | {{ site_name }}.</span>
+    <footer class="py-4 mt-5" style="border-top: 1px solid #e2e8f0;">
+        <div class="container">
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 small text-muted">
+                <span>&copy; {{ site_name }} | Asilbek Mirolimov</span>
+                <div class="d-flex gap-3">
+                    <a href="{{ url_for('main.privacy') }}" class="text-muted text-decoration-none" style="transition:color .2s;">
+                        <i class="fas fa-shield-alt me-1"></i>{{ _('Maxfiylik') }}
+                    </a>
+                    <a href="{{ url_for('main.about') }}" class="text-muted text-decoration-none" style="transition:color .2s;">
+                        <i class="fas fa-info-circle me-1"></i>{{ _('Haqida') }}
+                    </a>
+                    <a href="{{ url_for('main.contact') }}" class="text-muted text-decoration-none" style="transition:color .2s;">
+                        <i class="fas fa-envelope me-1"></i>{{ _('Aloqa') }}
+                    </a>
+                </div>
+            </div>
         </div>
     </footer>
 
