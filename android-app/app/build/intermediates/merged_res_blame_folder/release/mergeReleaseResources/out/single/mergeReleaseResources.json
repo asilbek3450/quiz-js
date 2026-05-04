@@ -1,0 +1,90 @@
+[
+    {
+        "merged": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-release-36:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-main-37:/drawable/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-release-36:/drawable_ic_launcher_foreground_png.xml.flat",
+        "source": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-main-37:/drawable/ic_launcher_foreground_png.xml"
+    },
+    {
+        "merged": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-release-36:/mipmap-xhdpi_ic_launcher_round.png.flat",
+        "source": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-main-37:/mipmap-xhdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "com.jahonschool.quizjs.app-release-36:/drawable-nodpi_start.jpg.flat",
+        "source": "com.jahonschool.quizjs.app-main-37:/drawable-nodpi/start.jpg"
+    },
+    {
+        "merged": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-release-36:/drawable-nodpi_start.png.flat",
+        "source": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-main-37:/drawable-nodpi/start.png"
+    },
+    {
+        "merged": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-release-36:/drawable_ic_launcher_background.xml.flat",
+        "source": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-main-37:/drawable/ic_launcher_background.xml"
+    },
+    {
+        "merged": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-release-36:/mipmap-mdpi_ic_launcher_round.png.flat",
+        "source": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-main-37:/mipmap-mdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-release-36:/mipmap-hdpi_ic_launcher.png.flat",
+        "source": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-main-37:/mipmap-hdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-release-36:/mipmap-xxhdpi_ic_launcher.png.flat",
+        "source": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-main-37:/mipmap-xxhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-release-36:/layout_activity_main.xml.flat",
+        "source": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-main-37:/layout/activity_main.xml"
+    },
+    {
+        "merged": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-release-36:/drawable-nodpi_ic_launcher_logo.png.flat",
+        "source": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-main-37:/drawable-nodpi/ic_launcher_logo.png"
+    },
+    {
+        "merged": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-release-36:/mipmap-xxxhdpi_ic_launcher.png.flat",
+        "source": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-main-37:/mipmap-xxxhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-release-36:/xml_network_security_config.xml.flat",
+        "source": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-main-37:/xml/network_security_config.xml"
+    },
+    {
+        "merged": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-release-36:/mipmap-hdpi_ic_launcher_round.png.flat",
+        "source": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-main-37:/mipmap-hdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-release-36:/layout_activity_splash.xml.flat",
+        "source": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-main-37:/layout/activity_splash.xml"
+    },
+    {
+        "merged": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-release-36:/mipmap-xxxhdpi_ic_launcher_round.png.flat",
+        "source": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-main-37:/mipmap-xxxhdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-release-36:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-main-37:/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-release-36:/mipmap-mdpi_ic_launcher.png.flat",
+        "source": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-main-37:/mipmap-mdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-release-36:/mipmap-xxhdpi_ic_launcher_round.png.flat",
+        "source": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-main-37:/mipmap-xxhdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-release-36:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-main-37:/mipmap-anydpi-v26/ic_launcher_round.xml"
+    },
+    {
+        "merged": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-release-36:/drawable_launch_screen.xml.flat",
+        "source": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-main-37:/drawable/launch_screen.xml"
+    },
+    {
+        "merged": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-release-36:/mipmap-xhdpi_ic_launcher.png.flat",
+        "source": "/Users/asilbek/.gradle/daemon/8.13/com.jahonschool.quizjs.app-main-37:/mipmap-xhdpi/ic_launcher.png"
+    }
+]

@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">JS-Test</string>
+    <string name="base_url">https://jahonschool.pythonanywhere.com</string>
+    <string name="retry">Qayta urinish</string>
+    <string name="error_title">Internet bilan ulanish yo‘q</string>
+    <string name="error_message">Tarmoqni tekshirib, sahifani qayta yuklang.</string>
+    <string name="download_started">Yuklab olish boshlandi</string>
+    <string name="download_failed">Faylni yuklab bo‘lmadi</string>
+    <string name="unsupported_link">Bu havola turini ochib bo‘lmadi</string>
+    <string name="file_picker_missing">Fayl tanlash oynasi topilmadi</string>
+</resources>

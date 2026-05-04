@@ -1,0 +1,9 @@
+<resources>
+    <color name="quiz_primary">#1E88E5</color>
+    <color name="quiz_primary_dark">#1565C0</color>
+    <color name="quiz_accent">#FFC107</color>
+    <color name="screen_background">#F7FAFC</color>
+    <color name="text_primary">#16212E</color>
+    <color name="text_secondary">#526171</color>
+    <color name="white">#FFFFFF</color>
+</resources>

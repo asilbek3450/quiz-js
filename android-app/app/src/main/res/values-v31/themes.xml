@@ -1,0 +1,13 @@
+<resources>
+    <style name="Theme.QuizJS" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/quiz_primary</item>
+        <item name="colorPrimaryContainer">@color/quiz_primary_dark</item>
+        <item name="colorSecondary">@color/quiz_accent</item>
+        <item name="android:statusBarColor">@color/quiz_primary_dark</item>
+        <item name="android:navigationBarColor">@color/white</item>
+        <item name="android:windowBackground">@drawable/launch_screen</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/start</item>
+        <item name="android:windowSplashScreenBackground">@color/white</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+    </style>
+</resources>

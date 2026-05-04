@@ -8,19 +8,18 @@ instance/test_platform.db-shm
 *.db-wal
 *.db-shm
 .gradle/
-local.properties
+# local.properties
 android-app/.idea/
-android-app/app/release/
-android-app/build/
-android-app/app/build/
-*.jks
+# android-app/app/release/
+# android-app/build/
+# android-app/app/build/
+# *.jks
 *.keystore
-android-app/keystore.properties
+# android-app/keystore.properties
 keys/
-/android-app
 
-android-app/app/start.png
-android-app/app/start.jpeg
+# android-app/app/start.png
+# android-app/app/start.jpeg
 
 .DS_Store
 PRESENTATION.html

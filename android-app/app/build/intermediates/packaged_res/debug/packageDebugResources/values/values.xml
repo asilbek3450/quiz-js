@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:ns1="http://schemas.android.com/tools">
+    <color name="quiz_accent">#FFC107</color>
+    <color name="quiz_primary">#1E88E5</color>
+    <color name="quiz_primary_dark">#1565C0</color>
+    <color name="screen_background">#F7FAFC</color>
+    <color name="text_primary">#16212E</color>
+    <color name="text_secondary">#526171</color>
+    <color name="white">#FFFFFF</color>
+    <string name="app_name">JS-Test</string>
+    <string name="base_url">https://jahonschool.pythonanywhere.com</string>
+    <string name="download_failed">Faylni yuklab bo‘lmadi</string>
+    <string name="download_started">Yuklab olish boshlandi</string>
+    <string name="error_message">Tarmoqni tekshirib, sahifani qayta yuklang.</string>
+    <string name="error_title">Internet bilan ulanish yo‘q</string>
+    <string name="file_picker_missing">Fayl tanlash oynasi topilmadi</string>
+    <string name="retry">Qayta urinish</string>
+    <string name="unsupported_link">Bu havola turini ochib bo‘lmadi</string>
+    <style name="Theme.QuizJS" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/quiz_primary</item>
+        <item name="colorPrimaryContainer">@color/quiz_primary_dark</item>
+        <item name="colorSecondary">@color/quiz_accent</item>
+        <item name="android:statusBarColor">@color/quiz_primary_dark</item>
+        <item name="android:navigationBarColor">@color/white</item>
+        <item name="android:windowLightStatusBar" ns1:targetApi="m">false</item>
+        <item name="android:windowBackground">@drawable/launch_screen</item>
+    </style>
+</resources>

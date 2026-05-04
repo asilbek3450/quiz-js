@@ -1,0 +1,5 @@
+com.jahonschool.quizjs.test.app-androidTest-0 /Users/asilbek/Desktop/AI-Projects/quiz-js/android-app/app/build/generated/res/resValues/androidTest/debug
+com.jahonschool.quizjs.test.app-updated_navigation_xml-1 /Users/asilbek/Desktop/AI-Projects/quiz-js/android-app/app/build/generated/updated_navigation_xml/debugAndroidTest
+com.jahonschool.quizjs.test.app-mergeDebugAndroidTestResources-2 /Users/asilbek/Desktop/AI-Projects/quiz-js/android-app/app/build/intermediates/incremental/debugAndroidTest/mergeDebugAndroidTestResources/merged.dir
+com.jahonschool.quizjs.test.app-mergeDebugAndroidTestResources-3 /Users/asilbek/Desktop/AI-Projects/quiz-js/android-app/app/build/intermediates/incremental/debugAndroidTest/mergeDebugAndroidTestResources/stripped.dir
+com.jahonschool.quizjs.test.app-debugAndroidTest-4 /Users/asilbek/Desktop/AI-Projects/quiz-js/android-app/app/build/intermediates/merged_res/debugAndroidTest/mergeDebugAndroidTestResources
