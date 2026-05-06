@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sqlite3 instance/test_platform.db \".tables\")",
+      "Bash(sqlite3 instance/test_platform.db \"SELECT id, name, name_ru, name_en, grades FROM subject ORDER BY id;\")",
+      "Bash(sqlite3 instance/test_platform.db \"SELECT subject_id, grade, quarter, COUNT\\(*\\) FROM question WHERE subject_id IN \\(1,2\\) GROUP BY subject_id, grade, quarter ORDER BY subject_id, grade, quarter;\")",
+      "Bash(sqlite3 instance/test_platform.db \"SELECT id, grade, quarter, lesson, substr\\(question_text,1,80\\), correct_answer FROM question WHERE subject_id=1 AND grade=5 AND quarter=1 LIMIT 30;\")",
+      "Bash(sqlite3 instance/test_platform.db \"SELECT count\\(DISTINCT substr\\(question_text,1,30\\)\\) as unique_starts, count\\(*\\) as total FROM question WHERE subject_id=1 AND grade=5 AND quarter=1;\")",
+      "Bash(sqlite3 instance/test_platform.db \"SELECT substr\\(question_text,1,40\\), COUNT\\(*\\) FROM question WHERE subject_id=1 AND grade=5 AND quarter=1 GROUP BY substr\\(question_text,1,40\\);\")",
+      "Bash(sqlite3 instance/test_platform.db \"SELECT subject_id, grade, quarter, COUNT\\(DISTINCT lesson\\) as lessons FROM question WHERE subject_id IN \\(1,2\\) GROUP BY subject_id, grade, quarter ORDER BY subject_id, grade, quarter;\")",
+      "Bash(sqlite3 instance/test_platform.db \"SELECT id, title, grade, quarter FROM control_work WHERE subject_id IN \\(1,2\\) ORDER BY subject_id, grade, quarter;\")",
+      "Bash(sqlite3 instance/test_platform.db \"SELECT cw.id, cw.title, COUNT\\(cwq.question_id\\) as q_count FROM control_work cw LEFT JOIN control_work_questions cwq ON cw.id=cwq.control_work_id WHERE cw.subject_id IN \\(1,2\\) GROUP BY cw.id ORDER BY cw.subject_id, cw.grade, cw.quarter;\")",
+      "Bash(sqlite3 instance/test_platform.db \"SELECT id, grade, quarter, lesson, substr\\(question_text, 1, 100\\) FROM question WHERE subject_id=2 AND grade=7 AND quarter=1 ORDER BY id LIMIT 30;\")",
+      "Bash(sqlite3 instance/test_platform.db \"SELECT lesson, COUNT\\(*\\) FROM question WHERE subject_id=2 AND grade=7 AND quarter=1 GROUP BY lesson;\")",
+      "Bash(sqlite3 instance/test_platform.db \"SELECT id, substr\\(question_text,1,50\\), question_text_ru, question_text_en FROM question WHERE subject_id IN \\(1,2\\) LIMIT 5;\")"
+    ]
+  }
+}
