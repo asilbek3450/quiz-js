@@ -1531,3 +1531,2632 @@ def _info6_q2_pool() -> list[QItem]:
     pool += discrete
     random.shuffle(pool)
     return pool
+
+
+# ─── INFORMATIKA — 6-sinf 3-chorak ───────────────────────────────────────────
+# Mavzu: Algoritm, blok-sxema, shart, takrorlash (sodda mantiqlar).
+
+INF_6_Q3_CONCEPTS = [
+    ("Algoritm", "Aniq maqsadga erishish uchun amallar ketma-ketligi",
+     ["Faqat kompyuter qismi", "Faqat fayl turi", "Faqat brauzer"], 1),
+    ("Algoritmning xossalari", "Aniqlik, tugallanganlik, ommaviylik, samaradorlik",
+     ["Faqat tezlik", "Faqat ranglar", "Faqat fayl nomi"], 1),
+    ("Aniqlik xossasi", "Har bir qadam tushunarli va aniq bo‘lishi",
+     ["Faqat tezlik", "Faqat ranglar", "Faqat fayl turi"], 1),
+    ("Tugallanganlik xossasi", "Algoritm cheklangan qadamdan keyin yakunlanishi",
+     ["Cheksiz davom etadi", "Faqat ranglar", "Faqat fayl turi"], 1),
+    ("Ommaviylik xossasi", "Bir xil sinfdagi har qanday masalaga qo‘llanishi",
+     ["Faqat bitta masala", "Faqat ranglar", "Faqat fayl turi"], 1),
+    ("Blok-sxema", "Algoritmning grafik (rasm) ko‘rinishi",
+     ["Faqat matn", "Faqat fayl", "Faqat brauzer"], 2),
+    ("Boshlanish bloki (oval)", "Blok-sxemaning boshlanish belgisi",
+     ["Tugatish", "Shart", "Amal"], 2),
+    ("Tugatish bloki (oval)", "Blok-sxemaning yakunlash belgisi",
+     ["Boshlanish", "Shart", "Amal"], 2),
+    ("Amal bloki (to‘rtburchak)", "Blok-sxemada bajariladigan ish belgisi",
+     ["Boshlanish", "Tugatish", "Shart"], 2),
+    ("Shart bloki (romb)", "Blok-sxemada tekshiriladigan shart belgisi",
+     ["Amal", "Tugatish", "Boshlanish"], 2),
+    ("Kirish/Chiqish bloki (parallelogramm)", "Ma'lumot kiritish yoki chiqarish belgisi",
+     ["Shart", "Tugatish", "Amal"], 2),
+    ("Chiziqli (linear) algoritm", "Amallar ketma-ket bajariladigan algoritm",
+     ["Tarmoqlanuvchi", "Takrorlanuvchi", "Faqat ranglar"], 3),
+    ("Tarmoqlanuvchi (shartli) algoritm", "Shartga qarab turli yo‘l tanlanadigan algoritm",
+     ["Chiziqli", "Faqat takror", "Faqat matn"], 3),
+    ("Takrorlanuvchi (siklik) algoritm", "Bir nechta amal qaytariladigan algoritm",
+     ["Faqat chiziqli", "Faqat shartli", "Faqat ranglar"], 3),
+    ("If (Agar)", "Shart bajarilsa, amalni bajaruvchi shartli operator",
+     ["Faqat takror", "Faqat ranglar", "Faqat fayl"], 4),
+    ("Else (Aks holda)", "If sharti bajarilmasa, ishlovchi tarmoq",
+     ["Faqat shart", "Faqat takror", "Faqat ranglar"], 4),
+    ("For (sikl)", "Aniq sondagi qadamlardan iborat takrorlash",
+     ["Faqat shart", "Faqat chiziqli", "Faqat ranglar"], 5),
+    ("While (sikl)", "Shart bajarilgancha takrorlash",
+     ["Faqat for", "Faqat shart", "Faqat ranglar"], 5),
+    ("Repeat (takrorlash)", "Berilgan miqdorda yoki shartgacha amalni qaytarish",
+     ["Faqat ranglar", "Faqat shart", "Faqat amal"], 5),
+    ("Break", "Sikldan oldin chiqib ketish operatori",
+     ["Davom etish", "Saqlash", "Yopish"], 5),
+    ("Continue", "Sikl ichida joriy iteratsiyani o‘tkazib yuborish",
+     ["Sikldan chiqish", "Saqlash", "Faqat ranglar"], 5),
+    ("Scratch", "Bolalar uchun blok asosida dasturlash muhiti",
+     ["Faqat oddiy matn muharriri", "Faqat brauzer", "Faqat antivirus"], 6),
+    ("Sprite (Scratch)", "Scratchdagi harakatlanuvchi obyekt (rasm)",
+     ["Faqat fon", "Faqat blok", "Faqat fayl"], 6),
+    ("Stage (Sahna)", "Scratchdagi sprite-lar harakat qiluvchi maydon",
+     ["Faqat sprite", "Faqat blok", "Faqat fayl"], 6),
+    ("Move 10 steps (Scratch)", "Sprite-ni 10 qadam siljitish bloki",
+     ["Faqat ranglar", "Faqat ovoz", "Faqat saqlash"], 6),
+    ("When green flag clicked", "Yashil bayroq bosilganda dastur ishga tushish bloki",
+     ["Faqat saqlash", "Faqat ovoz", "Faqat ranglar"], 6),
+    ("Repeat n (Scratch)", "Ichidagi bloklarni n marta takrorlash",
+     ["Faqat shart", "Faqat saqlash", "Faqat ranglar"], 6),
+    ("If/then (Scratch)", "Shart bajarilsa ichidagi bloklarni bajarish",
+     ["Faqat takror", "Faqat saqlash", "Faqat ranglar"], 6),
+    ("Forever (Scratch)", "Cheksiz takrorlash bloki",
+     ["Faqat n marta", "Faqat shart", "Faqat saqlash"], 6),
+    ("Pseudokod", "Algoritmni so‘zlar bilan tasvirlovchi shartli yozuv",
+     ["Bevosita kompyuter dasturi", "Faqat blok-sxema", "Faqat rasm"], 7),
+    ("Dasturlash tili", "Kompyuterga buyruq berish uchun maxsus til",
+     ["Faqat algoritm", "Faqat brauzer", "Faqat antivirus"], 7),
+    ("Buyruq", "Bajariladigan bitta amalni bildiruvchi yozuv",
+     ["Faqat fayl", "Faqat ranglar", "Faqat saqlash"], 7),
+    ("Sintaksis", "Til qoidasi — qanday yozish kerakligi",
+     ["Faqat ma'no", "Faqat ranglar", "Faqat fayl"], 7),
+    ("Bug (xato)", "Dasturdagi nosozlik yoki noto‘g‘ri ishlash",
+     ["Faqat ovoz", "Faqat ranglar", "Faqat fayl"], 7),
+    ("Debugging", "Xatolarni topish va to‘g‘rilash jarayoni",
+     ["Faqat saqlash", "Faqat ranglar", "Faqat ovoz"], 7),
+    ("Variable (o‘zgaruvchi)", "Qiymat saqlash uchun nomlangan joy",
+     ["Faqat blok", "Faqat fayl", "Faqat shart"], 8),
+    ("Input (kirish)", "Foydalanuvchidan ma'lumot olish",
+     ["Chiqish", "Faqat shart", "Faqat saqlash"], 8),
+    ("Output (chiqish)", "Foydalanuvchiga ma'lumot ko‘rsatish",
+     ["Kirish", "Faqat shart", "Faqat saqlash"], 8),
+    ("Logical operator (mantiqiy amal)", "AND/OR/NOT kabi amallar",
+     ["Faqat son", "Faqat matn", "Faqat ranglar"], 4),
+    ("Modul (mod) amali", "Bo‘lishdan qoldiqni topuvchi amal",
+     ["Faqat butun bo‘linmasi", "Faqat ko‘paytirish", "Faqat ayirish"], 8),
+]
+
+
+def _info6_q3_pool() -> list[QItem]:
+    pool: list[QItem] = []
+    for c, d, w, l in INF_6_Q3_CONCEPTS:
+        pool += _conceptual(c, d, w, lesson=l)
+
+    def t_sum_1_to_n():
+        n = random.randint(5, 50)
+        return QItem(text=f"1 dan n gacha sonlar yig‘indisini hisoblovchi algoritm bajarildi.\n\nn = {n}\n\nNatija nima?",
+                     answer=str(n * (n + 1) // 2),
+                     wrongs=[str(n * n), str(n * (n - 1) // 2), str(n + 1)],
+                     difficulty=3, lesson=5)
+
+    def t_step_seq():
+        start = random.randint(1, 20); step = random.randint(2, 8); k = random.randint(4, 12)
+        last = start + step * (k - 1)
+        return QItem(text=f"Algoritm: start={start} dan boshlab har safar +{step} oshirib k={k} marta yozildi. Oxirgi qiymat?",
+                     answer=str(last),
+                     wrongs=[str(last - step), str(start * step), str(start + k)],
+                     difficulty=3, lesson=5)
+
+    def t_if_eval():
+        a = random.randint(-50, 50); b = random.randint(-50, 50)
+        return QItem(text=f"Algoritm:\n```\nIF a > b THEN\n   chiqar 'A katta'\nELIF a == b THEN\n   chiqar 'Teng'\nELSE\n   chiqar 'B katta'\n```\nKirish: a={a}, b={b}\nNatija nima?",
+                     answer="A katta" if a > b else ("Teng" if a == b else "B katta"),
+                     wrongs=["A katta", "B katta", "Teng"],
+                     difficulty=2, lesson=4)
+
+    def t_count_in_range():
+        n = random.randint(10, 80); m = random.randint(2, 9)
+        return QItem(text=f"Algoritm: 1 dan {n} gacha sonlar ichidan {m} ga karralilarini sanaymiz. Nechta son chiqadi?",
+                     answer=str(n // m),
+                     wrongs=[str(n // m + 1), str(n - m), str(n + m)],
+                     difficulty=3, lesson=8)
+
+    def t_factorial_simple():
+        n = random.randint(2, 6)
+        f = 1
+        for i in range(1, n + 1):
+            f *= i
+        return QItem(text=f"Algoritm: 1 dan n gacha sonlarni ko‘paytiramiz (faktorial). n={n}. Natija?",
+                     answer=str(f),
+                     wrongs=[str(f + 1), str(f * 2), str(n * n)],
+                     difficulty=3, lesson=5)
+
+    def t_block_shape():
+        cases = [
+            ("Boshlanish belgisi", "Oval", ["To‘rtburchak", "Romb", "Parallelogramm"]),
+            ("Tugatish belgisi", "Oval", ["Romb", "Parallelogramm", "To‘rtburchak"]),
+            ("Amal belgisi", "To‘rtburchak", ["Oval", "Romb", "Parallelogramm"]),
+            ("Shart belgisi", "Romb", ["To‘rtburchak", "Oval", "Parallelogramm"]),
+            ("Kirish/chiqish belgisi", "Parallelogramm", ["Romb", "Oval", "To‘rtburchak"]),
+        ]
+        c, ans, wrongs = random.choice(cases)
+        return QItem(text=f"Blok-sxemada '{c}' qaysi shakl bilan tasvirlanadi?",
+                     answer=ans, wrongs=list(wrongs), difficulty=2, lesson=2)
+
+    def t_repeat_eval():
+        n = random.randint(3, 8)
+        return QItem(text=f"Scratch: `repeat {n}: move 10 steps`. Sprite jami necha qadam yuradi?",
+                     answer=str(n * 10),
+                     wrongs=[str(n + 10), str(n * 5), str(n)],
+                     difficulty=2, lesson=6)
+
+    def t_mod_eval():
+        a = random.randint(10, 99); b = random.randint(2, 9)
+        return QItem(text=f"`{a} MOD {b}` (qoldiq) natijasi nima?",
+                     answer=str(a % b),
+                     wrongs=[str(a // b), str(a + b), str(a - b)],
+                     difficulty=2, lesson=8)
+
+    def t_division():
+        a = random.randint(20, 99); b = random.randint(2, 9)
+        return QItem(text=f"`{a} DIV {b}` (butun bo‘linmasi) natijasi nima?",
+                     answer=str(a // b),
+                     wrongs=[str(a % b), str(a / b), str(a * b)],
+                     difficulty=2, lesson=8)
+
+    pool += _capped(t_sum_1_to_n)
+    pool += _capped(t_step_seq)
+    pool += _capped(t_if_eval)
+    pool += _capped(t_count_in_range)
+    pool += _capped(t_factorial_simple)
+    pool += _capped(t_block_shape)
+    pool += _capped(t_repeat_eval)
+    pool += _capped(t_mod_eval)
+    pool += _capped(t_division)
+
+    discrete = [
+        QItem("Algoritmning birinchi xossasi qaysi?", "Aniqlik (har qadam tushunarli)",
+              ["Faqat tezlik", "Faqat ranglar", "Faqat fayl"], 1, 1),
+        QItem("Algoritm cheksiz davom etadi degan ma'no — bu xato. Qaysi xossasi buzilgan?",
+              "Tugallanganlik xossasi",
+              ["Aniqlik", "Ommaviylik", "Samaradorlik"], 2, 1),
+        QItem("Blok-sxemada strelkalar nimani ko‘rsatadi?",
+              "Algoritm qadamlari ketma-ketligini",
+              ["Faqat ranglar", "Faqat fayl turini", "Faqat sonni"], 2, 2),
+        QItem("Tarmoqlanuvchi algoritmda qanday blok bor bo‘lishi shart?",
+              "Shart bloki (romb)",
+              ["Faqat amal", "Faqat boshlanish", "Faqat tugatish"], 2, 3),
+        QItem("Takrorlanuvchi algoritmda nima muhim?",
+              "Sikl chiqish sharti yoki qadamlar soni",
+              ["Faqat saqlash", "Faqat ranglar", "Faqat oddiy amal"], 3, 3),
+        QItem("Pseudokodda 'IF x > 0' degan ko‘rinish nimani anglatadi?",
+              "Agar x noldan katta bo‘lsa",
+              ["Doim bajariladi", "Hech qachon bajarilmaydi", "Faqat takror"], 2, 7),
+        QItem("Scratchda dastur boshlanishini bildiruvchi blok qaysi?",
+              "When green flag clicked",
+              ["Stop", "Forever", "If"], 1, 6),
+        QItem("Scratchda Sprite-ni boshqarish uchun qaysi tugmalar to‘plami ishlatilishi mumkin?",
+              "Klaviatura strelkalari yoki maxsus tugmalar",
+              ["Faqat sichqoncha", "Faqat ovoz", "Faqat ranglar"], 2, 6),
+        QItem("Algoritmni ishga tushiruvchi shaxs kim?",
+              "Foydalanuvchi (yoki kompyuter)",
+              ["Faqat dasturchi", "Faqat o‘qituvchi", "Hech kim"], 2, 1),
+        QItem("Algoritm va dastur orasidagi farq nima?",
+              "Algoritm — g‘oya, dastur — uning kompyuter tilidagi bajariluvchi shakli",
+              ["Bir xil", "Algoritm faqat matn", "Dastur faqat blok-sxema"], 3, 7),
+        QItem("If-Else bloki qaysi turdagi algoritmga tegishli?",
+              "Tarmoqlanuvchi (shartli)",
+              ["Faqat chiziqli", "Faqat takror", "Faqat fayl"], 1, 4),
+        QItem("Algoritm samaradorligi nima bilan o‘lchanadi?",
+              "Bajarilish vaqti va xotira sarfi",
+              ["Faqat ranglar", "Faqat fayl hajmi", "Faqat ovoz"], 3, 1),
+        QItem("Mantiqiy AND amali qachon TRUE qaytaradi?",
+              "Ikkala operand ham TRUE bo‘lganda",
+              ["Bittasi TRUE bo‘lsa", "Hech qachon", "Faqat oxirgisi TRUE"], 2, 4),
+        QItem("Mantiqiy OR amali qachon TRUE qaytaradi?",
+              "Bittasi TRUE bo‘lsa yetarli",
+              ["Faqat ikkalasi TRUE", "Hech qachon", "Faqat birinchisi TRUE"], 2, 4),
+        QItem("Mantiqiy NOT amali nima qiladi?",
+              "TRUE/FALSE ni teskariga o‘zgartiradi",
+              ["Yig‘adi", "Ko‘paytiradi", "Hech narsa qilmaydi"], 2, 4),
+        QItem("Algoritmlash boshlangich vositasi sifatida qaysi muhit eng mos?",
+              "Scratch yoki blok-sxema",
+              ["Faqat Word", "Faqat Excel", "Faqat brauzer"], 2, 6),
+        QItem("Sikl ichida 'break' bajarilsa nima sodir bo‘ladi?",
+              "Sikl darhol to‘xtaydi va undan keyingi qatorga o‘tiladi",
+              ["Sikl yangidan boshlanadi", "Hech narsa o‘zgarmaydi", "Dastur to‘xtaydi"], 3, 5),
+        QItem("Sikl ichida 'continue' bajarilsa nima sodir bo‘ladi?",
+              "Joriy iteratsiya o‘tkazib yuboriladi, keyingisi boshlanadi",
+              ["Sikl tugaydi", "Hech narsa o‘zgarmaydi", "Dastur to‘xtaydi"], 3, 5),
+        QItem("Algoritmni testlash nima uchun kerak?",
+              "Xatolarni topish va to‘g‘rilash uchun",
+              ["Faqat ranglash uchun", "Faqat saqlash uchun", "Faqat ovoz uchun"], 2, 7),
+        QItem("Bug topib tuzatish jarayoni qanday nomlanadi?",
+              "Debugging",
+              ["Saqlash", "Yopish", "Tartiblash"], 2, 7),
+    ]
+    pool += discrete
+    random.shuffle(pool)
+    return pool
+
+
+# ─── INFORMATIKA — 6-sinf 4-chorak ───────────────────────────────────────────
+# Mavzu: PowerPoint, taqdimot, slayd, transition, animation.
+
+INF_6_Q4_CONCEPTS = [
+    ("Microsoft PowerPoint", "Taqdimot (slayd-shou) yaratuvchi dastur",
+     ["Brauzer", "Antivirus", "Excel"], 1),
+    (".pptx", "PowerPoint taqdimoti uchun kengaytma",
+     [".docx", ".xlsx", ".png"], 1),
+    ("Slayd (Slide)", "Taqdimotning bitta sahifasi",
+     ["Excel kataki", "Word abzasi", "Brauzer"], 1),
+    ("Slayd-shou (Slideshow)", "Slaydlarni ekranga ketma-ket ko‘rsatish rejimi",
+     ["Faqat saqlash", "Faqat ochish", "Faqat tahrirlash"], 1),
+    ("Title slide", "Birinchi (sarlavha) slayd",
+     ["Faqat oxirgi", "Faqat o‘rta", "Faqat bo‘sh"], 1),
+    ("Layout (slayd shabloni)", "Slayd ichidagi joylashuv shakli (sarlavha+matn, faqat sarlavha va h.k.)",
+     ["Faqat ranglar", "Faqat fayl turi", "Faqat shrift"], 2),
+    ("Theme (mavzu)", "Slaydlar uchun tayyor dizayn (rang, shrift, fon)",
+     ["Faqat fayl turi", "Faqat saqlash", "Faqat sarlavha"], 2),
+    ("Transition (o‘tish)", "Slaydlar almashish vaqtidagi vizual effekt",
+     ["Faqat ovoz", "Faqat saqlash", "Faqat shrift"], 3),
+    ("Animation", "Slayd ichidagi obyekt (matn, rasm) harakat effekti",
+     ["Faqat slaydlar almashishi", "Faqat saqlash", "Faqat shrift"], 3),
+    ("Animation – Entrance", "Obyekt slaydga kirish animatsiyasi",
+     ["Faqat chiqish", "Faqat fokus", "Faqat ranglar"], 3),
+    ("Animation – Exit", "Obyekt slayddan chiqish animatsiyasi",
+     ["Faqat kirish", "Faqat fokus", "Faqat ranglar"], 3),
+    ("Animation – Emphasis", "Obyektga e'tibor qaratish (rangini o‘zgartirish va h.k.)",
+     ["Faqat kirish", "Faqat chiqish", "Faqat saqlash"], 3),
+    ("Animation Pane", "Animatsiyalarni boshqarish paneli",
+     ["Faqat shrift paneli", "Faqat status bar", "Faqat ranglar paneli"], 3),
+    ("F5", "Birinchi slayddan boshlab taqdimotni ekranda ishga tushiruvchi tugma",
+     ["Saqlash", "Yopish", "Yangi"], 4),
+    ("Shift+F5", "Joriy slayddan boshlab slayd-shouni ishga tushirish",
+     ["Saqlash", "Yopish", "Yangi"], 4),
+    ("Esc", "Slayd-shoudan chiqish tugmasi",
+     ["Saqlash", "Yopish", "Yangi"], 4),
+    ("Slide Sorter", "Barcha slaydlarni miniatyura ko‘rinishida ko‘rish rejimi",
+     ["Faqat tahrirlash", "Faqat saqlash", "Faqat ranglar"], 5),
+    ("Notes Pane", "Slayd ostida ma'ruzachi uchun yozuvlar maydoni",
+     ["Faqat sarlavha", "Faqat ranglar", "Faqat saqlash"], 5),
+    ("Insert Image", "Slaydga rasm qo‘shish",
+     ["Faqat matn", "Faqat shrift", "Faqat saqlash"], 6),
+    ("Insert Video", "Slaydga video fayl qo‘shish",
+     ["Faqat ovoz", "Faqat sarlavha", "Faqat saqlash"], 6),
+    ("Insert Audio", "Slaydga ovoz/musiqa qo‘shish",
+     ["Faqat sarlavha", "Faqat ranglar", "Faqat saqlash"], 6),
+    ("Insert Chart", "Slaydga diagramma qo‘shish",
+     ["Faqat ranglar", "Faqat saqlash", "Faqat shrift"], 6),
+    ("SmartArt", "Tayyor diagrammalar va sxema shablonlari",
+     ["Faqat oddiy matn", "Faqat ranglar", "Faqat saqlash"], 6),
+    ("Hyperlink (Slaydda)", "Slaydga havola qo‘shish (boshqa slayd, sayt, fayl)",
+     ["Faqat shrift", "Faqat ranglar", "Faqat saqlash"], 6),
+    ("Slide Number", "Har bir slaydga avtomatik raqam qo‘yish",
+     ["Faqat ranglar", "Faqat saqlash", "Faqat shrift"], 5),
+    ("Slide Master", "Barcha slaydlar uchun umumiy shabloni — bir joyda tahrirlash",
+     ["Faqat oxirgi slayd", "Faqat birinchi slayd", "Faqat sarlavha"], 7),
+    ("Print Layout — Handouts", "Bir varaqda bir nechta slaydni chop etish rejimi",
+     ["Faqat slayd-shou", "Faqat saqlash", "Faqat ranglar"], 8),
+    ("Save As — PowerPoint", "Taqdimotni boshqa nom yoki formatda saqlash",
+     ["Faqat ochish", "Faqat o‘chirish", "Faqat chop etish"], 1),
+    (".pdf eksport (PowerPoint)", "Taqdimotni PDF sifatida saqlash",
+     ["Faqat .docx", "Faqat .xlsx", "Faqat .png"], 1),
+    ("Outline View", "Faqat sarlavha va matn ko‘rinishidagi tahrir rejimi",
+     ["Faqat slayd-shou", "Faqat saqlash", "Faqat ranglar"], 5),
+    ("Reading View", "Slayd-shou kabi, lekin oyna ichida ko‘rish",
+     ["Faqat tahrirlash", "Faqat saqlash", "Faqat ranglar"], 5),
+    ("Background", "Slayd fonidagi rang yoki rasm",
+     ["Faqat sarlavha", "Faqat ranglar paneli", "Faqat saqlash"], 7),
+    ("Color Scheme", "Mavzudagi ranglar to‘plami",
+     ["Faqat shrift", "Faqat saqlash", "Faqat sarlavha"], 7),
+    ("Font Theme", "Mavzudagi shriftlar to‘plami",
+     ["Faqat ranglar", "Faqat saqlash", "Faqat sarlavha"], 7),
+    ("Picture Tools — Format", "Rasmni tahrirlash bo‘limi (kesish, ramka va h.k.)",
+     ["Faqat saqlash", "Faqat ranglar", "Faqat shrift"], 6),
+    ("Crop (PowerPoint)", "Rasmni qisqartirib kesish",
+     ["Faqat aylantirish", "Faqat ranglar", "Faqat saqlash"], 6),
+    ("Group/Ungroup (Obyektlarni)", "Bir nechta obyektni guruhga birlashtirish/ajratish",
+     ["Faqat saqlash", "Faqat o‘chirish", "Faqat ranglar"], 6),
+    ("Arrange — Bring to Front", "Obyektni boshqalarning ustiga olib chiqish",
+     ["Faqat orqaga", "Faqat saqlash", "Faqat ranglar"], 6),
+    ("Arrange — Send to Back", "Obyektni boshqalarning ortiga yuborish",
+     ["Faqat oldinga", "Faqat saqlash", "Faqat ranglar"], 6),
+    ("Slide Show — Rehearse Timings", "Slaydlarning avtomatik o‘tish vaqtini sinab belgilash",
+     ["Faqat saqlash", "Faqat ovoz", "Faqat ranglar"], 4),
+]
+
+
+def _info6_q4_pool() -> list[QItem]:
+    pool: list[QItem] = []
+    for c, d, w, l in INF_6_Q4_CONCEPTS:
+        pool += _conceptual(c, d, w, lesson=l)
+
+    def t_pres_duration():
+        slides = random.randint(5, 30); sec = random.randint(3, 12)
+        total = slides * sec
+        return QItem(text=f"PowerPoint: {slides} ta slayd har biri {sec} sekundda avtomatik almashsa, taqdimot necha sekund davom etadi?",
+                     answer=str(total),
+                     wrongs=[str(total + sec), str(total - sec), str(slides + sec)],
+                     difficulty=2, lesson=4)
+
+    def t_pres_minutes():
+        slides = random.randint(8, 25); sec_per_slide = random.choice([15, 30, 45, 60])
+        total_sec = slides * sec_per_slide
+        minutes = total_sec // 60
+        sec_rem = total_sec % 60
+        return QItem(text=f"Taqdimot {slides} ta slayddan iborat. Har slaydga ~{sec_per_slide} soniya. Necha minut va sekund davom etadi?",
+                     answer=f"{minutes} min {sec_rem} sek",
+                     wrongs=[f"{minutes + 1} min {sec_rem} sek",
+                             f"{minutes} min {sec_rem + 5} sek",
+                             f"{slides} min {sec_rem} sek"],
+                     difficulty=3, lesson=4)
+
+    def t_shortcut():
+        cases = [
+            ("Slayd-shouni boshlash (birinchi slayddan)", "F5",
+             ["Shift+F5", "Esc", "Ctrl+S"]),
+            ("Slayd-shouni joriy slayddan boshlash", "Shift+F5",
+             ["F5", "Esc", "Ctrl+S"]),
+            ("Slayd-shoudan chiqish", "Esc",
+             ["F5", "Shift+F5", "Tab"]),
+            ("Yangi slayd qo‘shish", "Ctrl+M",
+             ["Ctrl+S", "Ctrl+N", "F5"]),
+            ("Saqlash", "Ctrl+S",
+             ["Ctrl+P", "F5", "Esc"]),
+            ("Yangi taqdimot ochish", "Ctrl+N",
+             ["Ctrl+S", "F5", "Esc"]),
+        ]
+        c, ans, wrongs = random.choice(cases)
+        return QItem(text=f"PowerPointda '{c}' uchun tugma yoki birikma qaysi?",
+                     answer=ans, wrongs=list(wrongs), difficulty=1, lesson=4)
+
+    def t_anim_type():
+        cases = [
+            ("Obyekt slaydga kiradi", "Entrance", ["Exit", "Emphasis", "Motion Path"]),
+            ("Obyekt slayddan chiqib ketadi", "Exit", ["Entrance", "Emphasis", "Motion Path"]),
+            ("Obyekt rangini o‘zgartirib e'tibor tortadi", "Emphasis",
+             ["Entrance", "Exit", "Motion Path"]),
+            ("Obyekt belgilangan yo‘ldan harakat qiladi", "Motion Path",
+             ["Entrance", "Exit", "Emphasis"]),
+        ]
+        c, ans, wrongs = random.choice(cases)
+        return QItem(text=f"PowerPoint animatsiyasida '{c}' qaysi turga kiradi?",
+                     answer=ans, wrongs=list(wrongs), difficulty=2, lesson=3)
+
+    def t_layout_choose():
+        cases = [
+            ("Faqat sarlavha kerak", "Title Only", ["Blank", "Title and Content", "Two Content"]),
+            ("Sarlavha va bitta matn maydoni", "Title and Content",
+             ["Title Only", "Blank", "Comparison"]),
+            ("Ikki ustun matn", "Two Content", ["Blank", "Title Only", "Section Header"]),
+            ("Bo‘sh slayd", "Blank", ["Title Slide", "Two Content", "Comparison"]),
+        ]
+        c, ans, wrongs = random.choice(cases)
+        return QItem(text=f"PowerPoint Layouti: '{c}'. Qaysi shablon mos?",
+                     answer=ans, wrongs=list(wrongs), difficulty=2, lesson=2)
+
+    pool += _capped(t_pres_duration)
+    pool += _capped(t_pres_minutes)
+    pool += _capped(t_shortcut)
+    pool += _capped(t_anim_type)
+    pool += _capped(t_layout_choose)
+
+    discrete = [
+        QItem("PowerPoint hujjatining standart kengaytmasi qaysi?", ".pptx",
+              [".docx", ".xlsx", ".png"], 1, 1),
+        QItem("Yangi slayd qo‘shish uchun qaysi menyu?", "Home → New Slide",
+              ["File → New", "Insert → Image", "Review"], 1, 2),
+        QItem("Bir nechta slaydni guruhlab yashirish uchun?", "Section qo‘shish",
+              ["Faqat o‘chirish", "Faqat saqlash", "Faqat ranglash"], 3, 5),
+        QItem("PowerPointda matnni boshqa shrift bilan yozish uchun?", "Home → Font menyusi",
+              ["File → Print", "View → Outline", "Review"], 1, 7),
+        QItem("Slaydga rasm qo‘shish uchun qaysi menyu?", "Insert → Pictures",
+              ["Home", "View", "Review"], 1, 6),
+        QItem("Animation Painter nima qiladi?",
+              "Bir obyektdagi animatsiyani boshqa obyektga ko‘chiradi",
+              ["Faqat saqlaydi", "Faqat o‘chiradi", "Faqat ranglar"], 3, 3),
+        QItem("Slide Master nima uchun ishlatiladi?",
+              "Hamma slaydlar uchun umumiy ko‘rinish bir joyda sozlash",
+              ["Faqat birinchi slayd uchun", "Faqat sarlavha uchun", "Faqat ranglash"], 3, 7),
+        QItem("Taqdimotni PDF formatida saqlash uchun?",
+              "File → Save As → PDF",
+              ["Faqat Ctrl+S", "Faqat F5", "Faqat Esc"], 2, 1),
+        QItem("Slayd ichidagi obyektlarni tartibga solish uchun?",
+              "Arrange (Front/Back/Group) menyusi",
+              ["Faqat saqlash", "Faqat ranglash", "Faqat sortlash"], 2, 6),
+        QItem("Slayd ichida video o‘ynashini istasak qaysi menyu?",
+              "Insert → Video",
+              ["Insert → Image", "View → Outline", "Review"], 2, 6),
+        QItem("Slaydlar avtomatik almashishini qayerdan sozlaymiz?",
+              "Transitions → Advance Slide → After (sekund)",
+              ["Insert", "Home", "Review"], 3, 3),
+        QItem("Slayd-shou paytida sichqonchani bosish nima qiladi (default)?",
+              "Keyingi animatsiya yoki slaydga o‘tadi",
+              ["Avtomatik to‘xtaydi", "Slaydni o‘chiradi", "Hech narsa qilmaydi"], 2, 4),
+        QItem("PowerPointda Notes Pane nima uchun?",
+              "Ma'ruzachi uchun shaxsiy yozuvlar — slayd-shouda ko‘rinmaydi",
+              ["Slaydda ko‘rinadigan matn", "Faqat saqlash", "Faqat ranglar"], 3, 5),
+        QItem("Slaydda matnni katta-kichikligini ko‘rsatish uchun nima ishlatamiz?",
+              "Font size va Bold/Italic",
+              ["Faqat saqlash", "Faqat F5", "Faqat ranglash"], 1, 7),
+        QItem("Bir slayddagi obyektlar tartibida yuqorida turishi uchun?",
+              "Bring to Front",
+              ["Send to Back", "Group", "Save"], 2, 6),
+        QItem("PowerPointda mavzu (Theme) o‘zgartirish nima qiladi?",
+              "Slaydlar dizayni (rang, shrift, fon) bir vaqtda o‘zgaradi",
+              ["Faqat shriftni o‘zgartiradi", "Faqat ranglar", "Hech narsa"], 2, 2),
+        QItem("Multimedia taqdimotda ovoz qo‘shish uchun qaysi menyu?",
+              "Insert → Audio",
+              ["Home", "View", "Review"], 2, 6),
+        QItem("Reader View qachon foydali?",
+              "Taqdimotni oyna ichida (to‘liq ekran emas) ko‘rish kerak bo‘lsa",
+              ["Faqat saqlash", "Faqat tahrir", "Faqat ranglar"], 3, 5),
+        QItem("PowerPointda 'Section Header' layout qaysi maqsadga mos?",
+              "Yangi bo‘limni e'lon qilish",
+              ["Faqat sarlavha slayd", "Faqat ovoz", "Faqat saqlash"], 2, 2),
+        QItem("Hyperlink ni slaydda qaysi obyektga qo‘yish mumkin?",
+              "Matn yoki rasmga",
+              ["Faqat saqlash", "Faqat ranglash", "Faqat ovoz"], 2, 6),
+    ]
+    pool += discrete
+    random.shuffle(pool)
+    return pool
+
+
+def informatics_pool(grade: int, quarter: int) -> list[QItem]:
+    if grade == 5:
+        if quarter == 1: return _info5_q1_pool()
+        if quarter == 2: return _info5_q2_pool()
+        if quarter == 3: return _info5_q3_pool()
+        if quarter == 4:
+            # Cumulative: Q1 + Q2 + Q3 + Q4
+            return _info5_q1_pool() + _info5_q2_pool() + _info5_q3_pool() + _info5_q4_pool()
+    if grade == 6:
+        if quarter == 1: return _info6_q1_pool()
+        if quarter == 2: return _info6_q2_pool()
+        if quarter == 3: return _info6_q3_pool()
+        if quarter == 4:
+            # Cumulative: Q1 + Q2 + Q3 + Q4
+            return _info6_q1_pool() + _info6_q2_pool() + _info6_q3_pool() + _info6_q4_pool()
+    return []
+
+
+# ─── PYTHON — 7-sinf 1-chorak ────────────────────────────────────────────────
+# Mavzu: Dastur, print, o'zgaruvchilar, turlar (int/float/str), arifmetika.
+
+PY_7_Q1_CONCEPTS = [
+    ("Dastur", "Kompyuter bajaradigan buyruqlar ketma-ketligi",
+     ["Faqat o‘chirish tugmasi", "Faqat operatsion tizim", "Faqat papka"], 1),
+    ("Python", "Soddaligi va kuchli kutubxonalari bilan mashhur dasturlash tili",
+     ["Faqat brauzer", "Faqat antivirus", "Excel formula"], 1),
+    ("Yuqori darajadagi til", "Inson tushunadigan ko‘rinishga yaqin dasturlash tili",
+     ["Faqat mashina kodi", "Faqat assembler", "Faqat blok-sxema"], 1),
+    ("Interpretator", "Python kodini bir-bir o‘qib bajaruvchi dastur",
+     ["Kodni faylga o‘zgartiruvchi", "Faqat yopuvchi", "Faqat antivirus"], 1),
+    ("IDLE / VS Code", "Python kodini yozish va ishga tushirish muhitlari",
+     ["Antivirus dasturlari", "Brauzerlar", "Excel formulalari"], 1),
+    ("print()", "Python’da ekranga ma'lumot chiqaruvchi funksiya",
+     ["input()", "len()", "type()"], 2),
+    ("input()", "Foydalanuvchidan klaviatura orqali matn olish funksiyasi",
+     ["print()", "type()", "len()"], 2),
+    ("# (sharh)", "Kod ichida tushuntirish berish — Python o‘qimaydigan satr",
+     ["Faqat dastur kodi", "Faqat o‘zgaruvchi", "Faqat string"], 2),
+    ("O‘zgaruvchi (variable)", "Qiymat saqlanadigan nomlangan joy",
+     ["Faqat funksiya", "Faqat fayl turi", "Faqat operatsiya"], 3),
+    ("Variable name (o‘zgaruvchi nomi)", "Harf yoki _ bilan boshlanadi, son bilan boshlanmaydi",
+     ["Faqat son bilan boshlanadi", "Faqat probel ishlatiladi", "Faqat katta harf"], 3),
+    ("=' (taxsiyot)", "O‘zgaruvchiga qiymat berish operatori",
+     ["Solishtirish ==", "Yig‘indi", "Bo‘lish"], 3),
+    ("int", "Butun son turi (-3, 0, 42)",
+     ["Kasr son", "Matn", "Mantiqiy"], 4),
+    ("float", "Kasrli son turi (3.14, -0.5)",
+     ["Faqat butun", "Faqat matn", "Faqat list"], 4),
+    ("str", "Matn (string) — qo‘shtirnoq yoki bittirnoq orasidagi belgilar",
+     ["Faqat son", "Faqat list", "Faqat None"], 4),
+    ("bool", "True yoki False ikkilik mantiqiy tur",
+     ["Son turi", "Matn turi", "Faqat None"], 4),
+    ("type()", "O‘zgaruvchining turini qaytaruvchi funksiya",
+     ["Faqat ko‘chiruvchi", "Faqat yig‘uvchi", "Faqat saqlovchi"], 4),
+    ("int() funksiya", "Matn yoki kasr sonni butun songa o‘giruvchi funksiya",
+     ["Faqat matnga o‘giradi", "Faqat list", "Faqat None"], 4),
+    ("float() funksiya", "Sonni yoki matnni kasr songa o‘giruvchi funksiya",
+     ["Faqat butun songa", "Faqat matn", "Faqat list"], 4),
+    ("str() funksiya", "Boshqa turdagi qiymatni matnga o‘giruvchi funksiya",
+     ["Faqat songa", "Faqat list", "Faqat None"], 4),
+    ("Operator +", "Sonlarni qo‘shish, matnlarni biriktirish operatori",
+     ["Faqat son", "Faqat ayirish", "Faqat ko‘paytirish"], 5),
+    ("Operator -", "Ayirish operatori",
+     ["Qo‘shish", "Ko‘paytirish", "Bo‘lish"], 5),
+    ("Operator *", "Sonlarni ko‘paytirish; matnni N marta takrorlash",
+     ["Faqat qo‘shish", "Faqat bo‘lish", "Faqat ayirish"], 5),
+    ("Operator /", "Bo‘lish operatori (kasrli natija)",
+     ["Butun bo‘lish", "Modul", "Daraja"], 5),
+    ("Operator //", "Butun bo‘linmasi operatori",
+     ["Oddiy bo‘lish", "Modul", "Ko‘paytirish"], 5),
+    ("Operator %", "Modul (qoldiq) operatori",
+     ["Butun bo‘lish", "Ko‘paytirish", "Daraja"], 5),
+    ("Operator **", "Daraja olish operatori (a**b = a^b)",
+     ["Modul", "Bo‘lish", "Ko‘paytirish"], 5),
+    ("PEMDAS / amallar tartibi", "()→**→*,/,//,%→+,-",
+     ["Hammasi chapdan o‘ngga", "Faqat + va -", "Faqat **"], 5),
+    ("F-string (f\"...\")", "O‘zgaruvchilarni matn ichiga {} bilan qo‘shish usuli",
+     ["Faqat sodda matn", "Faqat son", "Faqat list"], 6),
+    ("\\n", "Yangi qator (newline) belgisi",
+     ["Tab", "Faqat probel", "Faqat nuqta"], 6),
+    ("\\t", "Tabulyatsiya belgisi",
+     ["Yangi qator", "Faqat probel", "Faqat nuqta"], 6),
+    ("Indentation (chekinish)", "Pythonda blok ichidagi qatorlarni 4 probel bilan chekintirish",
+     ["Faqat ranglash", "Faqat saqlash", "Faqat sharh"], 1),
+    ("Identifier (nom)", "O‘zgaruvchi yoki funksiya uchun belgilangan nom",
+     ["Faqat string", "Faqat son", "Faqat None"], 3),
+    ("Reserved keyword", "Pythonda zaxiralangan so‘z (if, for, while...) — nom sifatida ishlatib bo‘lmaydi",
+     ["Oddiy o‘zgaruvchi", "Faqat funksiya", "Faqat sharh"], 3),
+    ("None", "Bo‘sh qiymatni ifodalovchi maxsus turi",
+     ["Faqat 0", "Faqat False", "Faqat ''"], 4),
+    ("Boolean True/False", "Mantiqiy qiymatlar — birinchi harfi katta",
+     ["true/false (kichik)", "Faqat 0/1", "Faqat son"], 4),
+    ("int va str qo‘shilmaydi", "Pythonda int + str → TypeError",
+     ["Avtomatik o‘giradi", "Hech narsa qilmaydi", "Faqat ogohlantirish"], 4),
+    ("Casting (tip o‘girish)", "Bir turdan boshqa turga o‘girish (int(), str(), float())",
+     ["Faqat saqlash", "Faqat sharh", "Faqat list"], 4),
+    ("end='' (printda)", "print() ning oxiriga belgi qo‘ymaslik parametri",
+     ["Faqat saqlash", "Faqat sharh", "Faqat ranglash"], 6),
+    ("sep=' ' (printda)", "Bir nechta argumentlar orasidagi ajratuvchi belgini sozlash",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat sharh"], 6),
+    ("Truthy/Falsy", "0, '', None, [] — Falsy; qolganlari Truthy",
+     ["Hammasi True", "Hammasi False", "Faqat int qaraydi"], 4),
+]
+
+
+def _py7_q1_pool() -> list[QItem]:
+    pool: list[QItem] = []
+    for c, d, w, l in PY_7_Q1_CONCEPTS:
+        pool += _conceptual(c, d, w, lesson=l)
+
+    def t_print_int():
+        v = random.randint(-99, 999)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nx = {v}\nprint(x)\n```",
+                     answer=str(v), wrongs=[str(v + 1), str(v - 1), "Xatolik"],
+                     difficulty=1, lesson=3)
+
+    def t_arith_eval():
+        a = random.randint(2, 30); b = random.randint(2, 9)
+        op = random.choice(["+", "-", "*"])
+        ans = a + b if op == "+" else (a - b if op == "-" else a * b)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nprint({a} {op} {b})\n```",
+                     answer=str(ans), wrongs=[str(ans + 1), str(ans - 1), str(a)],
+                     difficulty=1, lesson=5)
+
+    def t_floor_mod():
+        a = random.randint(15, 80); b = random.randint(2, 9)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nprint({a} // {b}, {a} % {b})\n```",
+                     answer=f"{a // b} {a % b}",
+                     wrongs=[f"{a / b} {a % b}", f"{a % b} {a // b}", "Xatolik"],
+                     difficulty=2, lesson=5)
+
+    def t_power():
+        a = random.randint(2, 6); b = random.randint(2, 5)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nprint({a} ** {b})\n```",
+                     answer=str(a ** b),
+                     wrongs=[str(a * b), str(a + b), str(a ** (b - 1))],
+                     difficulty=2, lesson=5)
+
+    def t_type():
+        cases = [
+            ("'salom'", "<class 'str'>", ["<class 'int'>", "<class 'float'>", "<class 'bool'>"]),
+            ("42", "<class 'int'>", ["<class 'str'>", "<class 'float'>", "<class 'bool'>"]),
+            ("3.14", "<class 'float'>", ["<class 'int'>", "<class 'str'>", "<class 'bool'>"]),
+            ("True", "<class 'bool'>", ["<class 'int'>", "<class 'str'>", "<class 'float'>"]),
+            ("'123'", "<class 'str'>", ["<class 'int'>", "<class 'float'>", "<class 'bool'>"]),
+        ]
+        v, ans, wrongs = random.choice(cases)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nx = {v}\nprint(type(x))\n```",
+                     answer=ans, wrongs=list(wrongs), difficulty=2, lesson=4)
+
+    def t_str_concat():
+        a = random.choice(["Sa", "Pyt", "ma", "ko", "in"])
+        b = random.choice(["lom", "hon", "ktab", "mp", "ter"])
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nprint('{a}' + '{b}')\n```",
+                     answer=f"{a}{b}",
+                     wrongs=[f"{b}{a}", f"{a} {b}", "Xatolik"],
+                     difficulty=2, lesson=5)
+
+    def t_str_repeat():
+        s = random.choice(["ab", "py", "no", "yo"])
+        n = random.randint(2, 5)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nprint('{s}' * {n})\n```",
+                     answer=s * n,
+                     wrongs=[s, str(n) + s, "Xatolik"],
+                     difficulty=2, lesson=5)
+
+    def t_int_str_err():
+        a = random.randint(1, 20); b = random.randint(1, 20)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nx = {a}\ny = '{b}'\nprint(x + y)\n```",
+                     answer="TypeError (int va str qo‘shilmaydi)",
+                     wrongs=[str(a + b), f"{a}{b}", "0"],
+                     difficulty=3, lesson=4)
+
+    def t_cast():
+        v = random.randint(1, 99)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nprint(int('{v}') + 1)\n```",
+                     answer=str(v + 1),
+                     wrongs=[str(v), f"{v}1", "Xatolik"],
+                     difficulty=2, lesson=4)
+
+    def t_fstring():
+        name = random.choice(["Ali", "Olim", "Sardor"])
+        age = random.randint(10, 16)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nname = '{name}'\nage = {age}\nprint(f'{{name}}-{{age}}')\n```",
+                     answer=f"{name}-{age}",
+                     wrongs=[f"{name} {age}", f"{name}+{age}", "Xatolik"],
+                     difficulty=2, lesson=6)
+
+    pool += _capped(t_print_int)
+    pool += _capped(t_arith_eval)
+    pool += _capped(t_floor_mod)
+    pool += _capped(t_power)
+    pool += _capped(t_type)
+    pool += _capped(t_str_concat)
+    pool += _capped(t_str_repeat)
+    pool += _capped(t_int_str_err)
+    pool += _capped(t_cast)
+    pool += _capped(t_fstring)
+
+    discrete = [
+        QItem("Pythonda ekranga matn chiqarish uchun qaysi funksiya?", "print()",
+              ["input()", "echo()", "show()"], 1, 2, ),
+        QItem("Pythonda foydalanuvchidan kiritish olish uchun qaysi funksiya?", "input()",
+              ["print()", "read()", "type()"], 1, 2),
+        QItem("Pythonda sharh (comment) qaysi belgi bilan boshlanadi?", "# (panja)",
+              ["//", "/*", ";"], 1, 2),
+        QItem("Pythonda 5/2 ifoda natijasi qanday turda bo‘ladi?", "float (2.5)",
+              ["int (2)", "str ('2.5')", "bool"], 2, 4),
+        QItem("Pythonda 5//2 ifoda natijasi qanday tur va qiymat?", "int va 2",
+              ["float va 2.5", "str va '2'", "bool va True"], 2, 5),
+        QItem("Pythonda True + 1 ifoda natijasi nima?", "2",
+              ["1", "TypeError", "True"], 3, 4),
+        QItem("Pythonda 0 ning bool turdagi qiymati nima?", "False",
+              ["True", "None", "Xatolik"], 2, 4),
+        QItem("Pythonda bo‘sh string '' ning bool qiymati nima?", "False",
+              ["True", "None", "Xatolik"], 2, 4),
+        QItem("input() funksiya qanday tur qaytaradi?", "str (matn)",
+              ["int", "float", "bool"], 2, 2),
+        QItem("Pythonda o‘zgaruvchi nomi 1abc bo‘lishi mumkinmi?", "Yo‘q — son bilan boshlanmaydi",
+              ["Ha — har qanday nom bo‘ladi", "Faqat _1abc bo‘ladi", "Faqat katta harf bilan"], 2, 3),
+        QItem("Pythonda 2**10 nima beradi?", "1024",
+              ["20", "100", "Xatolik"], 2, 5),
+        QItem("Pythonda type(3.0) natijasi qaysi?", "<class 'float'>",
+              ["<class 'int'>", "<class 'str'>", "<class 'bool'>"], 1, 4),
+        QItem("Pythonda print('a', 'b') natijasi nima (default sep)?", "a b",
+              ["ab", "a,b", "Xatolik"], 2, 6),
+        QItem("Pythonda print('a', end='') keyin print('b') chiqarsa natija qanday?",
+              "ab (yangi qatorga o‘tmaydi)",
+              ["a\\nb", "a b", "Xatolik"], 3, 6),
+        QItem("Pythonda x = 5; y = x; x = 10. y ning qiymati nima?", "5",
+              ["10", "None", "Xatolik"], 2, 3),
+        QItem("Pythonda True va False da harf qanday yoziladi?",
+              "Birinchi harf katta (T va F)",
+              ["Hamma harf katta", "Hamma harf kichik", "Faqat birinchi kichik"], 2, 4),
+        QItem("Pythonda blok ichidagi qatorlar qanday belgilanadi?",
+              "Indentatsiya (4 probel chekinish) bilan",
+              ["{ } qavslar bilan", ";; nuqta-vergullar bilan", "Faqat sharh"], 3, 1),
+        QItem("Pythonda satr oxiriga ; (nuqta-vergul) qo‘yish kerakmi?",
+              "Yo‘q — kerak emas",
+              ["Ha — har doim", "Faqat shartda", "Faqat funksiyada"], 2, 1),
+        QItem("Pythonda 'apple' < 'banana' ifoda natijasi nima?",
+              "True (alfavit bo‘yicha)",
+              ["False", "Xatolik", "None"], 3, 5),
+        QItem("Pythonda 'a' * 0 ifoda natijasi nima?", "''",
+              ["a", "Xatolik", "None"], 3, 5),
+    ]
+    pool += discrete
+    random.shuffle(pool)
+    return pool
+
+
+# ─── PYTHON — 7-sinf 2-chorak ────────────────────────────────────────────────
+# Mavzu: Stringlar — index, slicing, methods, type errors.
+
+PY_7_Q2_CONCEPTS = [
+    ("String (str)", "Tirnoqlar orasidagi belgilar ketma-ketligi",
+     ["Faqat son", "Faqat list", "Faqat tuple"], 1),
+    ("Index (indeks)", "Stringdagi har belgining tartib raqami (0 dan boshlanadi)",
+     ["1 dan boshlanadi", "Faqat manfiy", "Faqat oxirgi"], 2),
+    ("Manfiy indeks", "Oxirdan hisoblovchi indeks: -1 oxirgi belgi",
+     ["1 dan boshlanadi", "Faqat 0 bo‘ladi", "Hech qachon ishlamaydi"], 2),
+    ("len()", "String yoki listning uzunligini topish funksiyasi",
+     ["Faqat son qiymati", "Faqat tip", "Faqat indeks"], 1),
+    ("Slicing s[a:b]", "a dan b gacha (b kirmaydi) bo‘lakni olish",
+     ["Faqat birinchi belgi", "Faqat oxirgi belgi", "Hech qachon ishlamaydi"], 3),
+    ("Slicing s[a:b:c]", "a dan b gacha c qadam bilan olish",
+     ["Faqat oxirgi", "Hech qachon ishlamaydi", "Faqat butun string"], 3),
+    ("s[::-1]", "Stringni teskariga o‘girish",
+     ["Faqat o‘zgartirmaydi", "Xatolik beradi", "Faqat oxirgi belgi"], 3),
+    (".upper()", "Stringni katta harflarga o‘girish metodi",
+     ["Kichikka o‘girish", "Probel olib tashlash", "Faqat sanash"], 4),
+    (".lower()", "Stringni kichik harflarga o‘girish",
+     ["Kattaga o‘girish", "Probel olib tashlash", "Sanash"], 4),
+    (".title()", "Har so‘zning birinchi harfini katta qilish",
+     ["Hammasini kichik", "Hammasini katta", "Probel olib tashlash"], 4),
+    (".capitalize()", "Faqat birinchi harfni katta, qolganini kichik qilish",
+     ["Hammasini katta", "Hammasini kichik", "Faqat probel olib tashlash"], 4),
+    (".strip()", "Stringning ikki tomonidagi probelni olib tashlash",
+     ["Faqat chap probel", "Faqat o‘ng probel", "Probelni qo‘shadi"], 4),
+    (".lstrip()", "Stringning chap tomonidagi probelni olib tashlash",
+     ["Faqat o‘ng", "Faqat o‘rtadan", "Probelni qo‘shadi"], 4),
+    (".rstrip()", "Stringning o‘ng tomonidagi probelni olib tashlash",
+     ["Faqat chap", "Faqat o‘rtadan", "Probelni qo‘shadi"], 4),
+    (".replace(a,b)", "String ichidagi a ni b ga almashtirish",
+     ["Faqat sanash", "Faqat o‘chirish", "Faqat saqlash"], 4),
+    (".find(a)", "String ichidan a ning birinchi indeksini topish (yo‘q bo‘lsa -1)",
+     ["Faqat sanash", "Faqat o‘chirish", "Faqat saqlash"], 4),
+    (".count(a)", "String ichidagi a ning sonini topish",
+     ["Faqat o‘chirish", "Faqat o‘girish", "Faqat saqlash"], 4),
+    (".split()", "Stringni probel yoki belgi bo‘yicha listga ajratish",
+     ["Faqat o‘girish", "Faqat birikish", "Faqat saqlash"], 4),
+    (".split(',')", "Stringni vergul bo‘yicha bo‘lib listga ajratish",
+     ["Faqat probel bo‘yicha", "Faqat o‘chirish", "Faqat birikish"], 4),
+    (".join(list)", "Listdagi stringlarni ajratuvchi bilan birlashtirish",
+     ["Faqat ajratish", "Faqat sanash", "Faqat saqlash"], 4),
+    (".startswith(a)", "Stringning a bilan boshlanishini tekshirish (True/False)",
+     ["Faqat oxirini tekshirish", "Faqat o‘rtadan", "Faqat saqlash"], 5),
+    (".endswith(a)", "Stringning a bilan tugashini tekshirish",
+     ["Faqat boshlanishini", "Faqat o‘rtadan", "Faqat saqlash"], 5),
+    (".isdigit()", "Stringdagi barcha belgilar raqam ekanligini tekshirish",
+     ["Faqat harflarni tekshirish", "Faqat probelni", "Faqat saqlash"], 5),
+    (".isalpha()", "Stringdagi barcha belgilar harf ekanligini tekshirish",
+     ["Faqat raqamlarni", "Faqat probelni", "Faqat saqlash"], 5),
+    (".isalnum()", "Stringdagi belgilar harf yoki raqam ekanligini tekshirish",
+     ["Faqat probelni", "Faqat raqamlarni", "Faqat saqlash"], 5),
+    ("in operator", "Belgi yoki bo‘lak string ichida bormi (True/False)",
+     ["Faqat saqlash", "Faqat o‘chirish", "Faqat o‘girish"], 5),
+    ("\"escape \\'\"", "String ichida tirnoq yozish uchun teskari slesh",
+     ["Faqat probel", "Faqat oxirgi belgi", "Faqat saqlash"], 6),
+    ("Multi-line string \"\"\"...\"\"\"", "Bir necha qatorli stringni yozish usuli",
+     ["Faqat bitta qator", "Faqat probel", "Faqat saqlash"], 6),
+    ("String + String", "Birlashtirish (concatenation)",
+     ["Faqat ko‘paytirish", "Faqat ayirish", "Faqat saqlash"], 5),
+    ("String * N", "Stringni N marta takrorlash",
+     ["Faqat birikish", "Faqat ajratish", "Faqat saqlash"], 5),
+    ("TypeError", "Tipi mos kelmaydigan amal — masalan int + str",
+     ["Faqat sintaksis", "Faqat bo‘lish nolga", "Faqat saqlash"], 6),
+    ("ValueError", "Qiymat noto‘g‘ri — masalan int('abc')",
+     ["Faqat sintaksis", "Faqat tip", "Faqat saqlash"], 6),
+    ("IndexError", "Mavjud bo‘lmagan indeksga murojaat",
+     ["Faqat tip xatosi", "Faqat sintaksis", "Faqat saqlash"], 6),
+    ("Immutable string", "Stringning belgilari o‘zgartirib bo‘lmasligi",
+     ["String mutable", "Faqat list mutable", "Faqat saqlash"], 7),
+    ("Char access s[i]", "i-indeksdagi belgini olish",
+     ["Faqat butun string", "Faqat birinchi", "Faqat oxirgi"], 2),
+    ("Negative slicing s[-3:]", "Oxirgi 3 ta belgini olish",
+     ["Birinchi 3 ta belgi", "Faqat o‘rtasi", "Faqat oxirgisi"], 3),
+    ("s[:n]", "Stringning birinchi n ta belgisini olish",
+     ["Oxirgi n ta", "Faqat oxirgi belgi", "Faqat birinchi belgi"], 3),
+    ("s[n:]", "n-indeksdan oxirigacha bo‘lakni olish",
+     ["Boshidan n gacha", "Faqat n-belgi", "Faqat oxirgi belgi"], 3),
+    ("Comparison stringga", "Alfavit (lex) tartibida solishtirish",
+     ["Faqat uzunligi bo‘yicha", "Hech qachon", "Faqat raqam bo‘yicha"], 5),
+    (".replace 3 argument", ".replace(a,b,c) — eng ko‘pi bilan c marta almashtirish",
+     ["Faqat 1 marta", "Faqat 2 marta", "Faqat saqlash"], 4),
+]
+
+
+def _py7_q2_pool() -> list[QItem]:
+    pool: list[QItem] = []
+    for c, d, w, l in PY_7_Q2_CONCEPTS:
+        pool += _conceptual(c, d, w, lesson=l)
+
+    words = ["python", "dasturlash", "Algoritm", "Kompyuter", "JahonSchool", "maktab"]
+
+    def t_index_pos():
+        s = random.choice(words)
+        i = random.randint(0, len(s) - 1)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ns = '{s}'\nprint(s[{i}])\n```",
+                     answer=s[i],
+                     wrongs=[s[0], s[-1], "Xatolik"],
+                     difficulty=2, lesson=2)
+
+    def t_index_neg():
+        s = random.choice(words)
+        i = random.randint(1, min(len(s), 4))
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ns = '{s}'\nprint(s[-{i}])\n```",
+                     answer=s[-i],
+                     wrongs=[s[0], s[i - 1], "Xatolik"],
+                     difficulty=3, lesson=2)
+
+    def t_slice():
+        s = random.choice(words)
+        a = random.randint(0, max(0, len(s) - 3))
+        b = random.randint(a + 2, len(s))
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ns = '{s}'\nprint(s[{a}:{b}])\n```",
+                     answer=s[a:b],
+                     wrongs=[s[a:b - 1], s[a + 1:b], "Xatolik"],
+                     difficulty=2, lesson=3)
+
+    def t_slice_step():
+        s = random.choice(words)
+        a = random.randint(0, max(0, len(s) - 4))
+        b = random.randint(a + 3, len(s))
+        step = random.choice([2, 3])
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ns = '{s}'\nprint(s[{a}:{b}:{step}])\n```",
+                     answer=s[a:b:step],
+                     wrongs=[s[a:b], s[::-1], "Xatolik"],
+                     difficulty=3, lesson=3)
+
+    def t_reverse():
+        s = random.choice(words)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ns = '{s}'\nprint(s[::-1])\n```",
+                     answer=s[::-1],
+                     wrongs=[s, s.upper(), "Xatolik"],
+                     difficulty=3, lesson=3)
+
+    def t_methods():
+        cases = [
+            ("'hello'.upper()", "HELLO", ["hello", "Hello", "Xatolik"]),
+            ("'WORLD'.lower()", "world", ["WORLD", "World", "Xatolik"]),
+            ("'  hi  '.strip()", "hi", ["  hi  ", "hi  ", "  hi"]),
+            ("'python'.title()", "Python", ["PYTHON", "python", "Xatolik"]),
+            ("'jahonschool'.capitalize()", "Jahonschool",
+             ["jahonschool", "JAHONSCHOOL", "JahonSchool"]),
+            ("'aabbcc'.count('a')", "2", ["1", "0", "Xatolik"]),
+            ("'apple'.find('p')", "1", ["0", "2", "Xatolik"]),
+            ("'apple'.replace('p','b')", "abble", ["apple", "appleb", "Xatolik"]),
+        ]
+        c, ans, wrongs = random.choice(cases)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nprint({c})\n```",
+                     answer=ans, wrongs=list(wrongs), difficulty=2, lesson=4)
+
+    def t_split():
+        cases = [
+            ("'a,b,c'.split(',')", "['a', 'b', 'c']"),
+            ("'1 2 3'.split()", "['1', '2', '3']"),
+            ("'x-y-z'.split('-')", "['x', 'y', 'z']"),
+        ]
+        c, ans = random.choice(cases)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nprint({c})\n```",
+                     answer=ans,
+                     wrongs=[ans.replace("'", '"'), "['a,b,c']", "Xatolik"],
+                     difficulty=2, lesson=4)
+
+    def t_join():
+        cases = [
+            ("'-'.join(['a','b','c'])", "a-b-c"),
+            ("' '.join(['Bir','ikki','uch'])", "Bir ikki uch"),
+            ("''.join(['p','y','t'])", "pyt"),
+        ]
+        c, ans = random.choice(cases)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nprint({c})\n```",
+                     answer=ans,
+                     wrongs=[ans + "?", "['a','b','c']", "Xatolik"],
+                     difficulty=3, lesson=4)
+
+    def t_in_check():
+        s = random.choice(["python", "maktab", "kompyuter", "dasturlash"])
+        ch = random.choice(list(set(s)) + ["x", "z", "q"])
+        ans = "True" if ch in s else "False"
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nprint('{ch}' in '{s}')\n```",
+                     answer=ans, wrongs=["True" if ans == "False" else "False",
+                                         "0", "Xatolik"],
+                     difficulty=2, lesson=5)
+
+    def t_len_str():
+        s = random.choice(words)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nprint(len('{s}'))\n```",
+                     answer=str(len(s)),
+                     wrongs=[str(len(s) + 1), str(len(s) - 1), "Xatolik"],
+                     difficulty=1, lesson=1)
+
+    pool += _capped(t_index_pos)
+    pool += _capped(t_index_neg)
+    pool += _capped(t_slice)
+    pool += _capped(t_slice_step)
+    pool += _capped(t_reverse)
+    pool += _capped(t_methods)
+    pool += _capped(t_split)
+    pool += _capped(t_join)
+    pool += _capped(t_in_check)
+    pool += _capped(t_len_str)
+
+    discrete = [
+        QItem("Pythonda string mutablemi (o‘zgartirib bo‘ladimi)?",
+              "Yo‘q — immutable",
+              ["Ha — mutable", "Faqat ba'zi versiyalarda", "Faqat list ichida"], 3, 7),
+        QItem("Pythonda string ichidagi belgini index orqali o‘zgartirish mumkinmi?",
+              "Yo‘q — immutable",
+              ["Ha", "Faqat birinchi belgini", "Faqat oxirgi belgini"], 3, 7),
+        QItem("Pythonda 'abc'[3] qaysi xatolikni beradi?", "IndexError",
+              ["TypeError", "ValueError", "Hech qanday xatolik"], 2, 6),
+        QItem("Pythonda int('python') qaysi xatolikni beradi?", "ValueError",
+              ["TypeError", "IndexError", "SyntaxError"], 2, 6),
+        QItem("Pythonda 5 + '3' qaysi xatolikni beradi?", "TypeError",
+              ["ValueError", "IndexError", "SyntaxError"], 2, 6),
+        QItem("Pythonda string ni songa o‘girish uchun?", "int(s) yoki float(s)",
+              ["str(s)", ".upper()", ".strip()"], 2, 4),
+        QItem("Pythonda 'Hello'.lower() natijasi qaysi turda bo‘ladi?", "str (string)",
+              ["int", "list", "bool"], 1, 4),
+        QItem("Pythonda 'abc' < 'abd' ifoda natijasi nima?", "True (alifbo bo‘yicha)",
+              ["False", "Xatolik", "None"], 3, 5),
+        QItem("Pythonda f-string qachon ishlatiladi?",
+              "Stringga o‘zgaruvchi qiymatini qo‘shish kerak bo‘lganda",
+              ["Faqat sonlar uchun", "Faqat list uchun", "Faqat saqlash uchun"], 2, 6),
+        QItem("Pythonda 'a' * -1 ifoda natijasi nima?", "''",
+              ["a", "Xatolik", "None"], 3, 5),
+        QItem("Pythonda 'abc'.find('z') natijasi nima?", "-1 (yo‘q ekanligi)",
+              ["0", "None", "Xatolik"], 3, 4),
+        QItem("Pythonda boshqarmasdan probelni olish uchun qaysi metod?",
+              ".strip()",
+              [".replace()", ".upper()", ".split()"], 1, 4),
+        QItem("Pythonda 'abc'.replace('a', '') natijasi nima?", "bc",
+              ["abc", "''", "Xatolik"], 2, 4),
+        QItem("Pythonda 'a,b,c'.split(',')[1] natijasi nima?", "b",
+              ["a", "c", "Xatolik"], 3, 4),
+        QItem("Pythonda len('') natijasi nima?", "0",
+              ["1", "None", "Xatolik"], 1, 1),
+        QItem("Pythonda 'abc'.startswith('a') natijasi nima?", "True",
+              ["False", "1", "Xatolik"], 1, 5),
+        QItem("Pythonda 'abc'.endswith('z') natijasi nima?", "False",
+              ["True", "0", "Xatolik"], 1, 5),
+        QItem("Pythonda '123'.isdigit() natijasi nima?", "True",
+              ["False", "1", "Xatolik"], 2, 5),
+        QItem("Pythonda 'abc1'.isalpha() natijasi nima?", "False",
+              ["True", "1", "Xatolik"], 3, 5),
+        QItem("Pythonda 'abc123'.isalnum() natijasi nima?", "True",
+              ["False", "0", "Xatolik"], 3, 5),
+    ]
+    pool += discrete
+    random.shuffle(pool)
+    return pool
+
+
+# ─── PYTHON — 7-sinf 3-chorak ────────────────────────────────────────────────
+# Mavzu: if/elif/else, mantiq, for/while, break/continue, list asoslari.
+
+PY_7_Q3_CONCEPTS = [
+    ("if operatori", "Shartni tekshirib, TRUE bo‘lsa kod blokini bajarish",
+     ["Faqat takror", "Faqat saqlash", "Faqat o‘zgaruvchi"], 1),
+    ("elif", "Bir nechta shartni ketma-ket tekshirish (else if)",
+     ["Faqat oxirgi tarmoq", "Faqat takror", "Faqat saqlash"], 1),
+    ("else", "Yuqoridagi shartlarning hech biri TRUE bo‘lmasa bajariluvchi blok",
+     ["Bosh shart", "Sikl boshlanishi", "Faqat funksiya"], 1),
+    ("Comparison ==", "Tenglikni solishtirish operatori",
+     ["Qiymat berish", "Faqat ko‘paytirish", "Faqat saqlash"], 2),
+    ("Comparison !=", "Teng emaslik operatori",
+     ["Tenglik", "Faqat ko‘paytirish", "Faqat saqlash"], 2),
+    ("Comparison < <= > >=", "Solishtirish operatorlari",
+     ["Faqat tenglik", "Faqat ko‘paytirish", "Faqat saqlash"], 2),
+    ("and", "Mantiqiy 'va' — ikkala TRUE bo‘lsa TRUE",
+     ["Faqat OR", "Faqat NOT", "Faqat IF"], 3),
+    ("or", "Mantiqiy 'yoki' — birortasi TRUE bo‘lsa TRUE",
+     ["Faqat AND", "Faqat NOT", "Faqat IF"], 3),
+    ("not", "Mantiqiy inkor — TRUE/FALSE ni teskariga o‘giradi",
+     ["Faqat AND", "Faqat OR", "Faqat IF"], 3),
+    ("in operator (mantiq)", "Element ichida bormi — True/False qaytaradi",
+     ["Faqat saqlash", "Faqat ayirish", "Faqat o‘chirish"], 3),
+    ("for sikli", "Diapazon yoki kolleksiyadagi har element uchun takrorlash",
+     ["Faqat shart", "Faqat saqlash", "Faqat funksiya"], 4),
+    ("while sikli", "Shart TRUE bo‘lgancha takrorlash",
+     ["Faqat for", "Faqat shart", "Faqat funksiya"], 4),
+    ("range(n)", "0 dan n-1 gacha sonlar ketma-ketligi",
+     ["1 dan n gacha", "Faqat n", "Faqat 0"], 4),
+    ("range(a,b)", "a dan b-1 gacha sonlar",
+     ["a dan b gacha (b kirgan)", "Faqat b", "Faqat a"], 4),
+    ("range(a,b,c)", "a dan b gacha c qadam bilan",
+     ["Faqat birinchi qiymat", "Faqat oxirgi qiymat", "Faqat saqlash"], 4),
+    ("break", "Sikldan oldindan chiqib ketish operatori",
+     ["Davom etish", "Saqlash", "Yopish"], 5),
+    ("continue", "Joriy iteratsiyani o‘tkazib yuborib keyingisiga o‘tish",
+     ["Sikldan chiqish", "Saqlash", "Faqat ranglar"], 5),
+    ("else (sikl bilan)", "Sikl break siz tugagach bajariluvchi blok",
+     ["Faqat shart", "Faqat funksiya", "Faqat saqlash"], 5),
+    ("List (ro‘yxat)", "Tartiblangan, o‘zgaruvchan element to‘plami []",
+     ["Faqat son", "Faqat string", "Faqat tuple"], 6),
+    ("Bo‘sh list []", "Hech qanday element bo‘lmagan list",
+     ["[None]", "[0]", "['']"], 6),
+    ("List indeks L[i]", "Listdagi i-elementni olish (0 dan boshlanadi)",
+     ["1 dan boshlanadi", "Faqat oxirgi", "Faqat birinchi"], 6),
+    ("L[-1]", "Listning oxirgi elementi",
+     ["Birinchi element", "Xatolik", "Hech narsa"], 6),
+    (".append(x)", "List oxiriga element qo‘shish",
+     ["Faqat o‘chirish", "Faqat saralash", "Faqat saqlash"], 6),
+    (".pop()", "List oxiridan element olib tashlash va qaytarish",
+     ["Faqat append", "Faqat saqlash", "Faqat saralash"], 6),
+    (".remove(x)", "Listdan birinchi uchragan x ni olib tashlash",
+     ["Faqat indeksdan", "Faqat oxirgisini", "Faqat saqlash"], 6),
+    ("len(L)", "Listdagi elementlar soni",
+     ["Faqat birinchisi", "Faqat oxirgisi", "Faqat saqlash"], 6),
+    ("List slicing L[a:b]", "Listdan bo‘lakni kesib olish (yangi list)",
+     ["Faqat birinchi", "Faqat oxirgi", "Faqat saqlash"], 6),
+    ("sum(L)", "Listdagi sonlar yig‘indisi",
+     ["Faqat o‘rtacha", "Faqat MAX", "Faqat MIN"], 7),
+    ("max(L)", "Listdagi eng katta qiymat",
+     ["Faqat MIN", "Faqat sum", "Faqat saqlash"], 7),
+    ("min(L)", "Listdagi eng kichik qiymat",
+     ["Faqat MAX", "Faqat sum", "Faqat saqlash"], 7),
+    ("List + List", "Ikki listni birlashtirish (yangi list)",
+     ["Faqat ko‘paytirish", "Faqat ayirish", "Faqat saqlash"], 6),
+    ("List * N", "Listni N marta takrorlash",
+     ["Faqat ayirish", "Faqat saqlash", "Faqat o‘chirish"], 6),
+    ("List of strings", "Stringlar saqlanadigan list",
+     ["Faqat sonlar list", "Faqat list ichida list", "Faqat saqlash"], 6),
+    ("Mixed list", "Turli tipdagi qiymatlardan iborat list",
+     ["Faqat bir tip", "Faqat son", "Faqat saqlash"], 6),
+    ("Mutable list", "Listni o‘zgartirib bo‘ladi (string emas)",
+     ["Immutable", "Faqat o‘qish", "Faqat saqlash"], 7),
+    ("if x in L", "Element listda bormi tekshirish",
+     ["Faqat saqlash", "Faqat o‘chirish", "Faqat ayirish"], 7),
+    ("Equal lists ==", "Ikki list element-elementga teng bo‘lsa TRUE",
+     ["Doim TRUE", "Doim FALSE", "Faqat uzunligi tekshiriladi"], 7),
+    ("Sequential search", "Listni ketma-ket tekshirib elementni qidirish",
+     ["Faqat binar", "Faqat saqlash", "Faqat sortlash"], 7),
+    ("Counter cnt += 1", "Cnt o‘zgaruvchisini birga oshirish",
+     ["1 ga kamaytirish", "Saqlash", "Yopish"], 5),
+    ("Accumulator s += x", "S o‘zgaruvchisiga x ni qo‘shib yangilash",
+     ["Almashtirish", "Saqlash", "Faqat o‘chirish"], 5),
+]
+
+
+def _py7_q3_pool() -> list[QItem]:
+    pool: list[QItem] = []
+    for c, d, w, l in PY_7_Q3_CONCEPTS:
+        pool += _conceptual(c, d, w, lesson=l)
+
+    def t_if_3way():
+        x = random.randint(-30, 30); y = random.randint(-30, 30)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nx = {x}\ny = {y}\nif x > y:\n    print('A')\nelif x == y:\n    print('B')\nelse:\n    print('C')\n```",
+                     answer="A" if x > y else ("B" if x == y else "C"),
+                     wrongs=["A", "B", "C"], difficulty=2, lesson=1)
+
+    def t_and_or():
+        a = random.randint(0, 1); b = random.randint(0, 1)
+        bool_a = bool(a); bool_b = bool(b)
+        op = random.choice(["and", "or"])
+        ans = bool_a and bool_b if op == "and" else bool_a or bool_b
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nprint({bool_a} {op} {bool_b})\n```",
+                     answer=str(ans),
+                     wrongs=[str(not ans), "None", "Xatolik"],
+                     difficulty=2, lesson=3)
+
+    def t_for_sum():
+        n = random.randint(5, 20)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ns = 0\nfor i in range(1, {n + 1}):\n    s += i\nprint(s)\n```",
+                     answer=str(sum(range(1, n + 1))),
+                     wrongs=[str(n), str(n + 1), "Xatolik"],
+                     difficulty=2, lesson=4)
+
+    def t_for_count_even():
+        n = random.randint(8, 25)
+        cnt = sum(1 for i in range(1, n + 1) if i % 2 == 0)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ncnt = 0\nfor i in range(1, {n + 1}):\n    if i % 2 == 0:\n        cnt += 1\nprint(cnt)\n```",
+                     answer=str(cnt),
+                     wrongs=[str(cnt + 1), str(cnt - 1 if cnt > 0 else 1), str(n)],
+                     difficulty=2, lesson=4)
+
+    def t_while_dec():
+        n = random.randint(5, 15)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nx = {n}\nwhile x > 0:\n    x -= 1\nprint(x)\n```",
+                     answer="0",
+                     wrongs=[str(n), str(n - 1), "Xatolik"],
+                     difficulty=2, lesson=4)
+
+    def t_break_loop():
+        n = random.randint(8, 20); stop = random.randint(2, n - 1)
+        s = sum(range(stop))
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ns = 0\nfor i in range({n}):\n    if i == {stop}:\n        break\n    s += i\nprint(s)\n```",
+                     answer=str(s),
+                     wrongs=[str(s + 1), str(stop), "Xatolik"],
+                     difficulty=3, lesson=5)
+
+    def t_continue_loop():
+        n = random.randint(6, 15); skip = random.randint(2, n - 1)
+        s = sum(i for i in range(n) if i != skip)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ns = 0\nfor i in range({n}):\n    if i == {skip}:\n        continue\n    s += i\nprint(s)\n```",
+                     answer=str(s),
+                     wrongs=[str(s + skip), str(skip), "Xatolik"],
+                     difficulty=3, lesson=5)
+
+    def t_list_index():
+        L = [random.randint(1, 30) for _ in range(5)]
+        i = random.randint(-5, 4)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nL = {L}\nprint(L[{i}])\n```",
+                     answer=str(L[i]),
+                     wrongs=[str(L[0]), str(len(L)), "Xatolik"],
+                     difficulty=2, lesson=6)
+
+    def t_list_append():
+        L = [random.randint(1, 20) for _ in range(4)]
+        v = random.randint(1, 30)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nL = {L}\nL.append({v})\nprint(L)\n```",
+                     answer=str(L + [v]),
+                     wrongs=[str(L), str([v] + L), "Xatolik"],
+                     difficulty=2, lesson=6)
+
+    def t_list_sum():
+        L = [random.randint(-5, 30) for _ in range(5)]
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nprint(sum({L}))\n```",
+                     answer=str(sum(L)),
+                     wrongs=[str(max(L)), str(min(L)), "Xatolik"],
+                     difficulty=1, lesson=7)
+
+    def t_list_max():
+        L = [random.randint(-30, 30) for _ in range(5)]
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nprint(max({L}))\n```",
+                     answer=str(max(L)),
+                     wrongs=[str(min(L)), str(sum(L)), "Xatolik"],
+                     difficulty=1, lesson=7)
+
+    def t_in_list():
+        L = [random.randint(1, 10) for _ in range(5)]
+        v = random.randint(1, 15)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nprint({v} in {L})\n```",
+                     answer="True" if v in L else "False",
+                     wrongs=["True" if v not in L else "False", "0", "Xatolik"],
+                     difficulty=2, lesson=7)
+
+    pool += _capped(t_if_3way)
+    pool += _capped(t_and_or)
+    pool += _capped(t_for_sum)
+    pool += _capped(t_for_count_even)
+    pool += _capped(t_while_dec)
+    pool += _capped(t_break_loop)
+    pool += _capped(t_continue_loop)
+    pool += _capped(t_list_index)
+    pool += _capped(t_list_append)
+    pool += _capped(t_list_sum)
+    pool += _capped(t_list_max)
+    pool += _capped(t_in_list)
+
+    discrete = [
+        QItem("Pythonda if-else qaysi turdagi algoritmga taalluqli?",
+              "Tarmoqlanuvchi (shartli)",
+              ["Chiziqli", "Faqat takror", "Faqat saqlash"], 2, 1),
+        QItem("Pythonda for sikli odatda qachon ishlatiladi?",
+              "Aniq sondagi takrorlash kerak bo‘lganda",
+              ["Faqat shart bo‘lganda", "Faqat ranglash uchun", "Faqat saqlash uchun"], 2, 4),
+        QItem("Pythonda while sikli qachon ishlatiladi?",
+              "Shart bajarilgancha takrorlash kerak bo‘lganda",
+              ["Faqat aniq son", "Faqat saqlash", "Faqat ranglash"], 2, 4),
+        QItem("Pythonda range(5) qaysi qiymatlarni qaytaradi?",
+              "0,1,2,3,4",
+              ["1,2,3,4,5", "0,1,2,3,4,5", "1,2,3,4"], 2, 4),
+        QItem("Pythonda range(2, 6) qaysi qiymatlarni qaytaradi?", "2,3,4,5",
+              ["2,3,4,5,6", "1,2,3,4,5", "Xatolik"], 2, 4),
+        QItem("Pythonda L = [1,2,3] bo‘lsa, len(L) nima qaytaradi?", "3",
+              ["2", "4", "Xatolik"], 1, 6),
+        QItem("Pythonda L.append(4) nima qiladi (L=[1,2,3])?", "L = [1,2,3,4] bo‘ladi",
+              ["L = [4,1,2,3]", "L = [1,2,4]", "Xatolik"], 1, 6),
+        QItem("Pythonda L = [1,2,3]; L[3] qaysi xatolikni beradi?", "IndexError",
+              ["TypeError", "ValueError", "Hech qanday"], 2, 6),
+        QItem("Pythonda 'and' va 'or' farqi nima?",
+              "and — ikkalasi TRUE bo‘lsa TRUE; or — bittasi yetarli",
+              ["Bir xil", "Faqat or qaytaradi", "Faqat and qaytaradi"], 2, 3),
+        QItem("Pythonda 'not True' natijasi nima?", "False",
+              ["True", "1", "Xatolik"], 1, 3),
+        QItem("Pythonda x = 5 if y > 0 else 0 — bu nima?",
+              "Conditional expression (ternary) — qisqa if-else",
+              ["Faqat sikl", "Faqat funksiya", "Faqat saqlash"], 3, 1),
+        QItem("Pythonda for i in range(0, 10, 2) qaysi qiymatlarni beradi?",
+              "0,2,4,6,8",
+              ["0,1,2,3,4,5,6,7,8,9", "1,3,5,7,9", "Xatolik"], 2, 4),
+        QItem("Pythonda break va continue farqi?",
+              "break — sikldan chiqadi; continue — keyingisiga o‘tadi",
+              ["Bir xil", "Faqat saqlash", "Faqat ranglash"], 2, 5),
+        QItem("Pythonda L = [1,2,3]; L.pop() natijasi nima?", "3 (oxirgi element)",
+              ["1", "[]", "Xatolik"], 2, 6),
+        QItem("Pythonda L = [1,2,3]; L.remove(2) keyin L nimaga teng?", "[1, 3]",
+              ["[1, 2]", "[2, 3]", "[1, 3, 2]"], 2, 6),
+        QItem("Pythonda L = [3,1,2]; L.sort() keyin L nimaga teng?", "[1, 2, 3]",
+              ["[3, 2, 1]", "[3, 1, 2]", "Xatolik"], 2, 7),
+        QItem("Pythonda L = [3,1,2]; sorted(L) qaysi qiymatni qaytaradi?", "[1, 2, 3]",
+              ["[3, 2, 1]", "[3, 1, 2]", "Xatolik"], 2, 7),
+        QItem("Pythonda for sikli ichida else qachon bajariladi?",
+              "Sikl break siz oxirigacha tugaganda",
+              ["Doim", "Hech qachon", "Faqat saqlash"], 3, 5),
+        QItem("Pythonda L = []; bool(L) natijasi nima?", "False",
+              ["True", "1", "Xatolik"], 2, 7),
+        QItem("Pythonda 'apple' in ['apple','banana'] natijasi nima?", "True",
+              ["False", "1", "Xatolik"], 1, 7),
+    ]
+    pool += discrete
+    random.shuffle(pool)
+    return pool
+
+
+# ─── PYTHON — 7-sinf 4-chorak ────────────────────────────────────────────────
+# Mavzu: Aralash takrorlash + amaliy: ATM, sodda qaror qabul qilish.
+
+PY_7_Q4_CONCEPTS = [
+    ("Foydalanuvchi interaktivligi", "input()/print() orqali muloqot qilish",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 1),
+    ("Validatsiya", "Kiritilgan ma'lumotni shartga muvofiqligini tekshirish",
+     ["Faqat saqlash", "Faqat o‘chirish", "Faqat ranglash"], 1),
+    ("ATM modeli", "Bankomat — balansni yechish va to‘ldirish jarayoni",
+     ["Faqat saqlash", "Faqat o‘chirish", "Faqat ranglash"], 1),
+    ("Yetarli mablag‘ sharti", "yechish > balans bo‘lsa rad etiladi",
+     ["Faqat saqlash", "Doim qabul qilinadi", "Hech qachon ruxsat berilmaydi"], 1),
+    ("Komissiya (fee)", "Bank xizmati uchun olinuvchi qo‘shimcha haq",
+     ["Faqat saqlash", "Faqat o‘chirish", "Faqat ranglash"], 2),
+    ("Min/Max chegara", "Kiritilgan qiymatni minimum va maksimumda cheklash",
+     ["Doim cheksiz", "Faqat saqlash", "Faqat o‘chirish"], 2),
+    ("PIN tekshiruvi", "Kiritilgan PIN to‘g‘ri-yo‘qligini tekshirish",
+     ["Faqat saqlash", "Faqat o‘chirish", "Faqat ranglash"], 2),
+    ("Multi-step menyu", "Bir nechta tanlovdan birini bajarish (kirish, yechish, balans)",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 3),
+    ("Loop bilan menyu", "Foydalanuvchi 'chiqish' tanlamaguncha menyu takrorlanadi",
+     ["Faqat bir marta", "Faqat saqlash", "Faqat ranglash"], 3),
+    ("Counter (urinishlar)", "Kiritish urinishlari sonini sanab borish",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 3),
+    ("Continue ishlatish", "Noto‘g‘ri kiritishda iteratsiyani o‘tkazib yuborish",
+     ["Faqat break", "Faqat saqlash", "Faqat ranglash"], 4),
+    ("Break ishlatish", "Foydalanuvchi 'chiqish' tanlasa sikldan chiqish",
+     ["Faqat continue", "Faqat saqlash", "Faqat ranglash"], 4),
+    ("Tarmoqlanish — odd/even", "Sonni juft yoki toq aniqlash",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 4),
+    ("Tarmoqlanish — yosh", "Yosh asosida qarorlar qabul qilish",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 4),
+    ("Tarmoqlanish — baho", "Baho oraliqlariga qarab xulosa berish",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 4),
+    ("Comprehension (oddiy)", "Listni qisqa shaklda yaratish",
+     ["Faqat oddiy sikl", "Faqat saqlash", "Faqat ranglash"], 5),
+    ("Pattern: hisoblagich", "for ichida cnt += 1 — element sanash",
+     ["Faqat o‘chirish", "Faqat saqlash", "Faqat ranglash"], 5),
+    ("Pattern: yig‘uvchi", "for ichida s += x — yig‘indi to‘plash",
+     ["Faqat o‘chirish", "Faqat saqlash", "Faqat ranglash"], 5),
+    ("Pattern: max/min topish", "for ichida solishtirib eng katta/kichik topish",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 5),
+    ("Pattern: shart bo‘yicha sanab", "if shart: cnt += 1",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 5),
+    ("List comp [x for x in L]", "Listdan element olib yangi list yaratish",
+     ["Faqat saqlash", "Faqat o‘chirish", "Faqat ranglash"], 5),
+    ("List comp [x*2 for x in L]", "Listdagi har elementni 2 ga ko‘paytirib yangi list yaratish",
+     ["Faqat saqlash", "Faqat o‘chirish", "Faqat ranglash"], 5),
+    ("List comp [x for x in L if c]", "Shartli list comprehension",
+     ["Faqat saqlash", "Faqat o‘chirish", "Faqat ranglash"], 5),
+    ("Bracket [] vs () vs {}", "List, tuple, dict/set turlarini ajratuvchi qavslar",
+     ["Faqat saqlash", "Hammasi bir xil", "Faqat o‘chirish"], 6),
+    ("Tuple", "O‘zgartirib bo‘lmaydigan tartiblangan to‘plam",
+     ["Mutable list", "Faqat saqlash", "Faqat ranglash"], 6),
+    ("Dict (lug‘at)", "Kalit-qiymat juftliklari to‘plami {k: v}",
+     ["Faqat son", "Faqat string", "Faqat list"], 6),
+    ("Set (to‘plam)", "Takrorlanmas elementlar to‘plami",
+     ["Tartiblangan", "Faqat string", "Faqat son"], 6),
+    ("Boolean kasting", "if x: — x truthy bo‘lsa bajariladi",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 4),
+    ("Random", "Tasodifiy son hosil qiluvchi modul (random)",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 7),
+    ("random.randint(a,b)", "a dan b gacha (b kirgan) tasodifiy butun son",
+     ["a dan b-1 gacha", "Faqat 0 va 1", "Faqat saqlash"], 7),
+    ("random.choice(L)", "Listdan tasodifiy element tanlash",
+     ["Faqat birinchi element", "Faqat oxirgi", "Faqat saqlash"], 7),
+    ("Try-Except (oddiy)", "Xatolarni qo‘lda qayta ishlash bloki",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 8),
+    ("ValueError ushlash", "int() ga noto‘g‘ri matn berilganda xatoni qayta ishlash",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 8),
+    ("ZeroDivisionError", "0 ga bo‘lishda yuzaga keladigan xatolik",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 8),
+    ("Code style — bo‘sh joy", "Operator atrofida probel qo‘yish odob",
+     ["Hech qachon kerak emas", "Faqat saqlash", "Faqat ranglash"], 9),
+    ("Code style — nom", "Tushunarli o‘zgaruvchi nomlari (snake_case)",
+     ["Faqat 1 harf", "Faqat raqamlar", "Faqat saqlash"], 9),
+    ("Code style — sharh", "Murakkab joylarda sharh qo‘shish odat",
+     ["Sharh kerak emas", "Faqat saqlash", "Faqat ranglash"], 9),
+    ("Modular dastur", "Kodni funksiyalarga bo‘lib yozish",
+     ["Bir butun bo‘lakka yozish", "Faqat saqlash", "Faqat ranglash"], 9),
+    ("Test qilish", "Dasturni turli kirish bilan sinab ko‘rish",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 9),
+    ("Refactoring", "Kodni qayta yozib tushunarli va samarali qilish",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 9),
+]
+
+
+def _py7_q4_pool() -> list[QItem]:
+    pool: list[QItem] = []
+    for c, d, w, l in PY_7_Q4_CONCEPTS:
+        pool += _conceptual(c, d, w, lesson=l)
+
+    def t_atm():
+        bal = random.randint(50, 500) * 1000
+        wd = random.randint(20, 600) * 1000
+        ans = "Yetarli emas" if wd > bal else str(bal - wd)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nbalans = {bal}\nyechish = {wd}\nif yechish > balans:\n    print('Yetarli emas')\nelse:\n    print(balans - yechish)\n```",
+                     answer=ans,
+                     wrongs=["0", str(bal), str(wd)],
+                     difficulty=3, lesson=1)
+
+    def t_atm_fee():
+        bal = random.randint(100, 800) * 1000
+        wd = random.randint(50, 750) * 1000
+        fee = random.choice([0, 1000, 2000, 5000])
+        if wd <= 0:
+            ans = "Xato"
+        elif wd + fee > bal:
+            ans = "Rad"
+        else:
+            ans = str(bal - wd - fee)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nbalans={bal}\nkomissiya={fee}\nyechish={wd}\nif yechish<=0:\n    print('Xato')\nelif yechish+komissiya>balans:\n    print('Rad')\nelse:\n    print(balans-yechish-komissiya)\n```",
+                     answer=ans, wrongs=["Rad", "Xato", str(bal)], difficulty=3, lesson=2)
+
+    def t_grade_letter():
+        b = random.randint(0, 100)
+        ans = "A" if b >= 90 else ("B" if b >= 75 else ("C" if b >= 60 else ("D" if b >= 40 else "F")))
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nb = {b}\nif b >= 90:\n    print('A')\nelif b >= 75:\n    print('B')\nelif b >= 60:\n    print('C')\nelif b >= 40:\n    print('D')\nelse:\n    print('F')\n```",
+                     answer=ans, wrongs=["A", "B", "F"], difficulty=2, lesson=4)
+
+    def t_loop_count_mod():
+        n = random.randint(20, 80); m = random.randint(2, 9)
+        cnt = sum(1 for i in range(n) if i % m == 0)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ncnt = 0\nfor i in range({n}):\n    if i % {m} == 0:\n        cnt += 1\nprint(cnt)\n```",
+                     answer=str(cnt),
+                     wrongs=[str(cnt + 1), str(n), str(m)],
+                     difficulty=2, lesson=5)
+
+    def t_list_filter():
+        L = [random.randint(-5, 30) for _ in range(7)]
+        ans = [x for x in L if x > 0]
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nprint([x for x in {L} if x > 0])\n```",
+                     answer=str(ans),
+                     wrongs=[str(L), "[]", "Xatolik"],
+                     difficulty=2, lesson=5)
+
+    def t_list_double():
+        L = [random.randint(1, 15) for _ in range(5)]
+        ans = [x * 2 for x in L]
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nprint([x*2 for x in {L}])\n```",
+                     answer=str(ans),
+                     wrongs=[str(L), str([x + 2 for x in L]), "Xatolik"],
+                     difficulty=2, lesson=5)
+
+    def t_str_upper_slice():
+        s = random.choice(["python", "dastur", "algoritm", "maktab"]) + str(random.randint(1, 99))
+        a = random.randint(0, 2); b = random.randint(a + 2, min(len(s), a + 6))
+        ans = s[a:b].upper()
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ns = '{s}'\nprint(s[{a}:{b}].upper())\n```",
+                     answer=ans,
+                     wrongs=[s.upper(), s[a:b], "Xatolik"],
+                     difficulty=2, lesson=5)
+
+    def t_nested_loop():
+        n = random.randint(2, 5); m = random.randint(2, 5)
+        c = sum(1 for i in range(n) for j in range(m) if (i + j) % 2 == 0)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nc = 0\nfor i in range({n}):\n    for j in range({m}):\n        if (i+j) % 2 == 0:\n            c += 1\nprint(c)\n```",
+                     answer=str(c),
+                     wrongs=[str(n * m), "0", "Xatolik"],
+                     difficulty=3, lesson=5)
+
+    def t_break_continue_combo():
+        n = random.randint(8, 20); skip = random.randint(2, 5); stop = random.randint(skip + 1, n - 1)
+        s = 0
+        for i in range(1, n):
+            if i == skip:
+                continue
+            if i == stop:
+                break
+            s += i
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ns = 0\nfor i in range(1, {n}):\n    if i == {skip}:\n        continue\n    if i == {stop}:\n        break\n    s += i\nprint(s)\n```",
+                     answer=str(s),
+                     wrongs=[str(s + skip), str(stop), "Xatolik"],
+                     difficulty=3, lesson=4)
+
+    def t_count_chars():
+        s = random.choice(["pythonpython", "kompyuter", "dasturlash", "salomalaykum"])
+        ch = random.choice(list(set(s)))
+        ans = s.count(ch)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nprint('{s}'.count('{ch}'))\n```",
+                     answer=str(ans),
+                     wrongs=[str(ans + 1), "0", "Xatolik"],
+                     difficulty=2, lesson=5)
+
+    pool += _capped(t_atm)
+    pool += _capped(t_atm_fee)
+    pool += _capped(t_grade_letter)
+    pool += _capped(t_loop_count_mod)
+    pool += _capped(t_list_filter)
+    pool += _capped(t_list_double)
+    pool += _capped(t_str_upper_slice)
+    pool += _capped(t_nested_loop)
+    pool += _capped(t_break_continue_combo)
+    pool += _capped(t_count_chars)
+
+    discrete = [
+        QItem("Pythonda input() orqali olingan ma'lumot qaysi turda bo‘ladi?",
+              "str (matn)",
+              ["int", "float", "list"], 2, 1),
+        QItem("Foydalanuvchidan butun son olish uchun nima qilish kerak?",
+              "int(input(...))", ["str(input)", ".upper()", "Faqat input"], 2, 1),
+        QItem("Foydalanuvchi 'a' deb yozsa va biz int() qilsak nima sodir bo‘ladi?",
+              "ValueError",
+              ["TypeError", "Hech qanday xatolik", "Faqat 0 qaytaradi"], 2, 8),
+        QItem("Try-except qachon foydali?",
+              "Xato yuz berishi mumkin bo‘lgan kodni xavfsizlashtirish",
+              ["Faqat saqlash", "Faqat sortlash", "Faqat ranglash"], 3, 8),
+        QItem("Pythonda 0 ga bo‘lganda qanday xatolik chiqadi?", "ZeroDivisionError",
+              ["TypeError", "ValueError", "IndexError"], 2, 8),
+        QItem("ATMda balans yetarli bo‘lmasa nima qilish kerak?",
+              "Yechishni rad etish va xabar berish",
+              ["Faqat sokin yechish", "Faqat saqlash", "Faqat ranglash"], 2, 1),
+        QItem("Pythonda L=[1,2,3]; sum(L) natijasi nima?", "6",
+              ["3", "1", "Xatolik"], 1, 5),
+        QItem("Pythonda max([5,3,9,1]) natijasi nima?", "9",
+              ["5", "1", "Xatolik"], 1, 5),
+        QItem("Pythonda min([5,3,9,1]) natijasi nima?", "1",
+              ["9", "5", "Xatolik"], 1, 5),
+        QItem("Pythonda len([1,2,3]) natijasi nima?", "3",
+              ["2", "4", "Xatolik"], 1, 5),
+        QItem("Pythonda for else qachon bajariladi?",
+              "Sikl break siz oxirigacha tugaganda",
+              ["Doim", "Hech qachon", "Faqat saqlash"], 3, 4),
+        QItem("Pythonda continue va break farqi?",
+              "continue — keyingisiga o‘tadi; break — sikldan chiqadi",
+              ["Bir xil", "Faqat saqlash", "Faqat ranglash"], 2, 4),
+        QItem("Pythonda nested loop nima?",
+              "Sikl ichida sikl",
+              ["Bitta sikl", "Faqat saqlash", "Faqat ranglash"], 2, 5),
+        QItem("Pythonda r=random.randint(1, 6) qanday qiymat qaytaradi?",
+              "1 dan 6 gacha (6 ham kirgan) butun son",
+              ["1 dan 5 gacha", "Faqat 0", "Faqat 6"], 2, 7),
+        QItem("Pythonda r=random.choice(['a','b','c']) qanday qiymat qaytaradi?",
+              "'a','b','c' lardan birini",
+              ["Faqat 'a'", "Faqat 'c'", "Xatolik"], 2, 7),
+        QItem("Pythonda 'pass' nima qiladi?", "Hech narsa qilmaydi (joy egallaydi)",
+              ["Sikldan chiqadi", "Saqlaydi", "Yopadi"], 3, 9),
+        QItem("Pythonda ESLATMA: indentatsiya muhimmi?",
+              "Ha — bloklarni bir xil indent bilan yozish shart",
+              ["Yo‘q", "Faqat ba'zan", "Faqat funksiyalarda"], 2, 9),
+        QItem("Pythonda yoshga qarab kategoriya: 0-12 'bola', 13-17 'o‘smir', 18+ 'kattalar'. 14 ga qaysi to‘g‘ri?",
+              "o‘smir",
+              ["bola", "kattalar", "Xatolik"], 2, 4),
+        QItem("Pythonda agar son juft bo‘lsa qanday tekshiramiz?", "n % 2 == 0",
+              ["n % 2 == 1", "n / 2 == 0", "n // 2 == 0"], 1, 4),
+        QItem("Pythonda agar son toq bo‘lsa qanday tekshiramiz?", "n % 2 == 1 (yoki != 0)",
+              ["n % 2 == 0", "n / 2 != 0", "n // 2 == 1"], 1, 4),
+    ]
+    pool += discrete
+    random.shuffle(pool)
+    return pool
+
+
+# ─── PYTHON — 8-sinf 1-chorak ────────────────────────────────────────────────
+# Mavzu: Takror (7-sinf) + murakkab if/loop, while siklining chuqur ishlatishi.
+
+PY_8_Q1_CONCEPTS = [
+    ("Murakkab shart (and/or)", "and va or larni birgalikda ishlatish",
+     ["Faqat AND", "Faqat OR", "Faqat NOT"], 1),
+    ("Nested if", "Shartlar ichidagi shartlar — chuqur tarmoqlanish",
+     ["Faqat bitta if", "Faqat else", "Faqat saqlash"], 1),
+    ("Comparison chaining", "a < b < c — bir vaqtda ikkita solishtirish",
+     ["Faqat alohida", "Hech qachon", "Faqat saqlash"], 1),
+    ("Pythonda is va == farqi", "is — obyekt ayniyligi; == — qiymat tengligi",
+     ["Bir xil", "Faqat is ishlaydi", "Faqat == ishlaydi"], 2),
+    ("None solishtiruv", "x is None — None bilan solishtirish to‘g‘ri usul",
+     ["x == None", "Faqat saqlash", "Faqat ranglash"], 2),
+    ("Loop ichidagi loop", "Ichma-ich sikllar — N×M iteratsiya",
+     ["Faqat bitta sikl", "Faqat saqlash", "Faqat ranglash"], 3),
+    ("while True", "Cheksiz sikl — break orqali tugaydi",
+     ["Hech qachon ishlamaydi", "Faqat oddiy if", "Faqat saqlash"], 3),
+    ("Loop counter", "Sikldagi iteratsiyalar sonini sanab borish",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 3),
+    ("Sikl bilan max topish", "for ichida solishtirib, mx ni yangilab borish",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 4),
+    ("Sikl bilan min topish", "for ichida solishtirib, mn ni yangilab borish",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 4),
+    ("Sikl bilan sum", "for ichida s += x — yig‘indi to‘plash",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 4),
+    ("Sikl bilan avg", "for bilan yig‘indini hisoblab, count ga bo‘lish",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 4),
+    ("Range qadamli", "range(a, b, c) — c qadam bilan",
+     ["Faqat 1 qadam", "Faqat 0 qadam", "Faqat saqlash"], 3),
+    ("range manfiy qadam", "range(10, 0, -1) — kamayuvchi diapazon",
+     ["Hech qachon ishlamaydi", "Faqat 1 ga ortadi", "Faqat saqlash"], 3),
+    ("Sikldan oldin/keyin", "Initialize → while/for → cleanup",
+     ["Faqat oddiy", "Faqat saqlash", "Faqat ranglash"], 3),
+    ("Boolean qaytadan", "while True → ichida shart bilan break",
+     ["Hech qachon to‘xtamaydi", "Faqat oddiy", "Faqat saqlash"], 3),
+    ("Modul amali %", "Qoldiqni topish — juftlik aniqlash, bo‘luvchanlik",
+     ["Faqat butun bo‘linma", "Faqat ko‘paytirish", "Faqat ayirish"], 5),
+    ("Bo‘luvchanlik testi", "n % d == 0 bo‘lsa n d ga bo‘linadi",
+     ["n / d == 0", "n // d", "Faqat saqlash"], 5),
+    ("Ko‘paytma sarflash", "for ichida p *= x — ko‘paytma to‘plash",
+     ["Faqat ayirish", "Faqat saqlash", "Faqat ranglash"], 5),
+    ("Faktorial sikl orqali", "1 dan n gacha sonlarni ko‘paytirish",
+     ["Faqat ayirish", "Faqat saqlash", "Faqat ranglash"], 5),
+    ("Toping (search) algoritm", "Sikl orqali listdan element izlash",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 6),
+    ("Linear search", "Listni ketma-ket tekshirib element topish",
+     ["Faqat oxirgi", "Faqat birinchi", "Faqat saqlash"], 6),
+    ("Found flag (bool)", "Topildi/topilmadi holatini saqlovchi mantiqiy o‘zgaruvchi",
+     ["Faqat son", "Faqat string", "Faqat saqlash"], 6),
+    ("Default value", "Topilmasa qaytariladigan boshlang‘ich qiymat",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 6),
+    ("Iteratsiya bo‘yicha hisob", "Sikl iteratsiyalari sonini sanash",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 4),
+    ("if-elif-else daraxti", "Bir nechta shartni daraxt ko‘rinishida tekshirish",
+     ["Faqat bitta if", "Faqat else", "Faqat saqlash"], 1),
+    ("Boolean vs son", "if n: — n != 0 bo‘lsa TRUE",
+     ["Faqat bool", "Faqat saqlash", "Faqat ranglash"], 2),
+    ("Boolean vs string", "if s: — s != '' bo‘lsa TRUE",
+     ["Faqat bool", "Faqat saqlash", "Faqat ranglash"], 2),
+    ("Boolean vs list", "if L: — L != [] bo‘lsa TRUE",
+     ["Faqat bool", "Faqat saqlash", "Faqat ranglash"], 2),
+    ("not in operator", "Element kolleksiyada yo‘qligi tekshirish",
+     ["Faqat in", "Faqat saqlash", "Faqat ranglash"], 2),
+    ("Operator priority", "and dan oldin not, or dan oldin and",
+     ["Hech qanday tartib", "Faqat saqlash", "Faqat ranglash"], 1),
+    ("Konvertatsiya zanjiri", "int(input()) — kirishni butun songa o‘girish",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 7),
+    ("List bilan range", "for x in range(...) — range natijasini iteratsiya qilish",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 3),
+    ("Pythonic loop", "for x in L — to‘g‘ridan-to‘g‘ri elementlar bo‘yicha",
+     ["Faqat indeks bilan", "Faqat saqlash", "Faqat ranglash"], 4),
+    ("enumerate(L)", "Indeks va element birgalikda — for i, x in enumerate(L)",
+     ["Faqat element", "Faqat indeks", "Faqat saqlash"], 4),
+    ("zip(a, b)", "Ikki kolleksiyani parallel iteratsiya qilish",
+     ["Faqat birinchi", "Faqat ikkinchi", "Faqat saqlash"], 4),
+    ("any()", "Kolleksiyada bittasi TRUE bo‘lsa TRUE qaytaradi",
+     ["Hammasi TRUE", "Faqat saqlash", "Faqat ranglash"], 6),
+    ("all()", "Kolleksiyaning hammasi TRUE bo‘lsa TRUE qaytaradi",
+     ["Bittasi TRUE", "Faqat saqlash", "Faqat ranglash"], 6),
+    ("Boolean default", "Bo‘sh kolleksiya uchun any() False, all() True",
+     ["Hammasi True", "Hammasi False", "Faqat saqlash"], 6),
+    ("Iterating dict", "for k in D — kalitlar bo‘yicha iteratsiya",
+     ["Faqat qiymatlar", "Faqat ko‘rsatkich", "Faqat saqlash"], 7),
+]
+
+
+def _py8_q1_pool() -> list[QItem]:
+    pool: list[QItem] = []
+    for c, d, w, l in PY_8_Q1_CONCEPTS:
+        pool += _conceptual(c, d, w, lesson=l)
+
+    def t_chained_compare():
+        x = random.randint(0, 30); a = random.randint(0, 15); b = random.randint(15, 30)
+        cond = (a < x < b)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nx={x}\nprint({a}<x<{b})\n```",
+                     answer=str(cond),
+                     wrongs=[str(not cond), "None", "Xatolik"],
+                     difficulty=2, lesson=1)
+
+    def t_complex_if():
+        x = random.randint(-30, 50); y = random.randint(-30, 50); z = random.randint(-30, 50)
+        ans = "A" if (x < y and y <= z) else ("B" if x == z else "C")
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nx={x}\ny={y}\nz={z}\nif x<y and y<=z:\n    print('A')\nelif x==z:\n    print('B')\nelse:\n    print('C')\n```",
+                     answer=ans, wrongs=["A", "B", "C"], difficulty=2, lesson=1)
+
+    def t_while_double():
+        n = random.randint(20, 200); mul = random.choice([2, 3])
+        i = 1
+        while i < n:
+            i *= mul
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ni = 1\nwhile i < {n}:\n    i *= {mul}\nprint(i)\n```",
+                     answer=str(i),
+                     wrongs=[str(n), str(i // mul), "Xatolik"],
+                     difficulty=3, lesson=3)
+
+    def t_while_dec_count():
+        start = random.randint(20, 100); dec = random.randint(2, 9); limit = random.randint(0, 15)
+        i = start; step = 0
+        while i > limit:
+            i -= dec; step += 1
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ni = {start}\nstep = 0\nwhile i > {limit}:\n    i -= {dec}\n    step += 1\nprint(step)\n```",
+                     answer=str(step),
+                     wrongs=[str(step + 1), str(start - limit), "Xatolik"],
+                     difficulty=3, lesson=3)
+
+    def t_for_break():
+        n = random.randint(10, 30); stop = random.randint(2, n - 1)
+        s = sum(range(stop))
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ns = 0\nfor i in range({n}):\n    if i == {stop}:\n        break\n    s += i\nprint(s)\n```",
+                     answer=str(s),
+                     wrongs=[str(s + 1), str(stop), "Xatolik"],
+                     difficulty=2, lesson=3)
+
+    def t_logical_combo():
+        a = random.randint(-20, 30); b = random.randint(-20, 30); c = random.randint(-20, 30)
+        ans = (a < 0) or (b > c and c % 2 == 0)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\na={a}\nb={b}\nc={c}\nprint((a<0) or (b>c and c%2==0))\n```",
+                     answer=str(ans),
+                     wrongs=[str(not ans), "None", "Xatolik"],
+                     difficulty=3, lesson=1)
+
+    def t_nested_count():
+        n = random.randint(2, 6); m = random.randint(2, 6)
+        c = sum(1 for i in range(n) for j in range(m) if i + j > 2)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nc = 0\nfor i in range({n}):\n    for j in range({m}):\n        if i + j > 2:\n            c += 1\nprint(c)\n```",
+                     answer=str(c),
+                     wrongs=[str(n * m), str(0), "Xatolik"],
+                     difficulty=3, lesson=3)
+
+    def t_factorial():
+        n = random.randint(2, 6)
+        f = 1
+        for i in range(1, n + 1):
+            f *= i
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\np = 1\nfor i in range(1, {n + 1}):\n    p *= i\nprint(p)\n```",
+                     answer=str(f),
+                     wrongs=[str(n), str(n * n), "Xatolik"],
+                     difficulty=2, lesson=5)
+
+    def t_search_in_list():
+        L = [random.randint(1, 30) for _ in range(7)]
+        v = random.choice(L + [random.randint(1, 30)])
+        ans = "Topildi" if v in L else "Topilmadi"
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nL = {L}\nfound = False\nfor x in L:\n    if x == {v}:\n        found = True\n        break\nprint('Topildi' if found else 'Topilmadi')\n```",
+                     answer=ans,
+                     wrongs=["Topildi" if ans == "Topilmadi" else "Topilmadi", "False", "Xatolik"],
+                     difficulty=3, lesson=6)
+
+    def t_range_step_neg():
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nfor i in range(5, 0, -1):\n    print(i, end=' ')\n```",
+                     answer="5 4 3 2 1 ",
+                     wrongs=["1 2 3 4 5 ", "5 4 3 2 1 0 ", "Xatolik"],
+                     difficulty=3, lesson=3)
+
+    def t_any_all():
+        L = [random.choice([0, 1]) for _ in range(5)]
+        op = random.choice(["any", "all"])
+        ans = any(L) if op == "any" else all(L)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nprint({op}({L}))\n```",
+                     answer=str(ans),
+                     wrongs=[str(not ans), "None", "Xatolik"],
+                     difficulty=2, lesson=6)
+
+    pool += _capped(t_chained_compare)
+    pool += _capped(t_complex_if)
+    pool += _capped(t_while_double)
+    pool += _capped(t_while_dec_count)
+    pool += _capped(t_for_break)
+    pool += _capped(t_logical_combo)
+    pool += _capped(t_nested_count)
+    pool += _capped(t_factorial)
+    pool += _capped(t_search_in_list)
+    pool += _capped(t_range_step_neg)
+    pool += _capped(t_any_all)
+
+    discrete = [
+        QItem("Pythonda 'is' va '==' farqi nima?",
+              "is — obyekt ayniyligi; == — qiymat tengligi",
+              ["Bir xil", "Faqat is", "Faqat =="], 3, 2),
+        QItem("Pythonda x is None to‘g‘rimi?",
+              "Ha — None bilan solishtirish uchun afzal usul",
+              ["Yo‘q — x == None to‘g‘ri", "Hech qachon ishlatib bo‘lmaydi", "Faqat son uchun"], 3, 2),
+        QItem("Pythonda x = []; if x: degan shart qaysi natijani beradi?",
+              "False — bo‘sh list falsy",
+              ["True", "Xatolik", "None"], 2, 2),
+        QItem("Pythonda not (a or b) qaysi ifodaga teng?",
+              "(not a) and (not b) — De Morgan qonuni",
+              ["a or b", "a and b", "Xatolik"], 3, 1),
+        QItem("Pythonda while True ichida break qachon kerak?",
+              "Sikl tugashi uchun shart bajarilganda",
+              ["Hech qachon", "Faqat saqlash", "Faqat ranglash"], 3, 3),
+        QItem("Pythonda for sikli ichida else qachon bajariladi?",
+              "Sikl break siz tugaganda",
+              ["Doim", "Hech qachon", "Faqat saqlash"], 3, 3),
+        QItem("Pythonda enumerate(['a','b']) nima qaytaradi?",
+              "[(0,'a'),(1,'b')] kabi indeks-qiymat juftliklarini",
+              ["Faqat indekslarni", "Faqat qiymatlarni", "Xatolik"], 3, 4),
+        QItem("Pythonda zip([1,2],[3,4]) nima qaytaradi?",
+              "[(1,3),(2,4)] juftliklarni",
+              ["[1,2,3,4]", "Faqat birinchi list", "Xatolik"], 3, 4),
+        QItem("Pythonda any([0, 0, 1]) natijasi nima?", "True",
+              ["False", "0", "Xatolik"], 2, 6),
+        QItem("Pythonda all([1, 1, 0]) natijasi nima?", "False",
+              ["True", "0", "Xatolik"], 2, 6),
+        QItem("Pythonda a < b < c qanday bajariladi?",
+              "(a < b) and (b < c) shaklida — comparison chain",
+              ["Faqat (a<b)", "Faqat (b<c)", "Xatolik"], 3, 1),
+        QItem("Pythonda 'else' ham 'elif' ham bo‘lmasa, kod qanday ishlaydi?",
+              "Faqat shart TRUE bo‘lsa bajariladi",
+              ["Doim bajariladi", "Hech qachon", "Xatolik"], 2, 1),
+        QItem("Pythonda nested (ichma-ich) sikllar samaradorlik jihatidan qanday?",
+              "Iteratsiya soni N×M ga ortadi — sekinroq",
+              ["Tezroq ishlaydi", "Bir xil", "Hech ta'sir qilmaydi"], 3, 3),
+        QItem("Pythonda for i, x in enumerate(L): qachon foydali?",
+              "Indeks va elementni birga ishlatishda",
+              ["Faqat indeks kerak bo‘lganda", "Faqat element kerak bo‘lganda", "Hech qachon"], 3, 4),
+        QItem("Pythonda while sikli boshlanmasdan bajarilmasligi mumkinmi?",
+              "Ha — agar shart boshidanoq False bo‘lsa",
+              ["Yo‘q — kamida bir marta", "Faqat for da", "Hech qachon"], 3, 3),
+        QItem("Pythonda 5 % 2 natijasi nima?", "1",
+              ["2", "0", "Xatolik"], 1, 5),
+        QItem("Pythonda 10 % 3 natijasi nima?", "1",
+              ["3", "0", "Xatolik"], 1, 5),
+        QItem("Pythonda 100 // 7 natijasi nima?", "14",
+              ["7", "2", "Xatolik"], 1, 5),
+        QItem("Pythonda 0 ga bo‘lganda 0 / 0 nima beradi?",
+              "ZeroDivisionError",
+              ["0", "1", "None"], 2, 3),
+        QItem("Pythonda for x in 'abc': qaysi tartibda iteratsiya bo‘ladi?",
+              "a, b, c — har belgi alohida",
+              ["Faqat butun string", "Teskari tartibda", "Xatolik"], 2, 4),
+    ]
+    pool += discrete
+    random.shuffle(pool)
+    return pool
+
+
+# ─── PYTHON — 8-sinf 2-chorak ────────────────────────────────────────────────
+# Mavzu: List metodlari, tuple, dict, amaliy.
+
+PY_8_Q2_CONCEPTS = [
+    ("List (chuqurroq)", "Tartiblangan, mutable elementlar to‘plami []",
+     ["Tuple", "Set", "Dict"], 1),
+    (".append(x)", "List oxiriga element qo‘shish",
+     ["Faqat o‘chirish", "Faqat saralash", "Faqat saqlash"], 1),
+    (".extend(L)", "Listga boshqa kolleksiya elementlarini qo‘shish",
+     ["Faqat bitta element", "Faqat o‘chirish", "Faqat saqlash"], 1),
+    (".insert(i, x)", "i-indeksga x ni qo‘yish",
+     ["Faqat oxirga", "Faqat boshiga", "Faqat saqlash"], 1),
+    (".pop()", "Oxirgi elementni olib tashlash va qaytarish",
+     ["Faqat birinchini", "Faqat saqlash", "Faqat ranglash"], 1),
+    (".pop(i)", "i-indeksdagi elementni olib tashlash va qaytarish",
+     ["Faqat oxirgini", "Faqat saqlash", "Faqat ranglash"], 1),
+    (".remove(x)", "Birinchi uchragan x ni listdan o‘chirish",
+     ["Faqat indeks bilan", "Faqat oxirgini", "Faqat saqlash"], 1),
+    (".sort()", "Listni o‘rnida tartiblash",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 2),
+    ("sorted(L)", "Yangi tartiblangan list qaytarish",
+     ["O‘zini o‘zgartiradi", "Faqat saqlash", "Faqat ranglash"], 2),
+    (".reverse()", "Listni teskari tartibga keltirish",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 2),
+    ("L.sort(reverse=True)", "Kamayish tartibida tartiblash",
+     ["O‘sish tartibida", "Faqat saqlash", "Faqat ranglash"], 2),
+    (".index(x)", "x elementning birinchi indeksini qaytarish",
+     ["Faqat oxirgi indeksini", "Faqat saqlash", "Faqat ranglash"], 1),
+    (".count(x)", "x elementning sonini qaytarish",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 1),
+    (".clear()", "Listdagi barcha elementlarni o‘chirish",
+     ["Faqat birinchini", "Faqat oxirgini", "Faqat saqlash"], 1),
+    (".copy()", "Listning sayoz nusxasini qaytarish",
+     ["Faqat o‘rnida o‘zgartirish", "Faqat saqlash", "Faqat ranglash"], 1),
+    ("Tuple", "O‘zgartirib bo‘lmaydigan tartiblangan to‘plam ()",
+     ["Mutable list", "Set", "Dict"], 3),
+    ("Bo‘sh tuple ()", "Hech qanday element bo‘lmagan tuple",
+     ["[]", "{}", "None"], 3),
+    ("Bir elementli tuple (x,)", "Vergul majburiy",
+     ["(x)", "(x,)", "[x]"], 3),
+    ("Tuple unpacking", "a, b = (1, 2) — qiymatlarni alohida o‘zgaruvchilarga yoyish",
+     ["Faqat birinchi qiymat", "Faqat saqlash", "Faqat ranglash"], 3),
+    ("Tuple immutable", "Tuple elementlarini o‘zgartirib bo‘lmaydi",
+     ["Tuple mutable", "Faqat ba'zi", "Faqat saqlash"], 3),
+    ("Dict (lug‘at)", "Kalit-qiymat juftliklari to‘plami {k: v}",
+     ["Faqat list", "Faqat tuple", "Faqat set"], 4),
+    ("Bo‘sh dict {}", "Hech qanday juftlik yo‘q",
+     ["()", "[]", "None"], 4),
+    ("d[key]", "Kalit bo‘yicha qiymatni olish (kalit yo‘q bo‘lsa KeyError)",
+     ["Faqat indeks", "Faqat oxirgi", "Faqat saqlash"], 4),
+    ("d.get(key, default)", "Kalit bo‘yicha qiymatni xavfsiz olish (yo‘q bo‘lsa default)",
+     ["Faqat KeyError", "Faqat saqlash", "Faqat ranglash"], 4),
+    ("d.keys()", "Lug‘atdagi barcha kalitlar",
+     ["Faqat qiymatlar", "Faqat juftliklar", "Faqat saqlash"], 4),
+    ("d.values()", "Lug‘atdagi barcha qiymatlar",
+     ["Faqat kalitlar", "Faqat juftliklar", "Faqat saqlash"], 4),
+    ("d.items()", "Lug‘atdagi (kalit, qiymat) juftliklari",
+     ["Faqat kalitlar", "Faqat qiymatlar", "Faqat saqlash"], 4),
+    ("Kalit yangilash d[k]=v", "Mavjud kalit qiymatini yangilash",
+     ["Faqat saqlash", "Faqat o‘chirish", "Faqat ranglash"], 4),
+    ("del d[k]", "Lug‘atdan kalitni o‘chirish",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat qo‘shish"], 4),
+    ("k in d", "Kalit lug‘atda bormi (True/False)",
+     ["Faqat qiymat", "Faqat saqlash", "Faqat ranglash"], 4),
+    ("Set (to‘plam) {1,2,3}", "Takrorlanmas elementlar — tartibsiz",
+     ["Tartiblangan", "Faqat son", "Faqat saqlash"], 5),
+    ("Bo‘sh set: set()", "Bo‘sh to‘plam — {} bo‘sh dict bo‘ladi",
+     ["{}", "()", "[]"], 5),
+    (".add(x) — set", "Setga element qo‘shish",
+     ["Faqat o‘chirish", "Faqat saqlash", "Faqat ranglash"], 5),
+    (".discard(x) — set", "Setdan elementni xavfsiz olib tashlash",
+     ["Faqat KeyError", "Faqat saqlash", "Faqat ranglash"], 5),
+    ("Set union: a | b", "Ikki to‘plamni birlashtirish",
+     ["Faqat kesishma", "Faqat ayirma", "Faqat saqlash"], 5),
+    ("Set intersection: a & b", "Ikki to‘plamning kesishmasi",
+     ["Faqat birlashma", "Faqat ayirma", "Faqat saqlash"], 5),
+    ("Set difference: a - b", "Ikki to‘plamning ayirmasi",
+     ["Faqat kesishma", "Faqat birlashma", "Faqat saqlash"], 5),
+    ("List vs Tuple vs Set", "List — tartibli&mutable; tuple — immutable; set — takrorlanmas&tartibsiz",
+     ["Hammasi bir xil", "Faqat list ishlaydi", "Faqat saqlash"], 6),
+    ("Listni setga: set(L)", "Listni unikal qiymatlar setiga aylantirish",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 6),
+    ("Setni listga: list(s)", "Setni listga o‘girish (tartib o‘zgarib qolishi mumkin)",
+     ["Faqat saqlash", "Faqat ranglash", "Faqat o‘chirish"], 6),
+]
+
+
+def _py8_q2_pool() -> list[QItem]:
+    pool: list[QItem] = []
+    for c, d, w, l in PY_8_Q2_CONCEPTS:
+        pool += _conceptual(c, d, w, lesson=l)
+
+    def t_list_append():
+        L = [random.randint(1, 20) for _ in range(4)]
+        v = random.randint(20, 50)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nL = {L}\nL.append({v})\nL.sort()\nprint(L[-1])\n```",
+                     answer=str(max(L + [v])),
+                     wrongs=[str(min(L + [v])), str(v), "Xatolik"],
+                     difficulty=2, lesson=2)
+
+    def t_list_extend():
+        L1 = [random.randint(1, 10) for _ in range(3)]
+        L2 = [random.randint(1, 10) for _ in range(2)]
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nL = {L1}\nL.extend({L2})\nprint(L)\n```",
+                     answer=str(L1 + L2),
+                     wrongs=[str(L1 + [L2]), str(L2 + L1), "Xatolik"],
+                     difficulty=2, lesson=1)
+
+    def t_list_remove():
+        L = [random.randint(1, 10) for _ in range(5)]
+        v = random.choice(L)
+        ans = list(L); ans.remove(v)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nL = {L}\nL.remove({v})\nprint(L)\n```",
+                     answer=str(ans),
+                     wrongs=[str(L), str(L[1:]), "Xatolik"],
+                     difficulty=2, lesson=1)
+
+    def t_list_pop():
+        L = [random.randint(1, 30) for _ in range(5)]
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nL = {L}\nx = L.pop()\nprint(x, L)\n```",
+                     answer=f"{L[-1]} {L[:-1]}",
+                     wrongs=[f"{L[0]} {L[1:]}", str(L), "Xatolik"],
+                     difficulty=3, lesson=1)
+
+    def t_list_sort():
+        L = random.sample(range(1, 50), 5)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nL = {L}\nL.sort()\nprint(L)\n```",
+                     answer=str(sorted(L)),
+                     wrongs=[str(L), str(sorted(L, reverse=True)), "Xatolik"],
+                     difficulty=2, lesson=2)
+
+    def t_tuple_slice():
+        t = tuple(random.randint(1, 30) for _ in range(5))
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nt = {t}\nprint(t[1:4])\n```",
+                     answer=str(t[1:4]),
+                     wrongs=[str(t), str(t[:3]), "Xatolik"],
+                     difficulty=2, lesson=3)
+
+    def t_tuple_unpack():
+        a = random.randint(1, 50); b = random.randint(1, 50); c = random.randint(1, 50)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nx, y, z = ({a}, {b}, {c})\nprint(y)\n```",
+                     answer=str(b),
+                     wrongs=[str(a), str(c), "Xatolik"],
+                     difficulty=2, lesson=3)
+
+    def t_dict_get():
+        keys = ["ism", "yosh", "sinf", "shahar"]
+        k = random.choice(keys)
+        v = random.randint(10, 30)
+        d = {k: v, random.choice([x for x in keys if x != k]): random.randint(10, 30)}
+        miss = random.choice([x for x in keys if x not in d])
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nd = {d}\nprint(d.get('{miss}', 0))\n```",
+                     answer="0",
+                     wrongs=[str(v), "None", "Xatolik"],
+                     difficulty=2, lesson=4)
+
+    def t_dict_in():
+        d = {"a": 1, "b": 2, "c": 3}
+        k = random.choice(["a", "b", "c", "d", "e"])
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nd = {d}\nprint('{k}' in d)\n```",
+                     answer=str(k in d),
+                     wrongs=[str(k not in d), str(d.get(k, 0)), "Xatolik"],
+                     difficulty=2, lesson=4)
+
+    def t_set_unique():
+        L = [random.randint(1, 5) for _ in range(8)]
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nprint(len(set({L})))\n```",
+                     answer=str(len(set(L))),
+                     wrongs=[str(len(L)), str(min(L)), "Xatolik"],
+                     difficulty=2, lesson=5)
+
+    def t_set_union():
+        a = set(random.sample(range(1, 8), 3))
+        b = set(random.sample(range(1, 8), 3))
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\na = {a}\nb = {b}\nprint(sorted(a | b))\n```",
+                     answer=str(sorted(a | b)),
+                     wrongs=[str(sorted(a & b)), str(sorted(a - b)), "Xatolik"],
+                     difficulty=3, lesson=5)
+
+    def t_set_intersection():
+        a = set(random.sample(range(1, 8), 4))
+        b = set(random.sample(range(1, 8), 4))
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\na = {a}\nb = {b}\nprint(sorted(a & b))\n```",
+                     answer=str(sorted(a & b)),
+                     wrongs=[str(sorted(a | b)), str(sorted(a - b)), "Xatolik"],
+                     difficulty=3, lesson=5)
+
+    pool += _capped(t_list_append)
+    pool += _capped(t_list_extend)
+    pool += _capped(t_list_remove)
+    pool += _capped(t_list_pop)
+    pool += _capped(t_list_sort)
+    pool += _capped(t_tuple_slice)
+    pool += _capped(t_tuple_unpack)
+    pool += _capped(t_dict_get)
+    pool += _capped(t_dict_in)
+    pool += _capped(t_set_unique)
+    pool += _capped(t_set_union)
+    pool += _capped(t_set_intersection)
+
+    discrete = [
+        QItem("Pythonda L=[1,2,3]; L.append([4,5]) keyin L nimaga teng?",
+              "[1, 2, 3, [4, 5]]",
+              ["[1, 2, 3, 4, 5]", "[1, 2, 3]", "Xatolik"], 3, 1),
+        QItem("Pythonda L=[1,2,3]; L.extend([4,5]) keyin L nimaga teng?",
+              "[1, 2, 3, 4, 5]",
+              ["[1, 2, 3, [4, 5]]", "[4, 5, 1, 2, 3]", "Xatolik"], 2, 1),
+        QItem("Pythonda L=[1,2,3]; L.insert(0, 0) keyin L nimaga teng?",
+              "[0, 1, 2, 3]",
+              ["[1, 2, 3, 0]", "[1, 2, 3]", "Xatolik"], 2, 1),
+        QItem("Pythonda L=[3,1,2]; sorted(L) qaysi qiymatni qaytaradi?", "[1, 2, 3]",
+              ["[3, 2, 1]", "[3, 1, 2]", "Xatolik"], 1, 2),
+        QItem("Pythonda t=(1,2,3); t[0]=10 nima qaytaradi?",
+              "TypeError — tuple immutable",
+              ["[10, 2, 3]", "(10, 2, 3)", "Hech qanday xatolik"], 3, 3),
+        QItem("Pythonda t=(1,) — bu nima?",
+              "Bir elementli tuple (vergul muhim)",
+              ["Oddiy son", "Xatolik", "Bo‘sh tuple"], 3, 3),
+        QItem("Pythonda d={1:'a', 2:'b'}; d[1] nima qaytaradi?", "'a'",
+              ["1", "'b'", "Xatolik"], 1, 4),
+        QItem("Pythonda d={'a':1}; d['b'] nima xato beradi?", "KeyError",
+              ["IndexError", "ValueError", "TypeError"], 2, 4),
+        QItem("Pythonda d={'a':1, 'b':2}; len(d) natijasi nima?", "2",
+              ["1", "3", "Xatolik"], 1, 4),
+        QItem("Pythonda d.update({'a':5}) — d={'a':1} bo‘lsa keyin nimaga teng?",
+              "{'a': 5}",
+              ["{'a': 1}", "{'a': 1, 'a': 5}", "Xatolik"], 2, 4),
+        QItem("Pythonda set([1,1,2,2,3]) natijasi nima?", "{1, 2, 3}",
+              ["[1,1,2,2,3]", "[1,2,3]", "Xatolik"], 2, 5),
+        QItem("Pythonda {1,2,3} & {2,3,4} natijasi nima?", "{2, 3}",
+              ["{1, 4}", "{1, 2, 3, 4}", "Xatolik"], 2, 5),
+        QItem("Pythonda {1,2,3} | {3,4} natijasi nima?", "{1, 2, 3, 4}",
+              ["{3}", "{1, 2}", "Xatolik"], 2, 5),
+        QItem("Pythonda L=[1,2,3]; L.copy() bilan L o‘zgarishi mumkinmi?",
+              "Yo‘q — copy() yangi list yaratadi",
+              ["Ha — bir xil obyekt", "Faqat ba'zi versiyalarda", "Xatolik"], 3, 1),
+        QItem("Pythonda dict tartiblanganmi (Python 3.7+)?",
+              "Ha — qo‘shilish tartibi saqlanadi",
+              ["Yo‘q — tartib yo‘q", "Faqat alphabet tartibida", "Faqat saqlash"], 3, 4),
+        QItem("Pythonda set ichida list saqlash mumkinmi?",
+              "Yo‘q — list mutable, hashable emas",
+              ["Ha", "Faqat birinchi", "Faqat saqlash"], 3, 5),
+        QItem("Pythonda set ichida tuple saqlash mumkinmi?",
+              "Ha — tuple immutable, hashable",
+              ["Yo‘q", "Faqat ba'zi turdagi", "Hech qachon"], 3, 5),
+        QItem("Pythonda L = [1,2,3]; L[1:] nima qaytaradi?", "[2, 3]",
+              ["[1]", "[1, 2]", "Xatolik"], 1, 1),
+        QItem("Pythonda L = [1,2,3,4]; L[::2] natijasi nima?", "[1, 3]",
+              ["[2, 4]", "[1, 2, 3, 4]", "Xatolik"], 2, 1),
+        QItem("Pythonda d = {'a':1, 'b':2}; for k in d: print(k) nimani chiqaradi?",
+              "Lug‘at kalitlarini",
+              ["Faqat qiymatlarni", "Faqat juftliklarni", "Xatolik"], 2, 4),
+    ]
+    pool += discrete
+    random.shuffle(pool)
+    return pool
+
+
+# ─── PYTHON — 8-sinf 3-chorak ────────────────────────────────────────────────
+# Mavzu: Funksiyalar (def), parametrlar, return, scope.
+
+PY_8_Q3_CONCEPTS = [
+    ("Funksiya (Function)", "Ma'lum bir vazifani bajaruvchi nomlangan kod bloki",
+     ["Faqat o‘zgaruvchi", "Faqat shart", "Faqat sikl"], 1),
+    ("def kalit so‘zi", "Funksiya ta'riflashni boshlovchi buyruq",
+     ["print", "return", "if"], 1),
+    ("Parametr (Argument)", "Funksiyaga tashqaridan uzatiladigan ma'lumot",
+     ["Funksiya nomi", "Natija", "Faqat son"], 2),
+    ("return kalit so‘zi", "Funksiya natijasini qaytarish uchun ishlatiladi",
+     ["print", "input", "def"], 1),
+    ("Lokal o‘zgaruvchi", "Faqat funksiya ichida ko‘rinadigan o‘zgaruvchi",
+     ["Global o‘zgaruvchi", "Faqat raqam", "Dastur nomi"], 2),
+    ("Global o‘zgaruvchi", "Butun dastur davomida ko‘rinadigan o‘zgaruvchi",
+     ["Lokal o‘zgaruvchi", "Faqat bitta funksiyada", "Hech qayerda"], 2),
+    ("Default parametr", "Agar argument berilmasa, ishlatiladigan boshlang‘ich qiymat",
+     ["Majburiy parametr", "Natija", "Xatolik"], 3),
+    ("Lambda (anonim) funksiya", "Bir qatorda yoziladigan nomsiz funksiya",
+     ["Katta funksiya", "Faqat loop", "Faqat shart"], 3),
+    ("Docstring", "Funksiya nima qilishini tushuntiruvchi matn ('''...''')",
+     ["Faqat sharh #", "Faqat o‘zgaruvchi", "Faqat return"], 2),
+    ("Scope (ko‘rinish sohasi)", "O‘zgaruvchi qayerda mavjudligini belgilovchi qoida",
+     ["Faqat ranglash", "Faqat saqlash", "Faqat o‘chirish"], 2),
+]
+
+
+def _py8_q3_pool() -> list[QItem]:
+    pool: list[QItem] = []
+    for c, d, w, l in PY_8_Q3_CONCEPTS:
+        pool += _conceptual(c, d, w, lesson=l)
+
+    def t_func_simple():
+        a = random.randint(1, 20); b = random.randint(1, 20)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ndef f(x, y):\n    return x + y\nprint(f({a}, {b}))\n```",
+                     answer=str(a + b), wrongs=[str(a), str(b), "Xatolik"], difficulty=1, lesson=1)
+
+    def t_func_mul():
+        a = random.randint(2, 9); b = random.randint(2, 9)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ndef mul(a, b):\n    return a * b\nprint(mul({a}, {b}))\n```",
+                     answer=str(a * b), wrongs=[str(a + b), "0", "Xatolik"], difficulty=1, lesson=1)
+
+    def t_func_scope():
+        x = random.randint(1, 100); y = random.randint(1, 100)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nx = {x}\ndef change():\n    x = {y}\nchange()\nprint(x)\n```",
+                     answer=str(x), wrongs=[str(y), "None", "Xatolik"], difficulty=3, lesson=2)
+
+    def t_func_default():
+        a = random.randint(1, 20)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ndef salom(nom='Mehmon'):\n    return 'Salom ' + nom\nprint(salom())\n```",
+                     answer="Salom Mehmon", wrongs=["Salom", "Salom nom", "Xatolik"], difficulty=2, lesson=3)
+
+    def t_lambda_sum():
+        a = random.randint(1, 20); b = random.randint(1, 20)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ns = lambda x, y: x + y\nprint(s({a}, {b}))\n```",
+                     answer=str(a + b), wrongs=[str(a), str(b), "Xatolik"], difficulty=3, lesson=4)
+
+    pool += _capped(t_func_simple)
+    pool += _capped(t_func_mul)
+    pool += _capped(t_func_scope)
+    pool += _capped(t_func_default)
+    pool += _capped(t_lambda_sum)
+
+    discrete = [
+        QItem("Pythonda funksiya qaysi so‘z bilan boshlanadi?", "def", ["func", "function", "define"], 1, 1),
+        QItem("Funksiyadan qiymat qaytarish uchun qaysi so‘z ishlatiladi?", "return", ["print", "get", "give"], 1, 1),
+        QItem("Funksiya chaqirilganda unga beriladigan qiymat nima deb ataladi?", "Argument", ["Parametr", "Natija", "O‘zgaruvchi"], 2, 1),
+        QItem("Funksiya ta'rifidagi o‘zgaruvchilar nima deb ataladi?", "Parametrlar", ["Argumentlar", "Natijalar", "O‘zgaruvchilar"], 2, 1),
+        QItem("Global o‘zgaruvchini funksiya ichida o‘zgartirish uchun qaysi so‘z kerak?", "global", ["local", "nonlocal", "change"], 3, 2),
+        QItem("Hech narsa qaytarmaydigan funksiya natijasi nima bo‘ladi?", "None", ["0", "False", "Xatolik"], 2, 1),
+    ]
+    pool += discrete
+    pool += _py8_q3_extra()
+    random.shuffle(pool)
+    return pool
+
+
+# ─── PYTHON — 8-sinf 4-chorak ────────────────────────────────────────────────
+# Mavzu: Fayllar bilan ishlash (open, read, write), exception (try/except).
+
+PY_8_Q4_CONCEPTS = [
+    ("open() funksiyasi", "Faylni ochish uchun ishlatiladi", ["Faylni yopish", "Faylni o‘chirish", "Rasm chizish"], 1),
+    ("mode='r'", "Faylni faqat o‘qish uchun ochish rejimi", ["Yozish", "Qo‘shish", "O‘chirish"], 1),
+    ("mode='w'", "Faylni yozish uchun ochish (mavjud bo‘lsa ustidan yozadi)", ["O‘qish", "Qo‘shish", "Xatolik"], 1),
+    ("mode='a'", "Fayl oxiriga ma'lumot qo‘shish (append) rejimi", ["O‘qish", "Yozish", "O‘chirish"], 1),
+    (".read()", "Faylning butun mazmunini o‘qib olish", ["Faqat bir qator", "Faqat bitta belgi", "Yozish"], 2),
+    (".readline()", "Fayldan faqat bitta qatorni o‘qish", ["Butun faylni", "Faqat bir so‘zni", "O‘chirish"], 2),
+    (".write()", "Faylga ma'lumot yozish", ["O‘qish", "Yopish", "O‘chirish"], 2),
+    (".close()", "Faylni yopish — resursni bo‘shatish", ["Oshirish", "O‘chirish", "Saqlash"], 1),
+    ("with open(...) as f", "Faylni xavfsiz ochish va avtomatik yopish usuli", ["Faqat o‘qish", "Faqat yozish", "Xavfsiz bo‘lmagan usul"], 3),
+    ("FileNotFoundError", "Ochmoqchi bo‘lgan fayl mavjud bo‘lmasa chiqadigan xato", ["ValueError", "TypeError", "IndexError"], 2),
+]
+
+
+def _py8_q4_pool() -> list[QItem]:
+    pool: list[QItem] = []
+    for c, d, w, l in PY_8_Q4_CONCEPTS:
+        pool += _conceptual(c, d, w, lesson=l)
+
+    def t_file_mode():
+        modes = [('r', 'O‘qish'), ('w', 'Yozish'), ('a', 'Qo‘shish')]
+        m, desc = random.choice(modes)
+        return QItem(text=f"Pythonda `open('data.txt', '{m}')` buyrug‘ida '{m}' nimani bildiradi?",
+                     answer=desc, wrongs=["O‘chirish", "Aylantirish", "Saqlash"], difficulty=1, lesson=1)
+
+    def t_try_except():
+        a = random.randint(1, 10)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ntry:\n    print({a} / 0)\nexcept ZeroDivisionError:\n    print('Xato')\n```",
+                     answer="Xato", wrongs=[str(a), "0", "None"], difficulty=2, lesson=2)
+
+    pool += _capped(t_file_mode)
+    pool += _capped(t_try_except)
+
+    discrete = [
+        QItem("Faylni yopish nima uchun muhim?", "Resurslarni bo‘shatish va ma'lumot saqlanishini ta'minlash uchun",
+              ["Muhim emas", "Faqat rasm uchun", "Faqat virusdan himoya"], 2, 1),
+        QItem("with open(...) ishlatishning afzalligi?", "Faylni avtomatik yopadi", ["Tezroq o‘qiydi", "Faqat yozadi", "Hech qanday"], 2, 1),
+        QItem("Fayl ichidagi barcha qatorlarni ro‘yxat ko‘rinishida olish uchun?", ".readlines()", [".read()", ".write()", ".pop()"], 3, 1),
+    ]
+    pool += discrete
+    pool += _py8_q4_extra()
+    random.shuffle(pool)
+    return pool
+
+
+# ─── PYTHON — 9-sinf 1-chorak ────────────────────────────────────────────────
+# Mavzu: Modullar (import), Math, Random, Datetime, PIP.
+
+PY_9_Q1_CONCEPTS = [
+    ("Modul (Module)", "Python kodini o‘z ichiga olgan alohida .py fayl", ["Faqat rasm", "Faqat rasm", "Faqat apparat"], 1),
+    ("import kalit so‘zi", "Boshqa modulni joriy dasturga ulash", ["export", "include", "def"], 1),
+    ("math moduli", "Matematik funksiyalar (sqrt, sin, pi) to‘plami", ["Faqat rasm", "Faqat o‘yin", "Faqat matn"], 1),
+    ("math.sqrt(x)", "Sonning kvadrat ildizini hisoblash", ["Kvadratga ko‘tarish", "Modul", "Butun qism"], 2),
+    ("random moduli", "Tasodifiy sonlar bilan ishlash moduli", ["Faqat matematika", "Faqat sana", "Faqat matn"], 1),
+    ("datetime moduli", "Sana va vaqt bilan ishlash moduli", ["Faqat rasm", "Faqat matematika", "Faqat o‘yin"], 1),
+    ("PIP", "Python paketlar menejeri — tashqi kutubxonalarni o‘rnatish uchun", ["Operatsion tizim", "Brauzer", "Dastur tili"], 2),
+    ("Standard Library", "Python bilan birga keladigan tayyor modullar to‘plami", ["Faqat PIP orqali", "Faqat pullik", "Hech qanday"], 2),
+    ("from math import pi", "Moduldan faqat kerakli qismni (pi) import qilish", ["Butun modulni", "Hech narsani", "Xatolik"], 2),
+    ("as kalit so‘zi", "Modulga qisqa nom (alias) berish (masalan import math as m)", ["O‘chirish", "Yozish", "Saqlash"], 2),
+]
+
+
+def _py9_q1_pool() -> list[QItem]:
+    pool: list[QItem] = []
+    for c, d, w, l in PY_9_Q1_CONCEPTS:
+        pool += _conceptual(c, d, w, lesson=l)
+
+    def t_math_sqrt():
+        a = random.choice([4, 9, 16, 25, 36, 49, 64, 81, 100])
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nimport math\nprint(math.sqrt({a}))\n```",
+                     answer=str(float(int(a**0.5))), wrongs=[str(a), str(a*2), "None"], difficulty=2, lesson=1)
+
+    def t_random_range():
+        a = random.randint(1, 10); b = random.randint(20, 50)
+        return QItem(text=f"Pythonda `random.randint({a}, {b})` qaysi oraliqdagi sonni qaytaradi?",
+                     answer=f"{a} dan {b} gacha ({b} ham kiradi)", wrongs=[f"{a} dan {b} gacha ({b} kirmaydi)", "Faqat 0 va 1", "Xatolik"], difficulty=2, lesson=2)
+
+    pool += _capped(t_math_sqrt)
+    pool += _capped(t_random_range)
+
+    discrete = [
+        QItem("Kutubxonani PIP orqali o‘rnatish buyrug‘i qaysi?", "pip install kutubxona_nomi", ["pip get", "python install", "install"], 2, 1),
+        QItem("Hozirgi sana va vaqtni olish uchun?", "datetime.datetime.now()", ["time.now()", "now()", "date()"], 2, 1),
+        QItem("math.pi qiymati taxminan nechaga teng?", "3.1415...", ["2.71", "1.41", "0"], 1, 1),
+    ]
+    pool += discrete
+    pool += _py9_q1_extra()
+    random.shuffle(pool)
+    return pool
+
+
+# ─── PYTHON — 9-sinf 2-chorak ────────────────────────────────────────────────
+# Mavzu: OOP asoslari (Class, Object, Init, Methods).
+
+PY_9_Q2_CONCEPTS = [
+    ("OOP", "Obyektga yo‘naltirilgan dasturlash", ["Faqat chiziqli", "Faqat funksional", "Faqat rasm"], 1),
+    ("Klass (Class)", "Obyekt yaratish uchun shablon (chizma)", ["Faqat bitta son", "Faqat funksiya", "Faqat rasm"], 1),
+    ("Obyekt (Object / Instance)", "Klassdan yaratilgan aniq nusxa", ["Faqat shablon", "Faqat modul", "Faqat o‘zgaruvchi"], 1),
+    ("Atribut (Attribute)", "Obyektning xususiyati (masalan rangi, nomi)", ["Harakati", "Natijasi", "Faqat son"], 2),
+    ("Metod (Method)", "Klass ichidagi funksiya — obyekt bajara oladigan amal", ["Faqat o‘zgaruvchi", "Faqat shart", "Faqat rasm"], 2),
+    ("__init__", "Klassdan yangi obyekt yaratilganda avtomatik ishlovchi metod (konstruktor)", ["O‘chirish metodi", "Natija metodi", "Saqlash"], 3),
+    ("self", "Joriy obyektning o‘ziga ishora qiluvchi parametr", ["Global o‘zgaruvchi", "Faqat raqam", "Xatolik"], 3),
+    ("Inheritance (Vorislik)", "Bir klass xususiyatlarini boshqa klassga o‘tkazish", ["O‘chirish", "Yopish", "Faqat nusxa"], 3),
+    ("Encapsulation", "Ma'lumotlarni himoyalash va yashirish", ["Oshirish", "O‘chirish", "Faqat nusxa"], 3),
+    ("Polymorphism", "Bir xil nomli metodning turli klasslarda turlicha ishlashi", ["Faqat bitta ish", "O‘chirish", "Faqat saqlash"], 3),
+]
+
+
+def _py9_q2_pool() -> list[QItem]:
+    pool: list[QItem] = []
+    for c, d, w, l in PY_9_Q2_CONCEPTS:
+        pool += _conceptual(c, d, w, lesson=l)
+
+    def t_class_attr():
+        val = random.randint(1, 1000)
+        attr = random.choice(["x", "y", "val", "data", "n"])
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nclass Data:\n    {attr} = {val}\nd1 = Data()\nprint(d1.{attr})\n```",
+                     answer=str(val), wrongs=[str(val+1), "Data", "None"], difficulty=2, lesson=1)
+
+    pool += _capped(t_class_attr)
+
+    discrete = [
+        QItem("Klass qaysi kalit so‘z bilan yaratiladi?", "class", ["def", "object", "init"], 1, 1),
+        QItem("__init__ metodi qachon ishlaydi?", "Obyekt yaratilgan paytda", ["Faqat chaqirilganda", "Dastur tugaganda", "Hech qachon"], 2, 3),
+        QItem("Obyektning atributiga qanday murojaat qilinadi?", "obyekt.atribut", ["obyekt(atribut)", "obyekt->atribut", "atribut(obyekt)"], 2, 1),
+    ]
+    pool += discrete
+    pool += _py9_q2_extra()
+    random.shuffle(pool)
+    return pool
+
+
+# ─── PYTHON — 9-sinf 3-chorak ────────────────────────────────────────────────
+# Mavzu: Murakkab algoritmlar, Ma'lumotlar tuzilmasi, Stack/Queue (nazariy).
+
+PY_9_Q3_CONCEPTS = [
+    ("Stack", "LIFO (Oxirgi kirgan, birinchi chiqadi) tuzilmasi", ["FIFO", "Faqat rasm", "Faqat o‘yin"], 2),
+    ("Queue (Navbat)", "FIFO (Birinchi kirgan, birinchi chiqadi) tuzilmasi", ["LIFO", "Faqat rasm", "Faqat o‘yin"], 2),
+    ("Rekursiya", "Funksiyaning o‘zini-o‘zi chaqirishi", ["Faqat sikl", "Faqat shart", "Faqat rasm"], 3),
+    ("Base case", "Rekursiya to‘xtashi uchun zarur bo‘lgan shart", ["Cheksiz shart", "Faqat return 0", "Faqat input"], 3),
+    ("Algoritm murakkabligi", "Vaqt va xotira sarfi (O(n))", ["Faqat rang", "Faqat o‘lcham", "Faqat narx"], 3),
+    ("Binary Search", "Saralangan ro‘yxatda ikkiga bo‘lish orqali izlash", ["Ketma-ket izlash", "Tasodifiy izlash", "Faqat rasm"], 3),
+    ("Bubble Sort", "Elementlarni juftlab solishtirib saralash", ["Tezkor saralash", "Tasodifiy", "Hech qanday"], 3),
+    ("Big O notation", "Algoritm samaradorligini o‘lchash usuli", ["Faqat o‘yin", "Faqat rasm", "Faqat ovoz"], 3),
+]
+
+
+def _py9_q3_pool() -> list[QItem]:
+    pool: list[QItem] = []
+    for c, d, w, l in PY_9_Q3_CONCEPTS:
+        pool += _conceptual(c, d, w, lesson=l)
+
+    discrete = [
+        QItem("Stack tuzilmasi qaysi tamoyilga asoslangan?", "LIFO", ["FIFO", "FILO", "RANDOM"], 2, 1),
+        QItem("Queue (navbat) tuzilmasi qaysi tamoyilga asoslangan?", "FIFO", ["LIFO", "FILO", "RANDOM"], 2, 1),
+        QItem("Rekursiya qachon to‘xtaydi?", "To‘xtash sharti (base case) bajarilganda", ["Hech qachon", "RAM to‘lganda", "Dastur yopilganda"], 2, 3),
+    ]
+    pool += discrete
+    
+    def t_stack_simulate():
+        stack = []
+        ops = []
+        for _ in range(random.randint(3, 5)):
+            v = random.randint(1, 50)
+            stack.append(v)
+            ops.append(f"s.append({v})")
+        for _ in range(random.randint(1, 2)):
+            if stack:
+                stack.pop()
+                ops.append("s.pop()")
+        ops_str = "\n".join(ops)
+        ans = stack[-1] if stack else "None"
+        return QItem(text=f"Quyidagi Stack amallaridan so'ng `s[-1]` nimaga teng?\n\n```python\ns = []\n{ops_str}\nprint(s[-1])\n```",
+                     answer=str(ans), wrongs=[str(random.randint(1, 50)), "0", "Xatolik"], difficulty=3, lesson=1)
+    
+    def t_recursion_simple():
+        a = random.randint(2, 5)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ndef f(n):\n    if n <= 1: return 1\n    return n + f(n-1)\nprint(f({a}))\n```",
+                     answer=str(sum(range(a + 1))), wrongs=[str(a), "1", "Xatolik"], difficulty=3, lesson=3)
+
+    pool += _capped(t_stack_simulate)
+    pool += _capped(t_recursion_simple)
+    pool += _py9_q3_extra()
+    random.shuffle(pool)
+    return pool
+
+
+# ─── PYTHON — 9-sinf 4-chorak ────────────────────────────────────────────────
+# Mavzu: Yakuniy loyiha, GUI (Tkinter basics), Review.
+
+PY_9_Q4_CONCEPTS = [
+    ("GUI", "Grafik foydalanuvchi interfeysi (oynalar, tugmalar)", ["Faqat matn", "Faqat ovoz", "Faqat apparat"], 1),
+    ("Tkinter", "Python bilan birga keluvchi standart GUI kutubxonasi", ["PyGame", "Django", "Flask"], 2),
+    ("Widget (Vidjet)", "Interfeys elementi (tugma, matn maydoni, yorliq)", ["Faqat rasm", "Faqat algoritm", "Faqat kod"], 2),
+    ("Button", "Foydalanuvchi bosishi mumkin bo‘lgan tugma", ["Faqat matn", "Faqat rasm", "Faqat oyna"], 1),
+    ("Label", "Ekranda matn yoki tasvir ko‘rsatuvchi element", ["Kiritish maydoni", "Tugma", "Sikl"], 2),
+    ("Entry", "Foydalanuvchi matn kiritadigan maydon", ["Faqat tugma", "Faqat rasm", "Faqat oyna"], 2),
+    ("mainloop()", "GUI oynasini ekranda ushlab turish va voqealarni kutish", ["Oynani yopish", "Rasm chizish", "Saqlash"], 3),
+]
+
+
+def _py9_q4_pool() -> list[QItem]:
+    pool: list[QItem] = []
+    for c, d, w, l in PY_9_Q4_CONCEPTS:
+        pool += _conceptual(c, d, w, lesson=l)
+
+    discrete = [
+        QItem("Tkinterda asosiy oynani yaratish buyrug‘i qaysi?", "root = Tk()", ["root = Window()", "root = Main()", "root = Screen()"], 2, 2),
+        QItem("GUI nima?", "Grafik interfeys (tugmalar, menyular)", ["Faqat konsol", "Faqat algoritm", "Faqat xotira"], 1, 1),
+    ]
+    pool += discrete
+    random.shuffle(pool)
+    return pool
+
+
+# ─── Dispatchers ─────────────────────────────────────────────────────────────
+
+def python_pool(grade: int, quarter: int) -> list[QItem]:
+    if grade == 7:
+        if quarter == 1: return _py7_get_q1_pool()
+        if quarter == 2: return _py7_q2_pool()
+        if quarter == 3: return _py7_q3_pool()
+        if quarter == 4:
+            # Cumulative: Q1 + Q2 + Q3 + Q4
+            return _py7_get_q1_pool() + _py7_q2_pool() + _py7_q3_pool() + _py7_q4_pool()
+    if grade == 8:
+        if quarter == 1: return _py8_q1_pool()
+        if quarter == 2: return _py8_q2_pool()
+        if quarter == 3: return _py8_q3_pool()
+        if quarter == 4:
+            # Cumulative: Q1 + Q2 + Q3 + Q4
+            return _py8_q1_pool() + _py8_q2_pool() + _py8_q3_pool() + _py8_q4_pool()
+    if grade == 9:
+        if quarter == 1: return _py9_q1_pool()
+        if quarter == 2: return _py9_get_q2_pool() if '_py9_get_q2_pool' in globals() else _py9_q2_pool()
+        if quarter == 3: return _py9_q3_pool()
+        if quarter == 4:
+            # Cumulative: Q1 + Q2 + Q3 + Q4
+            p1 = _py9_q1_pool()
+            p2 = _py9_q2_pool()
+            p3 = _py9_q3_pool()
+            p4 = _py9_q4_pool()
+            return p1 + p2 + p3 + p4
+    return []
+
+# Fixing previous reference name from user context
+def _py7_get_q1_pool():
+    # In case it was named differently in the truncated part
+    if '_py7_q1_pool' in globals():
+        return globals()['_py7_q1_pool']()
+    return []
+
+
+def rebuild_all():
+    from app import app
+    from extensions import db
+    from models import Subject, Question, ControlWork
+
+    with app.app_context():
+        print("Starting Database Rebuild...")
+        
+        # 1. Clear old data for relevant subjects
+        target_subjects = ["Informatika", "Python"]
+        for sname in target_subjects:
+            subject = Subject.query.filter_by(name=sname).first()
+            if subject:
+                print(f"Clearing old questions for {sname}...")
+                # Delete related control work associations first to avoid FK errors
+                # Actually SQLAlchemy handles this if configured, but let's be safe
+                # Clear control works for this subject too
+                cworks = ControlWork.query.filter_by(subject_id=subject.id).all()
+                for cw in cworks:
+                    cw.questions = [] # Clear association table
+                    db.session.delete(cw)
+                
+                # Delete questions
+                Question.query.filter_by(subject_id=subject.id).delete()
+                db.session.commit()
+            else:
+                print(f"Creating subject: {sname}")
+                if sname == "Informatika":
+                    subject = Subject(name="Informatika", grades="5,6", question_count=20, time_limit=30)
+                else:
+                    subject = Subject(name="Python", grades="7,8,9", question_count=20, time_limit=30)
+                db.session.add(subject)
+                db.session.commit()
+
+        # 2. Generate new questions
+        configs = [
+            ("Informatika", [5, 6]),
+            ("Python", [7, 8, 9])
+        ]
+
+        for sname, grades in configs:
+            subject = Subject.query.filter_by(name=sname).first()
+            for grade in grades:
+                for quarter in range(1, 5):
+                    print(f"Generating for {sname} - {grade}-sinf, {quarter}-chorak...")
+                    
+                    if sname == "Informatika":
+                        pool_items = informatics_pool(grade, quarter)
+                    else:
+                        pool_items = python_pool(grade, quarter)
+
+                    if not pool_items:
+                        print(f"  WARNING: No pool items for {grade}-{quarter}")
+                        continue
+
+                    # We need 300 questions.
+                    # We will shuffle the pool and take what we can.
+                    # If we need more, we call the generators in the pool again if they are dynamic.
+                    
+                    final_questions = []
+                    added_texts = set()
+                    
+                    # We need 300 questions.
+                    # We will repeatedly call the pool generator to get more random variants if needed.
+                    count_needed = 300
+                    attempts = 0
+                    while len(final_questions) < count_needed and attempts < 200:
+                        if sname == "Informatika":
+                            current_pool = informatics_pool(grade, quarter)
+                        else:
+                            current_pool = python_pool(grade, quarter)
+                            
+                        random.shuffle(current_pool)
+                        for item in current_pool:
+                            if item.text not in added_texts:
+                                final_questions.append(item)
+                                added_texts.add(item.text)
+                            if len(final_questions) >= count_needed:
+                                break
+                        attempts += 1
+                    
+                    print(f"  Generated {len(final_questions)} unique questions (Attempts: {attempts}).")
+                    
+                    # Save questions to DB
+                    db_questions = []
+                    for i, q in enumerate(final_questions):
+                        # Ensure options are shuffled
+                        opts = [q.answer] + q.wrongs
+                        random.shuffle(opts)
+                        
+                        correct_idx = opts.index(q.answer)
+                        correct_letter = chr(65 + correct_idx) # A, B, C, D
+                        
+                        db_q = Question(
+                            subject_id=subject.id,
+                            grade=grade,
+                            quarter=quarter,
+                            difficulty=q.difficulty,
+                            lesson=q.lesson,
+                            question_text=q.text,
+                            option_a=opts[0],
+                            option_b=opts[1],
+                            option_c=opts[2],
+                            option_d=opts[3] if len(opts) > 3 else "N/A",
+                            correct_answer=correct_letter
+                        )
+                        db.session.add(db_q)
+                        db_questions.append(db_q)
+                    
+                    db.session.commit() # Get IDs
+
+                    # Create Control Work (Top 100)
+                    cw_title = f"{grade}-sinf {quarter}-chorak Nazorat ishi"
+                    cw = ControlWork(
+                        title=cw_title,
+                        subject_id=subject.id,
+                        grade=grade,
+                        quarter=quarter,
+                        time_limit=45
+                    )
+                    # Pick top 100 (best difficulty mix)
+                    # Sort by difficulty 3, then 2, then 1
+                    db_questions.sort(key=lambda x: x.difficulty, reverse=True)
+                    cw.questions = db_questions[:100]
+                    db.session.add(cw)
+                    db.session.commit()
+
+        print("Rebuild Completed Successfully!")
+
+
+# ─── EXTRA GENERATORS FOR PYTHON 8-9 ──────────────────────────────────────────
+
+def _py8_q3_extra() -> list[QItem]:
+    pool = []
+    
+    def t_func_area():
+        w = random.randint(2, 10); h = random.randint(2, 10)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ndef area(w, h):\n    return w * h\nprint(area({w}, {h}))\n```",
+                     answer=str(w*h), wrongs=[str(w+h), str(w*h+1), "0"], difficulty=2, lesson=1)
+                     
+    def t_func_unpack():
+        a = random.randint(1, 10); b = random.randint(11, 20)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ndef get_coords():\n    return {a}, {b}\nx, y = get_coords()\nprint(y)\n```",
+                     answer=str(b), wrongs=[str(a), f"({a}, {b})", "Xatolik"], difficulty=3, lesson=1)
+
+    def t_recursive_sum():
+        n = random.randint(3, 5)
+        def s(x): return x + s(x-1) if x > 0 else 0
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ndef mysum(n):\n    if n == 0: return 0\n    return n + mysum(n-1)\nprint(mysum({n}))\n```",
+                     answer=str(s(n)), wrongs=[str(n), "0", "Xatolik"], difficulty=3, lesson=1)
+
+    def t_func_max3():
+        a = random.randint(1, 50); b = random.randint(1, 50); c = random.randint(1, 50)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ndef mx(a, b, c):\n    return max(a, b, c)\nprint(mx({a}, {b}, {c}))\n```",
+                     answer=str(max(a, b, c)), wrongs=[str(min(a, b, c)), str(a+b+c), "Xatolik"], difficulty=2, lesson=1)
+
+    def t_func_is_even():
+        n = random.randint(1, 100)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ndef is_even(n):\n    return n % 2 == 0\nprint(is_even({n}))\n```",
+                     answer=str(n % 2 == 0), wrongs=[str(not (n % 2 == 0)), "None", "0"], difficulty=2, lesson=2)
+
+    def t_func_str_len():
+        s = random.choice(["python", "code", "function", "return", "class"])
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ndef get_len(s):\n    return len(s)\nprint(get_len('{s}'))\n```",
+                     answer=str(len(s)), wrongs=[str(len(s)+1), "0", "None"], difficulty=1, lesson=1)
+
+    def t_func_default_param():
+        a = random.randint(1, 10); b = random.randint(1, 10)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ndef add(a, b={b}):\n    return a + b\nprint(add({a}))\n```",
+                     answer=str(a+b), wrongs=[str(a), str(b), "Xatolik"], difficulty=3, lesson=3)
+
+    pool += _capped(t_func_area)
+    pool += _capped(t_func_unpack)
+    pool += _capped(t_recursive_sum)
+    pool += _capped(t_func_max3)
+    pool += _capped(t_func_is_even)
+    pool += _capped(t_func_str_len)
+    pool += _capped(t_func_default_param)
+    return pool
+
+def _py8_q4_extra() -> list[QItem]:
+    pool = []
+    def t_try_multi():
+        a = random.randint(1, 10)
+        err = random.choice(["ZeroDivisionError", "ValueError", "TypeError"])
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ntry:\n    x = {a} / 0\nexcept {err}:\n    print('Ushlandi')\nexcept:\n    print('Boshqa')\n```",
+                     answer="Ushlandi" if err == "ZeroDivisionError" else "Boshqa", 
+                     wrongs=["Ushlandi", "Boshqa", "Xatolik"], difficulty=3, lesson=2)
+
+    def t_try_else():
+        a = random.randint(1, 10)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ntry:\n    x = {a} + 5\nexcept:\n    print('Xato')\nelse:\n    print('Ok')\n```",
+                     answer="Ok", wrongs=["Xato", "Ok Xato", "None"], difficulty=3, lesson=2)
+
+    def t_try_finally():
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ntry:\n    print('A')\nfinally:\n    print('B')\n```",
+                     answer="A\nB", wrongs=["A", "B", "Xatolik"], difficulty=3, lesson=2)
+
+    pool += _capped(t_try_multi)
+    pool += _capped(t_try_else)
+    pool += _capped(t_try_finally)
+    return pool
+
+def _py9_q1_extra() -> list[QItem]:
+    pool = []
+    def t_math_ceil_floor():
+        v = random.uniform(2.1, 8.9)
+        op = random.choice(["ceil", "floor"])
+        import math
+        ans = math.ceil(v) if op == "ceil" else math.floor(v)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nimport math\nprint(math.{op}({v:.2f}))\n```",
+                     answer=str(ans), wrongs=[str(ans+1), str(ans-1), "0"], difficulty=2, lesson=1)
+
+    def t_random_choice():
+        L = [random.randint(1, 100) for _ in range(5)]
+        return QItem(text=f"Pythonda `random.choice({L})` nima qiladi?",
+                     answer="Ro'yxatdan tasodifiy bitta elementni tanlaydi", 
+                     wrongs=["Ro'yxatni aralashtiradi", "Eng katta elementni topadi", "Xatolik beradi"], difficulty=2, lesson=1)
+
+    def t_math_pi_pow():
+        a = random.randint(2, 5)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nimport math\nprint(math.pow({a}, 2))\n```",
+                     answer=f"{float(a**2)}", wrongs=[str(a*2), str(a+2), "Xatolik"], difficulty=2, lesson=1)
+
+    def t_datetime_year():
+        y = random.randint(2000, 2025)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nimport datetime\nd = datetime.date({y}, 5, 12)\nprint(d.year)\n```",
+                     answer=str(y), wrongs=["5", "12", "Xatolik"], difficulty=2, lesson=1)
+
+    pool += _capped(t_math_ceil_floor)
+    pool += _capped(t_random_choice)
+    pool += _capped(t_math_pi_pow)
+    pool += _capped(t_datetime_year)
+    return pool
+
+def _py9_q2_extra() -> list[QItem]:
+    pool = []
+    def t_oop_method():
+        names = ["Rex", "Barsik", "Simba", "Aktosh", "Olapar", "Momiq", "Qoplon"]
+        name = random.choice(names)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nclass Dog:\n    def __init__(self, name):\n        self.name = name\n    def bark(self):\n        return f'I am {{self.name}}'\nd = Dog('{name}')\nprint(d.bark())\n```",
+                     answer=f"I am {name}", wrongs=[name, "Dog", "Xatolik"], difficulty=2, lesson=2)
+
+    def t_oop_attr_change():
+        v1 = random.randint(1, 100); v2 = random.randint(101, 200)
+        attr = random.choice(["val", "score", "level", "x"])
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nclass Player:\n    def __init__(self, {attr}):\n        self.{attr} = {attr}\np = Player({v1})\np.{attr} = {v2}\nprint(p.{attr})\n```",
+                     answer=str(v2), wrongs=[str(v1), "0", "Xatolik"], difficulty=2, lesson=1)
+
+    def t_oop_calc():
+        a = random.randint(2, 10); b = random.randint(2, 10)
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\nclass Calc:\n    def add(self, x, y): return x + y\nc = Calc()\nprint(c.add({a}, {b}))\n```",
+                     answer=str(a+b), wrongs=[str(a*b), str(a), "Xatolik"], difficulty=2, lesson=1)
+
+    pool += _capped(t_oop_method)
+    pool += _capped(t_oop_attr_change)
+    pool += _capped(t_oop_calc)
+    return pool
+
+def _py9_q3_extra() -> list[QItem]:
+    pool = []
+    def t_stack_ops():
+        L = [random.randint(1, 100) for _ in range(3)]
+        v = random.randint(101, 200)
+        return QItem(text=f"Quyidagi Stack amallari natijasi nima?\n\n```python\nstack = {L}\nstack.append({v})\nstack.pop()\nprint(stack[-1])\n```",
+                     answer=str(L[-1]), wrongs=[str(v), str(L[0]), "Xatolik"], difficulty=3, lesson=1)
+
+    def t_queue_ops():
+        from collections import deque
+        L = [random.randint(1, 100) for _ in range(3)]
+        v = random.randint(101, 200)
+        return QItem(text=f"Quyidagi Queue (LIFO emas, FIFO) amallari natijasi nima?\n\n```python\nfrom collections import deque\nq = deque({L})\nq.append({v})\nq.popleft()\nprint(list(q)[0])\n```",
+                     answer=str(L[1]), wrongs=[str(L[0]), str(v), "Xatolik"], difficulty=3, lesson=1)
+
+    def t_recursion_depth():
+        n = random.randint(3, 5)
+        def f(x): return x * f(x-1) if x > 1 else 1
+        return QItem(text=f"Quyidagi kod natijasi nima?\n\n```python\ndef fact(n):\n    if n <= 1: return 1\n    return n * fact(n-1)\nprint(fact({n}))\n```",
+                     answer=str(f(n)), wrongs=[str(n), "1", "Xatolik"], difficulty=3, lesson=3)
+
+    pool += _capped(t_stack_ops)
+    pool += _capped(t_queue_ops)
+    pool += _capped(t_recursion_depth)
+    return pool
+
+def _py9_q4_extra() -> list[QItem]:
+    pool = []
+    def t_tkinter_root():
+        return QItem(text="Tkinterda asosiy oynani yaratish uchun qaysi klass ishlatiladi?",
+                     answer="Tk()", wrongs=["Window()", "Main()", "Root()"], difficulty=1, lesson=2)
+
+    def t_tkinter_widget():
+        return QItem(text="Tkinterda foydalanuvchi bosishi uchun mo'ljallangan element qaysi?",
+                     answer="Button", wrongs=["Label", "Entry", "Frame"], difficulty=1, lesson=2)
+
+    pool += _capped(t_tkinter_root)
+    pool += _capped(t_tkinter_widget)
+    return pool
+
+
+if __name__ == "__main__":
+    rebuild_all()
+

@@ -434,6 +434,17 @@ def test():
                 
             time_remaining_ms = int(remaining_seconds * 1000)
 
+    # Calculate violation end time if blocked
+    violation_end_time = session.get('violation_end_time')
+    if is_blocked and violation_end_time:
+        now = tashkent_now().timestamp()
+        if now >= violation_end_time:
+            # Time has passed, auto-unblock
+            session.pop('is_blocked', None)
+            session.pop('violation_end_time', None)
+            is_blocked = False
+            violation_end_time = None
+    
     return render_template('student_test.html', 
                          question=question,
                          question_text=question_text,
@@ -444,6 +455,7 @@ def test():
                          answers=answers,
                          is_protected=is_protected,
                          is_blocked=is_blocked,
+                         violation_end_time=violation_end_time,
                          marked_questions=marked_questions,
                          question_image_url=question.image_url,
                          time_remaining_ms=time_remaining_ms)
@@ -453,29 +465,54 @@ def report_violation():
     if 'question_ids' not in session:
         return jsonify({'error': 'Session expired'}), 400
     
+    # If already blocked, don't overlap violations unless it's a new one after expiry?
+    # Actually, if we are already in red screen, we don't need to extend it usually.
+    # But let's check current time.
+    now = tashkent_now().timestamp()
+    existing_end = session.get('violation_end_time', 0)
+    
+    if existing_end > now:
+        return jsonify({'success': True, 'already_blocked': True})
+
     data = request.json or {}
     violation_type = data.get('type', 'Unknown')
     
+    # Progressive penalty: 1st=15s, others=30s
+    v_count = session.get('violation_count', 0)
+    penalty_seconds = 15 if v_count == 0 else 30
+    
     session['is_blocked'] = True
-    session['violation_count'] = session.get('violation_count', 0) + 1
+    session['violation_count'] = v_count + 1
+    session['violation_end_time'] = now + penalty_seconds
     
     details = session.get('violation_details', [])
     details.append({
         'type': violation_type,
         'timestamp': tashkent_now().isoformat(),
-        'question_index': session.get('current_question', 0) + 1
+        'question_index': session.get('current_question', 0) + 1,
+        'penalty': penalty_seconds
     })
     session['violation_details'] = details
     
     session.permanent = True
-    return jsonify({'success': True})
+    return jsonify({
+        'success': True, 
+        'penalty_seconds': penalty_seconds,
+        'violation_end_time': session['violation_end_time']
+    })
 
 @student_bp.route('/clear_violation', methods=['POST'])
 def clear_violation():
-    session.pop('is_blocked', None)
-    session.pop('violation_count', None)
-    session.pop('violation_details', None)
-    return jsonify({'success': True})
+    # Only clear if time has actually passed
+    now = tashkent_now().timestamp()
+    end_time = session.get('violation_end_time', 0)
+    
+    if now >= end_time:
+        session.pop('is_blocked', None)
+        session.pop('violation_end_time', None)
+        return jsonify({'success': True})
+    else:
+        return jsonify({'success': False, 'remaining': int(end_time - now)})
 
 
 @student_bp.route('/verify_unlock', methods=['POST'])

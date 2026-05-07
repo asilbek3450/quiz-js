@@ -565,6 +565,10 @@
             }
         });
 
+        const IS_BLOCKED_INIT = {{ 'true' if is_blocked else 'false' }};
+        const VIOLATION_END_TIME = {{ violation_end_time if violation_end_time else 0 }};
+        let violationTimerInterval = null;
+
         // ----------- ANTI-CHEAT LOGIC -----------
 
         function playWarningSound() {
@@ -580,11 +584,11 @@
 
                 oscillator1.type = 'sawtooth';
                 oscillator1.frequency.setValueAtTime(800, audioCtx.currentTime);
-                oscillator1.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.5);
+                oscillator1.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.3);
 
                 oscillator2.type = 'square';
                 oscillator2.frequency.setValueAtTime(400, audioCtx.currentTime);
-                oscillator2.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.5);
+                oscillator2.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.3);
 
                 oscillator1.connect(gainNode);
                 oscillator2.connect(gainNode);
@@ -593,12 +597,13 @@
                 oscillator1.start();
                 oscillator2.start();
 
-                gainNode.gain.setValueAtTime(0.6, audioCtx.currentTime);
-                gainNode.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 1.5);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 2);
+                // Make it loud
+                gainNode.gain.setValueAtTime(1.0, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(1.0, audioCtx.currentTime + 0.8);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.2);
 
-                oscillator1.stop(audioCtx.currentTime + 2);
-                oscillator2.stop(audioCtx.currentTime + 2);
+                oscillator1.stop(audioCtx.currentTime + 1.2);
+                oscillator2.stop(audioCtx.currentTime + 1.2);
             } catch (e) {
                 console.error("Audio error:", e);
             }
@@ -610,46 +615,52 @@
             return Object.assign({ 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN }, extra);
         }
 
-        const IS_BLOCKED_INIT = {{ 'true' if is_blocked else 'false' }};
-        let violationTimerInterval = null;
-
-        if (IS_BLOCKED_INIT) {
-            startViolationCountdown();
+        if (IS_BLOCKED_INIT && VIOLATION_END_TIME > 0) {
+            startViolationCountdown(VIOLATION_END_TIME);
         }
 
-        function startViolationCountdown() {
-            let timeLeft = 15;
+        function startViolationCountdown(endTime) {
             const timerEl = document.getElementById('violation-timer');
-            if (timerEl) timerEl.textContent = timeLeft;
-
+            const overlay = document.getElementById('violation-overlay');
+            
+            if (overlay) overlay.style.display = 'flex';
             if (violationTimerInterval) clearInterval(violationTimerInterval);
 
-            violationTimerInterval = setInterval(() => {
-                timeLeft--;
+            function update() {
+                const now = Date.now() / 1000;
+                const timeLeft = Math.max(0, Math.ceil(endTime - now));
+                
                 if (timerEl) timerEl.textContent = timeLeft;
+                
                 if (timeLeft <= 0) {
                     clearInterval(violationTimerInterval);
                     clearViolationOnServer();
                 }
-            }, 1000);
+            }
+            
+            update();
+            violationTimerInterval = setInterval(update, 1000);
         }
 
         function triggerViolation(type = 'Blur/Visibility') {
             if (!protectionEnabled) return;
-
-            // Show violation overlay immediately on client
+            
+            // Check if already blocked on client to avoid double audio
             const overlay = document.getElementById('violation-overlay');
-            if (overlay) overlay.style.display = 'flex';
+            if (overlay && overlay.style.display === 'flex') return;
 
-            playWarningSound();
-
-            startViolationCountdown();
-
-            // Report to server with type
+            // Report to server first to get the official end time
             fetch('/student/report_violation', {
                 method: 'POST',
                 headers: csrfHeaders(),
                 body: JSON.stringify({ type: type })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.violation_end_time) {
+                    playWarningSound();
+                    startViolationCountdown(data.violation_end_time);
+                }
             });
         }
 
@@ -661,7 +672,8 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        document.getElementById('violation-overlay').style.display = 'none';
+                        const overlay = document.getElementById('violation-overlay');
+                        if (overlay) overlay.style.display = 'none';
                         // Re-enter fullscreen if it was exited
                         if (!document.fullscreenElement && IS_PROTECTED) {
                             document.documentElement.requestFullscreen().catch(() => { });
@@ -672,14 +684,12 @@
 
         document.addEventListener('visibilitychange', () => {
             if (document.hidden && protectionEnabled) {
-                console.log("Violation: visibilitychange");
                 triggerViolation('Visibility-Changed');
             }
         });
 
         window.addEventListener('blur', () => {
             if (protectionEnabled) {
-                console.log("Violation: blur");
                 document.body.style.filter = "blur(20px)";
                 triggerViolation('Window-Blur');
             }
@@ -689,15 +699,47 @@
             document.body.style.filter = "none";
         });
 
+        // Advanced DevTools Detection
+        (function() {
+            let devtoolsOpen = false;
+            const threshold = 160;
+            
+            const check = () => {
+                const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+                const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+                if (widthThreshold || heightThreshold) {
+                    if (!devtoolsOpen && protectionEnabled) {
+                        triggerViolation('DevTools-Detected-Size');
+                    }
+                    devtoolsOpen = true;
+                } else {
+                    devtoolsOpen = false;
+                }
+            };
+            
+            setInterval(check, 1000);
+
+            // debugger trick
+            setInterval(() => {
+                if (protectionEnabled) {
+                    const start = Date.now();
+                    debugger;
+                    if (Date.now() - start > 100) {
+                        triggerViolation('DevTools-Detected-Debugger');
+                    }
+                }
+            }, 2000);
+        })();
+
         // Anti-Screenshot & Keys
         document.addEventListener('keyup', (e) => {
             if (protectionEnabled) {
                 if (e.key === 'PrintScreen' || e.keyCode === 44) {
                     navigator.clipboard.writeText("No screenshots!");
-                    triggerViolation();
+                    triggerViolation('Screenshot-Key');
                 }
                 if (e.metaKey && e.shiftKey && (e.key === '3' || e.key === '4' || e.key === '5')) {
-                    triggerViolation();
+                    triggerViolation('Screenshot-Shortcut');
                 }
             }
         });

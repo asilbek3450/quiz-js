@@ -1,9 +1,9 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 
 def tashkent_now():
     """Hozirgi Toshkent vaqtini qaytaradi (UTC+5)."""
-    return datetime.utcnow() + timedelta(hours=5)
+    return datetime.now(timezone(timedelta(hours=5)))
 from extensions import db
 
 # Association table for control work questions
