@@ -161,6 +161,24 @@
 </style>
 {% endblock %}
 
+
+{% block extra_js %}
+<!-- Violation Overlay for Arena -->
+<div id="violation-overlay"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #e74c3c; z-index: 99999; color: white; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+    <div class="display-3 mb-4"><i class="fas fa-exclamation-triangle"></i></div>
+    <h1 class="display-3 fw-bold">QOIDABUZARLIK!</h1>
+    <h3 class="mb-4">Siz arena oynasidan chiqdingiz!</h3>
+    <div class="mb-4">
+        <p class="h5 mb-3" id="violation-msg">Sizga 15 soniyalik jazo berildi!</p>
+        <div class="display-1 fw-bold mb-3" id="violation-timer">15</div>
+    </div>
+    <button id="resume-btn" class="btn btn-light btn-lg shadow-lg px-5 py-3 mt-3" style="display: none;" onclick="clearViolationOnServer()">
+        <i class="fas fa-play me-2"></i> Davom etish
+    </button>
+</div>
+{% endblock %}
+
 {% block content %}
 <div class="pd-wrap">
   <!-- ── Left: Problem statement ─────────────────────────────────────────── -->
@@ -455,6 +473,104 @@ print(n * 2)
   const PID      = parseInt("{{ problem.id }}", 10);
   const EXAMPLES = {{ examples | tojson }};   // namuna test holatlari
   let stdinVisible = false;
+
+  
+  // ── Arena Anti-cheat System ───────────────────────────────────────────────
+  let protectionEnabled = true;
+  let violationTimerInterval = null;
+
+  const VIOLATION_END_TIME_INIT = {{ session.get('arena_violation_end_time', 0) }};
+  if (VIOLATION_END_TIME_INIT > (Date.now() / 1000)) {
+      startViolationCountdown(VIOLATION_END_TIME_INIT);
+  }
+
+  function startViolationCountdown(endTime) {
+      const timerEl = document.getElementById('violation-timer');
+      const overlay = document.getElementById('violation-overlay');
+      const resumeBtn = document.getElementById('resume-btn');
+      const msgEl = document.getElementById('violation-msg');
+      
+      if (overlay) {
+          overlay.style.display = 'flex';
+          // Force fullscreen if possible, but browser might block without gesture
+      }
+      if (resumeBtn) resumeBtn.style.display = 'none';
+      if (msgEl) msgEl.textContent = "Sizga 15 soniyalik jazo berildi!";
+      if (violationTimerInterval) clearInterval(violationTimerInterval);
+
+      function update() {
+          const now = Date.now() / 1000;
+          const timeLeft = Math.max(0, Math.ceil(endTime - now));
+          if (timerEl) {
+              timerEl.textContent = timeLeft;
+              timerEl.style.display = timeLeft > 0 ? 'block' : 'none';
+          }
+          if (timeLeft <= 0) {
+              clearInterval(violationTimerInterval);
+              if (resumeBtn) {
+                  resumeBtn.style.display = 'inline-block';
+                  if (msgEl) msgEl.textContent = "Jazo muddati tugadi. Davom etishingiz mumkin.";
+              } else {
+                  clearViolationOnServer();
+              }
+          }
+      }
+      update();
+      violationTimerInterval = setInterval(update, 1000);
+  }
+
+  function triggerViolation(type = 'Unknown') {
+      if (!protectionEnabled) return;
+      const overlay = document.getElementById('violation-overlay');
+      if (overlay && overlay.style.display === 'flex') return;
+
+      fetch('/arena/report_violation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+          body: JSON.stringify({ type: type })
+      })
+      .then(res => res.json())
+      .then(data => {
+          if (data.success && data.violation_end_time) {
+              startViolationCountdown(data.violation_end_time);
+          }
+      });
+  }
+
+  window.clearViolationOnServer = function() {
+      fetch('/arena/clear_violation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF }
+      })
+      .then(res => res.json())
+      .then(data => {
+          if (data.success) {
+              const overlay = document.getElementById('violation-overlay');
+              if (overlay) overlay.style.display = 'none';
+              if (!document.fullscreenElement) {
+                  document.documentElement.requestFullscreen().catch(() => { });
+              }
+          }
+      });
+  }
+
+  document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement && protectionEnabled) {
+          triggerViolation('Fullscreen-Exit');
+      }
+  });
+
+  document.addEventListener('visibilitychange', () => {
+      if (document.hidden && protectionEnabled) {
+          triggerViolation('Visibility-Changed');
+      }
+  });
+
+  window.addEventListener('blur', () => {
+      if (protectionEnabled) {
+          triggerViolation('Window-Blur');
+      }
+  });
 
   // ── Anti-cheat measures ───────────────────────────────────────────────────
 
