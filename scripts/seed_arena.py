@@ -1898,6 +1898,7 @@ def run():
                 existing.output_format  = p_data.get("output_format", "")
                 existing.constraints    = p_data.get("constraints", "")
                 existing.examples       = examples_json
+                existing.hidden_tests   = json.dumps(p_data.get("hidden_tests", []), ensure_ascii=False)
                 existing.difficulty     = p_data["difficulty"]
                 existing.category       = p_data["category"]
                 existing.correct_answer = p_data["correct_answer"]
@@ -1911,6 +1912,7 @@ def run():
                     output_format  = p_data.get("output_format", ""),
                     constraints    = p_data.get("constraints", ""),
                     examples       = examples_json,
+                    hidden_tests   = json.dumps(p_data.get("hidden_tests", []), ensure_ascii=False),
                     difficulty     = p_data["difficulty"],
                     category       = p_data["category"],
                     correct_answer = p_data["correct_answer"],

@@ -460,14 +460,17 @@
     <h1 class="display-3 fw-bold">{{ _('QOIDABUZARLIK!') }}</h1>
     <h3 class="mb-4">{{ _('Siz test oynasidan chiqdingiz!') }}</h3>
     <div class="mb-4">
-        <p class="h5 mb-3">{{ _('Sizga 15 soniyalik jazo berildi!') }}</p>
+        <p class="h5 mb-3" id="violation-msg">{{ _('Sizga 15 soniyalik jazo berildi!') }}</p>
         <div class="display-1 fw-bold mb-3" id="violation-timer">15</div>
     </div>
+    <button id="resume-btn" class="btn btn-light btn-lg shadow-lg px-5 py-3 mt-3 animate-scale-in" style="display: none;" onclick="clearViolationOnServer()">
+        <i class="fas fa-play me-2"></i> {{ _('Davom etish') }}
+    </button>
 </div>
 
 <!-- Start Overlay for Audio Permission & Grace Period -->
-<!-- Start Overlay for Audio Permission & Grace Period - ONLY ON FIRST Q -->
-{% if current <= 1 and is_protected %} <div id="start-overlay"
+{% if current <= 1 and is_protected %} 
+<div id="start-overlay"
     style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 9998; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; backdrop-filter: blur(5px);">
     <div class="card p-5 border-0 shadow-xl" style="max-width: 500px;">
         <div class="mb-4 text-primary">
@@ -480,323 +483,263 @@
             <i class="fas fa-play me-2"></i> {{ _('Testni boshlash') }}
         </button>
     </div>
-    </div>
-    {% endif %}
+</div>
+{% endif %}
 
-    <script>
-        // Configuration
-        const IS_PROTECTED = {{ 'true' if is_protected else 'false' }};
-        // Enable protection immediately if it's protected and NOT the first question (handled by JS logic)
-        // Or if first question, wait for start.
-        const CURRENT_Q = {{ current }};
+<script>
+    // Configuration
+    const IS_PROTECTED = {{ 'true' if is_protected else 'false' }};
+    const CURRENT_Q = {{ current }};
+    let protectionEnabled = false;
 
-        // If Q == 1, wait for "Start Test" button.
-        // If Q > 1, start with a 3-second grace period to allow session/page stability.
-        let protectionEnabled = false;
-
-        if (IS_PROTECTED && CURRENT_Q > 1) {
-            console.log("Q > 1 detected. Arming protection in 3s...");
-            setTimeout(() => {
-                // Only arm if we are not already displaying a violation
-                const overlay = document.getElementById('violation-overlay');
-                if (protectionEnabled === false && overlay && overlay.style.display !== 'flex') {
-                    protectionEnabled = true;
-                    console.log("Protection armed automatically.");
-                }
-            }, 3000);
-        }
-
-        // Disable protection when intentional navigation starts
-        function disableProtection() {
-            protectionEnabled = false;
-            console.log("Protection disabled for navigation.");
-        }
-
-        // Add listeners to all navigation links
-        document.querySelectorAll('a[href*="/student/navigate"], a[href*="/student/jump"]').forEach(link => {
-            link.addEventListener('click', disableProtection);
-        });
-
-        // Also handle the finish button in the modal
-        const finishBtn = document.querySelector('a[href*="direction=finish"]');
-        if (finishBtn) finishBtn.addEventListener('click', disableProtection);
-
-        // Audio Context
-        let audioCtx = null;
-
-        function startTest() {
-            // Hide overlay immediately
-            const overlay = document.getElementById('start-overlay');
-            if (overlay) overlay.style.display = 'none';
-
-            // Request Fullscreen
-            if (document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen().catch(e => {
-                    console.error("FS error:", e);
-                });
-            }
-
-            // Try to unlock audio
-            try {
-                if (!audioCtx) {
-                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
-            } catch (e) {
-                console.log("Audio init warning:", e);
-            }
-
-            // Arm protection with delay
-            if (IS_PROTECTED) {
-                console.log("Arming protection in 2s...");
-                setTimeout(() => {
-                    protectionEnabled = true;
-                    console.log("Protection armed.");
-                }, 2000);
-            }
-        }
-
-        // Fullscreen Change Detection
-        document.addEventListener('fullscreenchange', () => {
-            if (!document.fullscreenElement && protectionEnabled) {
-                triggerViolation('Fullscreen-Exit');
-            }
-        });
-
-        const IS_BLOCKED_INIT = {{ 'true' if is_blocked else 'false' }};
-        const VIOLATION_END_TIME = {{ violation_end_time if violation_end_time else 0 }};
-        let violationTimerInterval = null;
-
-        // ----------- ANTI-CHEAT LOGIC -----------
-
-        function playWarningSound() {
-            try {
-                if (!audioCtx) {
-                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-
-                const oscillator1 = audioCtx.createOscillator();
-                const oscillator2 = audioCtx.createOscillator();
-                const gainNode = audioCtx.createGain();
-
-                oscillator1.type = 'sawtooth';
-                oscillator1.frequency.setValueAtTime(800, audioCtx.currentTime);
-                oscillator1.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.3);
-
-                oscillator2.type = 'square';
-                oscillator2.frequency.setValueAtTime(400, audioCtx.currentTime);
-                oscillator2.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.3);
-
-                oscillator1.connect(gainNode);
-                oscillator2.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-
-                oscillator1.start();
-                oscillator2.start();
-
-                // Make it loud
-                gainNode.gain.setValueAtTime(1.0, audioCtx.currentTime);
-                gainNode.gain.linearRampToValueAtTime(1.0, audioCtx.currentTime + 0.8);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.2);
-
-                oscillator1.stop(audioCtx.currentTime + 1.2);
-                oscillator2.stop(audioCtx.currentTime + 1.2);
-            } catch (e) {
-                console.error("Audio error:", e);
-            }
-        }
-
-        // CSRF token barcha fetch so'rovlari uchun
-        const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || '';
-        function csrfHeaders(extra) {
-            return Object.assign({ 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN }, extra);
-        }
-
-        if (IS_BLOCKED_INIT && VIOLATION_END_TIME > 0) {
-            startViolationCountdown(VIOLATION_END_TIME);
-        }
-
-        function startViolationCountdown(endTime) {
-            const timerEl = document.getElementById('violation-timer');
+    if (IS_PROTECTED && CURRENT_Q > 1) {
+        setTimeout(() => {
             const overlay = document.getElementById('violation-overlay');
-            
-            if (overlay) overlay.style.display = 'flex';
-            if (violationTimerInterval) clearInterval(violationTimerInterval);
+            if (protectionEnabled === false && overlay && overlay.style.display !== 'flex') {
+                protectionEnabled = true;
+            }
+        }, 3000);
+    }
 
-            function update() {
-                const now = Date.now() / 1000;
-                const timeLeft = Math.max(0, Math.ceil(endTime - now));
-                
-                if (timerEl) timerEl.textContent = timeLeft;
-                
-                if (timeLeft <= 0) {
-                    clearInterval(violationTimerInterval);
+    function disableProtection() {
+        protectionEnabled = false;
+    }
+
+    document.querySelectorAll('a[href*="/student/navigate"], a[href*="/student/jump"]').forEach(link => {
+        link.addEventListener('click', disableProtection);
+    });
+
+    const finishBtn = document.querySelector('a[href*="direction=finish"]');
+    if (finishBtn) finishBtn.addEventListener('click', disableProtection);
+
+    let audioCtx = null;
+
+    function startTest() {
+        const overlay = document.getElementById('start-overlay');
+        if (overlay) overlay.style.display = 'none';
+
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen().catch(e => console.error("FS error:", e));
+        }
+
+        try {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        } catch (e) { console.log("Audio init warning:", e); }
+
+        if (IS_PROTECTED) {
+            setTimeout(() => { protectionEnabled = true; }, 2000);
+        }
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement && protectionEnabled) {
+            triggerViolation('Fullscreen-Exit');
+        }
+    });
+
+    const IS_BLOCKED_INIT = {{ 'true' if is_blocked else 'false' }};
+    const VIOLATION_END_TIME = {{ violation_end_time if violation_end_time else 0 }};
+    let violationTimerInterval = null;
+
+    function playWarningSound() {
+        try {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            for(let i = 0; i < 3; i++) {
+                const start = now + (i * 0.4);
+                const stop = start + 0.35;
+                const osc1 = audioCtx.createOscillator();
+                const osc2 = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc1.type = 'sawtooth';
+                osc1.frequency.setValueAtTime(800, start);
+                osc1.frequency.exponentialRampToValueAtTime(1200, stop);
+                osc2.type = 'square';
+                osc2.frequency.setValueAtTime(400, start);
+                osc2.frequency.exponentialRampToValueAtTime(600, stop);
+                gain.gain.setValueAtTime(0, start);
+                gain.gain.linearRampToValueAtTime(1.0, start + 0.05);
+                gain.gain.linearRampToValueAtTime(1.0, stop - 0.05);
+                gain.gain.linearRampToValueAtTime(0, stop);
+                osc1.connect(gain);
+                osc2.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc1.start(start);
+                osc2.start(start);
+                osc1.stop(stop);
+                osc2.stop(stop);
+            }
+        } catch (e) { console.error("Audio error:", e); }
+    }
+
+    const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    function csrfHeaders(extra) {
+        return Object.assign({ 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN }, extra);
+    }
+
+    if (IS_BLOCKED_INIT && VIOLATION_END_TIME > 0) {
+        startViolationCountdown(VIOLATION_END_TIME);
+    }
+
+    function startViolationCountdown(endTime) {
+        const timerEl = document.getElementById('violation-timer');
+        const overlay = document.getElementById('violation-overlay');
+        const resumeBtn = document.getElementById('resume-btn');
+        const msgEl = document.getElementById('violation-msg');
+        
+        if (overlay) overlay.style.display = 'flex';
+        if (resumeBtn) resumeBtn.style.display = 'none';
+        if (msgEl) msgEl.textContent = "{{ _('Sizga 15 soniyalik jazo berildi!') }}";
+        if (violationTimerInterval) clearInterval(violationTimerInterval);
+
+        function update() {
+            const now = Date.now() / 1000;
+            const timeLeft = Math.max(0, Math.ceil(endTime - now));
+            
+            if (timerEl) timerEl.textContent = timeLeft;
+            
+            if (timeLeft <= 0) {
+                clearInterval(violationTimerInterval);
+                if (resumeBtn) {
+                    resumeBtn.style.display = 'inline-block';
+                    if (timerEl) timerEl.style.display = 'none';
+                    if (msgEl) msgEl.textContent = "{{ _('Jazo muddati tugadi. Davom etishingiz mumkin.') }}";
+                } else {
                     clearViolationOnServer();
                 }
             }
-            
-            update();
-            violationTimerInterval = setInterval(update, 1000);
         }
+        
+        update();
+        violationTimerInterval = setInterval(update, 1000);
+    }
 
-        function triggerViolation(type = 'Blur/Visibility') {
-            if (!protectionEnabled) return;
-            
-            // Check if already blocked on client to avoid double audio
-            const overlay = document.getElementById('violation-overlay');
-            if (overlay && overlay.style.display === 'flex') return;
+    function triggerViolation(type = 'Blur/Visibility') {
+        if (!protectionEnabled) return;
+        const overlay = document.getElementById('violation-overlay');
+        if (overlay && overlay.style.display === 'flex') return;
 
-            // Report to server first to get the official end time
-            fetch('/student/report_violation', {
-                method: 'POST',
-                headers: csrfHeaders(),
-                body: JSON.stringify({ type: type })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success && data.violation_end_time) {
-                    playWarningSound();
-                    startViolationCountdown(data.violation_end_time);
-                }
-            });
-        }
-
-        function clearViolationOnServer() {
-            fetch('/student/clear_violation', {
-                method: 'POST',
-                headers: csrfHeaders()
-            })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        const overlay = document.getElementById('violation-overlay');
-                        if (overlay) overlay.style.display = 'none';
-                        // Re-enter fullscreen if it was exited
-                        if (!document.fullscreenElement && IS_PROTECTED) {
-                            document.documentElement.requestFullscreen().catch(() => { });
-                        }
-                    }
-                });
-        }
-
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden && protectionEnabled) {
-                triggerViolation('Visibility-Changed');
+        fetch('/student/report_violation', {
+            method: 'POST',
+            headers: csrfHeaders(),
+            body: JSON.stringify({ type: type })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.violation_end_time) {
+                playWarningSound();
+                startViolationCountdown(data.violation_end_time);
             }
         });
+    }
 
-        window.addEventListener('blur', () => {
+    function clearViolationOnServer() {
+        fetch('/student/clear_violation', {
+            method: 'POST',
+            headers: csrfHeaders()
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const overlay = document.getElementById('violation-overlay');
+                if (overlay) overlay.style.display = 'none';
+                const timerEl = document.getElementById('violation-timer');
+                if (timerEl) timerEl.style.display = 'block';
+                
+                if (!document.fullscreenElement && IS_PROTECTED) {
+                    document.documentElement.requestFullscreen().catch(() => { });
+                }
+            }
+        });
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden && protectionEnabled) triggerViolation('Visibility-Changed');
+    });
+
+    window.addEventListener('blur', () => {
+        if (protectionEnabled) {
+            document.body.style.filter = "blur(20px)";
+            triggerViolation('Window-Blur');
+        }
+    });
+
+    window.addEventListener('focus', () => { document.body.style.filter = "none"; });
+
+    (function() {
+        let devtoolsOpen = false;
+        const threshold = 160;
+        const check = () => {
+            const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+            const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+            if (widthThreshold || heightThreshold) {
+                if (!devtoolsOpen && protectionEnabled) triggerViolation('DevTools-Detected-Size');
+                devtoolsOpen = true;
+            } else { devtoolsOpen = false; }
+        };
+        setInterval(check, 1000);
+        setInterval(() => {
             if (protectionEnabled) {
-                document.body.style.filter = "blur(20px)";
-                triggerViolation('Window-Blur');
+                const start = Date.now();
+                debugger;
+                if (Date.now() - start > 100) triggerViolation('DevTools-Detected-Debugger');
+            }
+        }, 2000);
+    })();
+
+    document.addEventListener('keyup', (e) => {
+        if (protectionEnabled) {
+            if (e.key === 'PrintScreen' || e.keyCode === 44) {
+                navigator.clipboard.writeText("No screenshots!");
+                triggerViolation('Screenshot-Key');
+            }
+            if (e.metaKey && e.shiftKey && (e.key === '3' || e.key === '4' || e.key === '5')) triggerViolation('Screenshot-Shortcut');
+        }
+    });
+
+    document.addEventListener('contextmenu', event => { if (protectionEnabled) event.preventDefault(); });
+
+    document.onkeydown = function (e) {
+        if (!protectionEnabled) return true;
+        if (e.key === 'F12') return false;
+        if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) return false;
+        if (e.ctrlKey && e.key === 'u') return false;
+    }
+
+    function submitAnswer(questionId, answer) {
+        fetch('/student/answer', {
+            method: 'POST',
+            headers: csrfHeaders(),
+            body: JSON.stringify({ question_id: questionId, answer: answer })
+        });
+    }
+
+    function toggleMark(questionId) {
+        const btn = document.getElementById('mark-btn');
+        const isMarked = btn.classList.contains('btn-warning');
+        const newMarked = !isMarked;
+
+        fetch('/student/mark_question', {
+            method: 'POST',
+            headers: csrfHeaders(),
+            body: JSON.stringify({ question_id: parseInt(questionId), marked: newMarked })
+        }).then(() => {
+            if (newMarked) {
+                btn.classList.replace('btn-outline-warning', 'btn-warning');
+                btn.querySelector('i').classList.replace('far', 'fas');
+            } else {
+                btn.classList.replace('btn-warning', 'btn-outline-warning');
+                btn.querySelector('i').classList.replace('fas', 'far');
             }
         });
+    }
 
-        window.addEventListener('focus', () => {
-            document.body.style.filter = "none";
-        });
+    const VIOLATION_TIMEOUT = 15000;
+    {% if session.get('cw_time_limit') %}
+    const TEST_DURATION = {{ session.get('cw_time_limit') }} * 60;
 
-        // Advanced DevTools Detection
-        (function() {
-            let devtoolsOpen = false;
-            const threshold = 160;
-            
-            const check = () => {
-                const widthThreshold = window.outerWidth - window.innerWidth > threshold;
-                const heightThreshold = window.outerHeight - window.innerHeight > threshold;
-                if (widthThreshold || heightThreshold) {
-                    if (!devtoolsOpen && protectionEnabled) {
-                        triggerViolation('DevTools-Detected-Size');
-                    }
-                    devtoolsOpen = true;
-                } else {
-                    devtoolsOpen = false;
-                }
-            };
-            
-            setInterval(check, 1000);
-
-            // debugger trick
-            setInterval(() => {
-                if (protectionEnabled) {
-                    const start = Date.now();
-                    debugger;
-                    if (Date.now() - start > 100) {
-                        triggerViolation('DevTools-Detected-Debugger');
-                    }
-                }
-            }, 2000);
-        })();
-
-        // Anti-Screenshot & Keys
-        document.addEventListener('keyup', (e) => {
-            if (protectionEnabled) {
-                if (e.key === 'PrintScreen' || e.keyCode === 44) {
-                    navigator.clipboard.writeText("No screenshots!");
-                    triggerViolation('Screenshot-Key');
-                }
-                if (e.metaKey && e.shiftKey && (e.key === '3' || e.key === '4' || e.key === '5')) {
-                    triggerViolation('Screenshot-Shortcut');
-                }
-            }
-        });
-
-        document.addEventListener('contextmenu', event => {
-            if (protectionEnabled) event.preventDefault();
-        });
-
-        document.onkeydown = function (e) {
-            if (!protectionEnabled) return true;
-            // F12, Ctrl+Shift+I/J/C, Ctrl+U
-            if (e.key === 'F12') return false;
-            if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) return false;
-            if (e.ctrlKey && e.key === 'u') return false;
-        }
-
-        // Standard Logic
-        function submitAnswer(questionId, answer) {
-            fetch('/student/answer', {
-                method: 'POST',
-                headers: csrfHeaders(),
-                body: JSON.stringify({ question_id: questionId, answer: answer })
-            });
-        }
-
-        function toggleMark(questionId) {
-            const btn = document.getElementById('mark-btn');
-            const isMarked = btn.classList.contains('btn-warning');
-            const newMarked = !isMarked;
-
-            fetch('/student/mark_question', {
-                method: 'POST',
-                headers: csrfHeaders(),
-                body: JSON.stringify({ question_id: parseInt(questionId), marked: newMarked })
-            }).then(() => {
-                // Update UI visually
-                if (newMarked) {
-                    btn.classList.remove('btn-outline-warning');
-                    btn.classList.add('btn-warning');
-                    btn.querySelector('i').classList.remove('far');
-                    btn.querySelector('i').classList.add('fas');
-                } else {
-                    btn.classList.remove('btn-warning');
-                    btn.classList.add('btn-outline-warning');
-                    btn.querySelector('i').classList.remove('fas');
-                    btn.querySelector('i').classList.add('far');
-                }
-                // Optional: sync map without reload? 
-                // For now, reload to see map changes or just leave it for next/prev.
-                // Re-rendering map client side is complex, let's keep it simple.
-            });
-        }
-
-        // Timer configuration
-        const VIOLATION_TIMEOUT = 15000; // 15 seconds
-        {% if session.get('cw_time_limit') %}
-        const TEST_DURATION = {{ session.get('cw_time_limit') }} * 60;
         {% else %}
         const TEST_DURATION = 30 * 60; // Fallback 30 minutes
         {% endif %}

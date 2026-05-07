@@ -4,12 +4,12 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from flask_babel import gettext as _, get_locale
 from extensions import db
 from models import Subject, Question, TestResult, ControlWork, Feedback
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 
 def tashkent_now():
     """Hozirgi Toshkent vaqtini qaytaradi (UTC+5)."""
-    return datetime.utcnow() + timedelta(hours=5)
+    return datetime.now(timezone(timedelta(hours=5)))
 
 
 def to_tashkent(dt):
@@ -165,7 +165,7 @@ def start():
         session['class_number'] = request.form['class_number']
         session['quarter'] = int(request.form['quarter'])
         session['subject_id'] = subject_id
-        session['start_time'] = tashkent_now().timestamp()
+        session['start_time'] = datetime.now(timezone.utc).timestamp()
         session.permanent = True
         
         subject = Subject.query.get(session['subject_id'])
@@ -271,7 +271,7 @@ def control_start():
         session['quarter'] = cw.quarter
         session['subject_id'] = cw.subject_id
         session['control_work_id'] = cw.id
-        session['start_time'] = tashkent_now().timestamp()
+        session['start_time'] = datetime.now(timezone.utc).timestamp()
         session['cw_time_limit'] = cw.time_limit # minutes
         session.permanent = True
         
@@ -424,7 +424,7 @@ def test():
     if cw_time_limit:
         start_time_timestamp = session.get('start_time')
         if start_time_timestamp:
-            elapsed_seconds = tashkent_now().timestamp() - start_time_timestamp
+            elapsed_seconds = datetime.now(timezone.utc).timestamp() - start_time_timestamp
             total_time_seconds = cw_time_limit * 60
             remaining_seconds = total_time_seconds - elapsed_seconds
             
@@ -437,7 +437,7 @@ def test():
     # Calculate violation end time if blocked
     violation_end_time = session.get('violation_end_time')
     if is_blocked and violation_end_time:
-        now = tashkent_now().timestamp()
+        now = datetime.now(timezone.utc).timestamp()
         if now >= violation_end_time:
             # Time has passed, auto-unblock
             session.pop('is_blocked', None)
@@ -468,7 +468,7 @@ def report_violation():
     # If already blocked, don't overlap violations unless it's a new one after expiry?
     # Actually, if we are already in red screen, we don't need to extend it usually.
     # But let's check current time.
-    now = tashkent_now().timestamp()
+    now = datetime.now(timezone.utc).timestamp()
     existing_end = session.get('violation_end_time', 0)
     
     if existing_end > now:
@@ -504,7 +504,7 @@ def report_violation():
 @student_bp.route('/clear_violation', methods=['POST'])
 def clear_violation():
     # Only clear if time has actually passed
-    now = tashkent_now().timestamp()
+    now = datetime.now(timezone.utc).timestamp()
     end_time = session.get('violation_end_time', 0)
     
     if now >= end_time:
@@ -685,7 +685,7 @@ def result():
     duration_text = "00:00"
 
     if start_time:
-        duration_seconds = int(tashkent_now().timestamp() - start_time)
+        duration_seconds = int(datetime.now(timezone.utc).timestamp() - start_time)
         mins = duration_seconds // 60
         secs = duration_seconds % 60
         duration_text = f"{mins:02d}:{secs:02d}"
