@@ -27,10 +27,14 @@ def tashkent_now():
 
 
 def to_tashkent(dt):
-    """DateTime ni Toshkent vaqtiga o'tkazadi (eski UTC yozuvlar uchun ham)."""
+    """DateTime ni Toshkent vaqtida qaytaradi.
+    DB tashkent_now() orqali Toshkent vaqtida saqlangan, qo'shimcha siljish kerakmas."""
     if dt is None:
         return dt
-    return dt + timedelta(hours=5)
+    if dt.tzinfo is not None:
+        from datetime import timezone
+        dt = dt.astimezone(timezone(timedelta(hours=5))).replace(tzinfo=None)
+    return dt
 import json
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload

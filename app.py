@@ -2,7 +2,7 @@ import os
 import secrets
 from flask import Flask, Response, session
 from flask import send_from_directory
-from datetime import date, timedelta
+from datetime import date, timedelta, timezone
 from extensions import db, babel, csrf
 from routes.main import main_bp
 from routes.admin import admin_bp
@@ -61,13 +61,16 @@ def create_app():
 
     @app.template_filter('tashkent')
     def tashkent_filter(dt, fmt='%H:%M, %d-%m'):
-        """DateTime ni Toshkent vaqtiga (UTC+5) o'tkazib formatlaydi.
+        """DateTime ni Toshkent vaqtida formatlaydi.
+        DB models.tashkent_now() orqali Toshkent vaqtida saqlangan, qo'shimcha siljish kerakmas.
         Ishlatish: {{ obj.created_at | tashkent }}
                    {{ obj.created_at | tashkent('%d.%m.%Y %H:%M') }}
         """
         if dt is None:
             return ''
-        return (dt + timedelta(hours=5)).strftime(fmt)
+        if dt.tzinfo is not None:
+            dt = dt.astimezone(timezone(timedelta(hours=5))).replace(tzinfo=None)
+        return dt.strftime(fmt)
 
     # Register Blueprints
     app.register_blueprint(main_bp)
