@@ -2079,7 +2079,14 @@ def p_b071():
         inp = ' '.join(map(str, bills))
         hidden.append({"input": inp, "output": solve(inp)})
     add("B071", "Limonad qaytim (Lemonade Change)",
-        "Limonad 5$ turadi. Mijozlar 5/10/20 dollarlik kupyuralar bilan to'laydi. Har biriga to'g'ri qaytim berib bo'ladimi?",
+        "Limonad sotuvchisisiz. Har bir limonad 5$ turadi. Xaridorlar navbat bilan kelib sizga 5$, 10$ yoki 20$ kupyura beradi.\n"
+        "Sizda boshida hech qanday mayda pul (qaytim) yo'q. Faqat mijozlar bergan pullardan foydalanib qaytim bera olasiz.\n\n"
+        "Barcha xaridorlarga TO'G'RI qaytim bera olsangiz true, aks holda false chiqaring.\n\n"
+        "Ochko'zlik (Greedy) yondashuvi:\n"
+        "  • 5$ kelsa: Qaytim kerak emas, bitta 5$ ko'paydi.\n"
+        "  • 10$ kelsa: Bitta 5$ qaytim beramiz (agar bor bo'lsa), 10$ ko'paydi.\n"
+        "  • 20$ kelsa: Qaytimga 15$ berish kerak. Eng zo'r usul: bitta 10$ va bitta 5$ berish (chunki 5$ lar keyinroq ham kerak bo'ladi). "
+        "Agar 10$ yo'q bo'lsa, uchta 5$ beramiz.",
         "Bir qatorda kupyuralar.", "true yoki false.",
         "1 ≤ n ≤ 10^5",
         examples, hidden, "easy", "Ochko'zlik", "true")
@@ -2106,7 +2113,13 @@ def p_b072():
         inp = f"{' '.join(map(str,g))}\n{' '.join(map(str,s))}"
         hidden.append({"input": inp, "output": solve(inp)})
     add("B072", "Bolalarga pechene tarqatish (Assign Cookies)",
-        "Har bolaning ochligi g[i], har pechenening hajmi s[j]. Pechene s[j] >= g[i] bo'lsa bola qoniqadi. Maksimal qancha bola qoniqishi mumkin?",
+        "Sizda bir nechta pechene va och qolgan bolalar bor. Har bir bolaning 'ochlik darajasi' (g[i]) bor va har bir pechenening 'hajmi' (s[j]) bor.\n\n"
+        "Qoida: Agar s[j] >= g[i] bo'lsa, bu bola shu pechenega to'yadi. Har bir bolaga faqat 1 tagacha pechene berish mumkin.\n"
+        "Maksimal nechta bolani to'yg'izish mumkin?\n\n"
+        "Ochko'zlik (Greedy) Yechimi:\n"
+        "Ikkala massivni ham o'sish tartibida saralang.\n"
+        "Eng kichik ochlik darajasiga ega boladan boshlab pechenelarni tekshirib boring. Agar joriy pechene bolani to'yg'izolsa (s[j]>=g[i]), "
+        "keyingi bolaga (i+1) o'tamiz. Har qanday holatda ham keyingi pechenega (j+1) o'tamiz.",
         "Birinchi qatorda g, ikkinchida s.", "Maksimal qoniqgan bolalar.",
         "1 ≤ |g|, |s| ≤ 3·10^4",
         examples, hidden, "easy", "Ochko'zlik", "1")
@@ -2140,7 +2153,12 @@ def p_b073():
         inp = f"{' '.join(map(str,bed))}\n{n}"
         hidden.append({"input": inp, "output": solve(inp)})
     add("B073", "Gul ekish (Can Place Flowers)",
-        "0/1 dan iborat gulzor (1=gul, 0=bo'sh). Yon-yondagi bo'lmagan holda yana n ta gul ekish mumkinmi?",
+        "Uzoq gulzorda gullar ekilgan (1) yoki bo'sh (0). Qoida: Ikkita gul hech qachon yonma-yon ekilishi mumkin emas.\n\n"
+        "Sizga yana n ta gul ekish vazifasi berilgan. Qoidani buzmagan holda shu gullarni ekib bo'ladimi?\n\n"
+        "Ochko'zlik (Greedy) Yechimi:\n"
+        "Gulzor bo'ylab chapdan o'ngga yuramiz. Agar joriy joy (i) bo'sh bo'lsa (0) va uning CHAP tomoni ham bo'sh (yoki chegara), va O'NG tomoni ham bo'sh (yoki chegara) bo'lsa:\n"
+        "O'sha joyga gul ekamiz (0 ni 1 ga aylantiramiz) va n ni 1 taga kamaytiramiz.\n"
+        "Oxirida n <= 0 bo'lsa, demak ekib bo'ladi (true).",
         "Birinchi qatorda gulzor, ikkinchida n.", "true yoki false.",
         "1 ≤ |bed| ≤ 10^4",
         examples, hidden, "easy", "Ochko'zlik", "true")
@@ -2239,7 +2257,13 @@ def p_b076():
         inp = ' '.join(map(str, stones))
         hidden.append({"input": inp, "output": solve(inp)})
     add("B076", "Oxirgi tosh og'irligi (Last Stone Weight)",
-        "Har qadamda eng katta ikkita tosh urishtiriladi: teng bo'lsa ikkalasi yo'qoladi, aks holda ayirma qoladi. Oxiri qancha tosh og'irligi qoldi?",
+        "Sizda har xil og'irlikdagi toshlar bor. Har qadamda eng OG'IR ikkita toshni olasiz va ularni bir-biriga urasiz:\n"
+        "  • Agar x == y bo'lsa, ikkala tosh ham parchalanib yo'q bo'ladi.\n"
+        "  • Agar x != y bo'lsa (y og'irroq), x yo'qoladi, y ning og'irligi y - x bo'lib qoladi.\n\n"
+        "Bu jarayon bitta tosh qolgunicha (yoki umuman qolmaguncha) davom etadi. Oxirida qolgan toshning og'irligini toping (hech nima qolmasa 0).\n\n"
+        "Optimal Yechim (Max-Heap / Priority Queue):\n"
+        "Toshlarni Max-Heap ma'lumotlar tuzilmasiga saqlash (Python da heapq - manfiy qilib saqlash orqali). "
+        "Bu har safar eng katta 2 ta toshni tezda (O(logN)) topish va yangisini qo'shish imkonini beradi.",
         "Bir qatorda toshlar.", "Oxirgi tosh og'irligi (0 yoki +).",
         "1 ≤ n ≤ 30, 1 ≤ tosh ≤ 1000",
         examples, hidden, "easy", "Ochko'zlik", "1")
@@ -2354,7 +2378,16 @@ def p_b080():
         inp = ' '.join(map(str, gains))
         hidden.append({"input": inp, "output": solve(inp)})
     add("B080", "Eng yuqori balandlik (Find the Highest Altitude)",
-        "Velosipedchi 0 dan boshlaydi. gain[i] — i-bosqichda balandlik o'zgarishi. Eng yuqori joyga balandlikni toping.",
+        "Velosipedchi dengiz sathidan (0 balandlikdan) sayohatni boshladi. Sizga u o'tgan har bir nuqtalar orasidagi BALANDLIK O'ZGARISHI (gain) massivi berilgan.\n"
+        "Masalan: gain = [-5, 1, 5, 0, -7]\n"
+        "0-nuqta: 0\n"
+        "1-nuqta: 0 + (-5) = -5\n"
+        "2-nuqta: -5 + 1 = -4\n"
+        "3-nuqta: -4 + 5 = 1\n"
+        "4-nuqta: 1 + 0 = 1\n"
+        "5-nuqta: 1 + (-7) = -6\n\n"
+        "Bu balandliklar ichida eng kattasi 1. Demak sayohatdagi eng yuqori balandlik 1 ga teng.\n"
+        "Yechim: Prefiks yig'indisi (Prefix sum) orqali yig'ib borib, eng kattasini eslab qolish kifoya.",
         "Bir qatorda gain massivi.", "Eng yuqori balandlik.",
         "1 ≤ n ≤ 100",
         examples, hidden, "easy", "Massivlar", "1")
@@ -2410,7 +2443,15 @@ def p_b082():
         inp = ' '.join(map(str, nums))
         hidden.append({"input": inp, "output": solve(inp)})
     add("B082", "Uy o'g'risi (House Robber)",
-        "Yon-yondagi uylarni o'g'irlash mumkin emas. Maksimal nima qadar mol o'g'irlash mumkin?",
+        "Siz professional o'g'risiz va ko'chadagi uylarni tunamoqchisiz. Har bir uyda ma'lum miqdorda pul bor.\n"
+        "LEKIN xavfsizlik tizimi shundayki: YONMA-YON joylashgan ikkita uyga tushsangiz, signalizatsiya ishlab ketadi!\n\n"
+        "Vazifa: Signalizatsiyani ishga tushirmasdan eng ko'p qancha pul o'g'irlash mumkinligini toping.\n\n"
+        "Dinamik dasturlash (Dynamic Programming) yechimi:\n"
+        "i-chi uyga kelganda ikkita tanlov bor:\n"
+        "  1) Bu uyni o'g'irlash: unda i-1 uyni tashlash kerak, ya'ni i-2 gacha bo'lgan foyda + i-uyning puli.\n"
+        "  2) Bu uyni tashlab ketish: unda i-1 gacha bo'lgan foydani o'zini olish.\n"
+        "Formula: dp[i] = max(dp[i-1], dp[i-2] + nums[i])\n"
+        "Buni faqat oxirgi 2 ta holatni (prev va curr) xotirada saqlab O(1) xotira bilan ishlash ham mumkin.",
         "Bir qatorda uylardagi pul.", "Maksimal pul.",
         "1 ≤ n ≤ 100",
         examples, hidden, "easy", "Dinamik dasturlash", "4")
@@ -2436,7 +2477,12 @@ def p_b083():
         inp = ' '.join(map(str, cost))
         hidden.append({"input": inp, "output": solve(inp)})
     add("B083", "Zinapoyaning minimal narxi (Min Cost Climbing Stairs)",
-        "Har zinapoyada cost berilgan. Pastdan boshlab 1 yoki 2 zina ko'tarilishingiz mumkin. Tepaga chiqishning minimal narxi.",
+        "Siz zinapoya oldidasiz. Har bir pog'onaga qadam qo'yishning o'ziga xos 'narxi' (cost massivi) bor.\n"
+        "Siz 0- yoki 1-pog'onadan boshlashingiz mumkin. Har safar 1 ta yoki 2 ta pog'ona yuqoriga sakrashingiz mumkin.\n"
+        "Vazifa: Eng yuqoriga (massiv oxiridan tashqariga) chiqish uchun to'lanadigan MINIMAL narxni toping.\n\n"
+        "Dinamik Dasturlash (DP) Yechimi:\n"
+        "i-chi pog'onaga chiqishning minimal narxi: cost[i] + min(i-1 dan kelish narxi, i-2 dan kelish narxi).\n"
+        "Buni orqadan oldinga (tepadan pastga) hisoblasa ham bo'ladi: a va b o'zgaruvchilar yordamida O(1) xotira bilan ishlasa bo'ladi.",
         "Bir qatorda cost massivi.", "Minimal narx.",
         "2 ≤ n ≤ 1000",
         examples, hidden, "easy", "Dinamik dasturlash", "15")
@@ -2574,7 +2620,15 @@ def p_b088():
         n = random.randint(1, 10**6)
         hidden.append({"input": str(n), "output": solve(str(n))})
     add("B088", "Almashinuvchi bitlar (Alternating Bits)",
-        "Sonning ikkilik tasviri 010101... yoki 101010... shaklida bo'lsa true.",
+        "Berilgan sonning ikkilik sanoq sistemasidagi ko'rinishida 0 va 1 lar doimo galma-gal kelishini tekshiring (yonma-yon ikkita 0 yoki ikkita 1 kelmasin).\n\n"
+        "Masalan:\n"
+        "  • 5 = 101 (true)\n"
+        "  • 7 = 111 (false, uchta 1 yonma-yon)\n"
+        "  • 11 = 1011 (false)\n\n"
+        "Bit amallari bilan hiyla:\n"
+        "Agar n almashtiruvchi bitlardan iborat bo'lsa (1010), uni o'ngga 1 bit sursak (n >> 1 = 0101) va ular XOR (^) qilinsa:\n"
+        "1010 ^ 0101 = 1111 (faqat 1 lardan iborat son chiqadi).\n"
+        "Bunday sonni x&(x+1) qilsangiz doim 0 chiqadi!",
         "Bir musbat son.", "true yoki false.",
         "1 ≤ n ≤ 2^31-1",
         examples, hidden, "easy", "Bit amallari", "true")
@@ -2600,7 +2654,12 @@ def p_b089():
             n = random.randint(-100, 10**6)
         hidden.append({"input": str(n), "output": solve(str(n))})
     add("B089", "To'rtning darajasi (Power of Four)",
-        "n soni 4 ning biror darajasiga teng bo'lsa true (1, 4, 16, 64, ...).",
+        "Berilgan n soni 4 ning butun darajasiga (4^x) tengmi yoki yo'qmi, shuni tekshiring.\n"
+        "Qator: 1, 4, 16, 64, 256...\n\n"
+        "Bit amallari (Bitwise) bilan hiyla yechim:\n"
+        "  1) Avval son 2 ning darajasi ekanligiga ishonch hosil qilamiz: n > 0 va (n & (n-1)) == 0\n"
+        "  2) Agar u 2 ning darajasi bo'lsa, u qachon 4 ning darajasi bo'ladi? Faqat uning yagona '1' biti TOQ pozitsiyada turganda! (Masalan 1 = 1, 4 = 100, 16 = 10000)\n"
+        "Buni tekshirish uchun uni maska (0x55555555, ya'ni ...01010101) bilan AND qilamiz. Agar n & 0x55555555 != 0 bo'lsa, u 4 ning darajasi hisoblanadi.",
         "Bir butun son.", "true yoki false.",
         "-2^31 ≤ n ≤ 2^31-1",
         examples, hidden, "easy", "Bit amallari", "true")
@@ -2671,8 +2730,15 @@ def p_b092():
         t = random.choice('abcdefghijk')
         inp = f"{' '.join(letters)}\n{t}"
         hidden.append({"input": inp, "output": solve(inp)})
-    add("B092", "Targetdan katta eng kichik harf",
-        "Saralangan harflar massivi va target harf berilgan. target dan katta eng kichik harfni topib chiqaring (aylanma — yo'q bo'lsa birinchisini).",
+    add("B092", "Maqsaddan katta eng kichik harf (Find Smallest Letter Greater Than Target)",
+        "Sizga o'sish tartibida saralangan harflar massivi va bitta 'target' harfi berilgan.\n"
+        "Massiv ichidan alfabet bo'yicha 'target' dan KATTAROQ bo'lgan eng kichik harfni toping.\n\n"
+        "Eslatma (Aylanma xususiyat - Wrap around):\n"
+        "Agar massivda 'target' dan katta harf umuman topilmasa, massivning ENG BIRINCHI harfini qaytarishingiz kerak.\n\n"
+        "Misol: letters = ['c', 'f', 'j']\n"
+        "  • target = 'a' → 'c' ('a' dan katta eng kichik)\n"
+        "  • target = 'c' → 'f' ('c' bilan teng bo'lishi yetarli emas, KATTA bo'lishi shart!)\n"
+        "  • target = 'j' → 'c' (j dan kattasi yo'q, shuning uchun aylanib birinchisiga qaytadi).",
         "Birinchi qatorda harflar (probel bilan), ikkinchida target.", "Topilgan harf.",
         "2 ≤ |letters| ≤ 10^4",
         examples, hidden, "easy", "Algoritmlar", "c")
@@ -2738,7 +2804,13 @@ def p_b094():
         inp = f"{' '.join(map(str,nums))}\n{l} {r}"
         hidden.append({"input": inp, "output": solve(inp)})
     add("B094", "Diapazon yig'indisi (Range Sum Query)",
-        "Massivda [l, r] oraliqdagi yig'indini chiqaring (inklyuziv).",
+        "Sizga sonlar massivi va l, r indekslari beriladi.\n"
+        "Massivdagi [l, r] oraliqda yotuvchi barcha elementlar yig'indisini hisoblab chiqaring (ikkala chegara ham kiradi).\n\n"
+        "Prefiks Yig'indisi (Prefix Sum) usuli haqida tushuncha:\n"
+        "Aslida, agar ko'p marta so'rov berilsa, [l, r] oraliqni har safar qo'shib chiqish o'rniga prefix sum qilingan massiv ishlatiladi:\n"
+        "  prefix[i] = nums[0] + ... + nums[i-1]\n"
+        "Shunda [l, r] oraliq yig'indisini O(1) vaqtda topish mumkin: sum = prefix[r+1] - prefix[l]\n\n"
+        "Bu misolda faqat bir marta so'rov bo'lgani uchun oddiy sikl yordamida ham yechsa bo'ladi.",
         "Birinchi qatorda massiv, ikkinchida l r.", "Yig'indi.",
         "1 ≤ n ≤ 10^4",
         examples, hidden, "easy", "Massivlar", "1")
@@ -2763,7 +2835,14 @@ def p_b095():
         inp = ' '.join(map(str, nums))
         hidden.append({"input": inp, "output": solve(inp)})
     add("B095", "Chastota bo'yicha saralash (Sort by Frequency)",
-        "Sonlarni uchrash chastotasi bo'yicha o'sish tartibida joylash. Chastotalar teng bo'lsa katta son oldin keladi.",
+        "Sonlar massivini ularning uchrash chastotasi (necha marta qatnashgani) bo'yicha O'SISH tartibida saralang.\n\n"
+        "Qo'shimcha shart: Agar ikki xil sonning uchrash chastotasi bir xil bo'lsa, u holda KATTA son birinchi yozilsin (ya'ni qiymati bo'yicha kamayish tartibida).\n\n"
+        "Misol: [1, 1, 2, 2, 2, 3]\n"
+        "Chastotalar: 3(1 marta), 1(2 marta), 2(3 marta).\n"
+        "Natija: [3, 1, 1, 2, 2, 2]. (1 ning chastotasi 2, shuning uchun 2 dan oldin yozildi).\n\n"
+        "Misol-2: [2, 3, 1, 3, 2]\n"
+        "Chastotalar: 1(1), 2(2), 3(2). 2 va 3 bir xil ko'p uchragan (2 marta). Shartga ko'ra qiymati katta bo'lgan 3 oldin keladi!\n"
+        "Natija: [1, 3, 3, 2, 2].",
         "Bir qatorda massiv.", "Saralangan massiv.",
         "1 ≤ n ≤ 100",
         examples, hidden, "easy", "Hash", "3 1 1 2 2 2")
@@ -2871,7 +2950,18 @@ def p_b098():
         n = random.randint(0, 10**6)
         hidden.append({"input": str(n), "output": solve(str(n))})
     add("B098", "Sonni nolga keltirish qadami (Steps to Reduce to Zero)",
-        "Son juft bo'lsa 2 ga bo'l, toq bo'lsa 1 ayir. Nolga kelguniga qancha qadam kerak?",
+        "Sizga manfiy bo'lmagan n soni berilgan. Uni 0 ga tushirish uchun necha qadam kerak?\n\n"
+        "Qoidalar:\n"
+        "  • Agar son juft bo'lsa, uni 2 ga bo'lasiz.\n"
+        "  • Agar son toq bo'lsa, undan 1 ayirasiz.\n\n"
+        "Misol: n = 14\n"
+        "  1-qadam: 14 juft, 2 ga bo'lamiz = 7\n"
+        "  2-qadam: 7 toq, 1 ayiramiz = 6\n"
+        "  3-qadam: 6 juft, 2 ga bo'lamiz = 3\n"
+        "  4-qadam: 3 toq, 1 ayiramiz = 2\n"
+        "  5-qadam: 2 juft, 2 ga bo'lamiz = 1\n"
+        "  6-qadam: 1 toq, 1 ayiramiz = 0.\n"
+        "Jami 6 qadam.",
         "Bir manfiy bo'lmagan son.", "Qadamlar soni.",
         "0 ≤ n ≤ 10^6",
         examples, hidden, "easy", "Bit amallari", "6")
