@@ -15,7 +15,8 @@
       "Bash(sqlite3 instance/test_platform.db \"SELECT id, substr\\(question_text,1,50\\), question_text_ru, question_text_en FROM question WHERE subject_id IN \\(1,2\\) LIMIT 5;\")",
       "Bash(python3 -c ' *)",
       "Bash(python3)",
-      "Bash(python3 scripts/seed_grade6_informatika.py)"
+      "Bash(python3 scripts/seed_grade6_informatika.py)",
+      "Bash(python3 scripts/seed_arena_leetcode.py)"
     ]
   }
 }
