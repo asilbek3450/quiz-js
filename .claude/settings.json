@@ -15,7 +15,8 @@
       "Bash(sqlite3 instance/test_platform.db \"SELECT control_work_id, COUNT\\(*\\) FROM control_work_questions GROUP BY control_work_id;\")",
       "Bash(python3 scripts/optimize_quarter4.py)",
       "Bash(python3 scripts/remove_advanced_topics.py)",
-      "Bash(python3 scripts/fix_code_question_style.py)"
+      "Bash(python3 scripts/fix_code_question_style.py)",
+      "Bash(python3 -c ' *)"
     ]
   }
 }
