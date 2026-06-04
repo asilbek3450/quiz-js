@@ -160,14 +160,18 @@ def join_room_req():
         if code not in ROOMS:
             return jsonify({'error': "Bunday xona topilmadi. Kodni tekshiring."}), 404
         room = ROOMS[code]
-        if room['state'] != 'waiting':
-            return jsonify({'error': "Poyga boshlangan. Keyingi poyga kuting."}), 400
         if len(room['participants']) >= 50:
             return jsonify({'error': "Xona to'ldi (max 50 kishi)."}), 400
 
         uid = _get_uid()
         session['typing_name'] = name
-        room['participants'][uid] = _new_participant(name)
+        # Late join: if race is already in progress, mark this participant as
+        # already finished so the global all-finished check is not blocked by them.
+        # They still get a fresh participant row and can type along.
+        participant = _new_participant(name)
+        if room['state'] in ('countdown', 'racing', 'finished'):
+            participant['late_join'] = True
+        room['participants'][uid] = participant
 
     return jsonify({'code': code, 'url': url_for('typing.room', code=code)})
 
@@ -308,6 +312,7 @@ def reset_room(code):
             p['finish_time'] = None
             p['rank']        = None
             p['last_seen']   = time.time()
+            p.pop('late_join', None)
 
     return jsonify({'ok': True})
 
@@ -348,9 +353,11 @@ def update_progress(code):
             p['rank']        = room['finish_count']
             just_finished    = True
 
-        if (room['state'] == 'racing'
-                and all(v['finished'] for v in room['participants'].values())):
-            room['state'] = 'finished'
+        if room['state'] == 'racing':
+            on_time = [v for v in room['participants'].values()
+                       if not v.get('late_join')]
+            if on_time and all(v['finished'] for v in on_time):
+                room['state'] = 'finished'
 
     if just_finished and wpm > 0:
         name = room['participants'][uid]['name']

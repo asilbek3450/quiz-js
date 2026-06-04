@@ -1153,6 +1153,11 @@ function esc(s) {
 (function init() {
   if (INITIAL_STATE === 'racing') {
     activateRacing();
+  } else if (INITIAL_STATE === 'countdown') {
+    document.getElementById('panel-waiting').style.display = 'none';
+    document.getElementById('panel-countdown').style.display = 'block';
+  } else if (INITIAL_STATE === 'finished') {
+    document.getElementById('panel-waiting').style.display = 'none';
   }
   stateInterval = setInterval(pollState, 450);
   pollState();
