@@ -40,6 +40,15 @@
                 </div>
 
                 <div class="options-list">
+                    {% if question.q_type == 'open_ended' %}
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-muted uppercase small">{{ _('Javobingizni kiriting') }}</label>
+                        <textarea class="form-control border-2 bg-light rounded-4 p-3 fs-5" rows="6" 
+                            placeholder="{{ _('Javobingizni yozing...') }}"
+                            onchange="submitAnswer('{{ question.id }}', this.value)"
+                            onkeyup="debouncedSubmitAnswer('{{ question.id }}', this.value)">{{ answers.get(question.id|string, '') }}</textarea>
+                    </div>
+                    {% else %}
                     <div class="row g-3">
                         {% set visual_labels = ['A', 'B', 'C', 'D'] %}
                         {% for option in options %}
@@ -59,6 +68,7 @@
                         </div>
                         {% endfor %}
                     </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -714,6 +724,14 @@
             headers: csrfHeaders(),
             body: JSON.stringify({ question_id: questionId, answer: answer })
         });
+    }
+
+    let saveTimeout;
+    function debouncedSubmitAnswer(questionId, answer) {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            submitAnswer(questionId, answer);
+        }, 1000);
     }
 
     function toggleMark(questionId) {

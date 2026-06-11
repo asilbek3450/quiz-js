@@ -159,6 +159,9 @@
                             </td>
                             <td>
                                 <strong>{{ result.score }}/{{ result.total_questions }}</strong>
+                                {% if not result.is_graded %}
+                                <span class="badge bg-warning ms-1" title="{{ _('Tekshirilmagan') }}"><i class="fas fa-clock"></i></span>
+                                {% endif %}
                             </td>
                             <td>
                                 <div class="progress" style="height: 25px;">
@@ -174,6 +177,11 @@
                                 <small>{{ result.test_date | tashkent('%d.%m.%Y %H:%M') }}</small>
                             </td>
                             <td>
+                                {% if not result.is_graded %}
+                                <a href="{{ url_for('admin.result_grade', id=result.id) }}" class="btn btn-sm btn-primary" title="{{ _('Tekshirish') }}">
+                                    <i class="fas fa-check-double"></i>
+                                </a>
+                                {% endif %}
                                 <button type="button" class="btn btn-sm btn-outline-danger"
                                     onclick="deleteResult({{ result.id }}, this)" title="{{ _('O\'chirish') }}">
                                     <i class="fas fa-trash"></i>

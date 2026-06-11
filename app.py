@@ -218,6 +218,11 @@ def create_app():
             with db.engine.connect() as conn:
                 conn.execute(db.text("ALTER TABLE subject ADD COLUMN question_count INTEGER DEFAULT 20"))
                 conn.commit()
+        if 'open_ended_count' not in columns:
+            print("Migrating database: Adding open_ended_count to Subject table...")
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE subject ADD COLUMN open_ended_count INTEGER DEFAULT 0"))
+                conn.commit()
         if 'time_limit' not in columns:
             print("Migrating database: Adding time_limit to Subject table...")
             with db.engine.connect() as conn:
@@ -240,6 +245,13 @@ def create_app():
             print("Migrating database: Adding control_work_id to TestResult table...")
             with db.engine.connect() as conn:
                 conn.execute(db.text("ALTER TABLE test_result ADD COLUMN control_work_id INTEGER REFERENCES control_work(id)"))
+                conn.commit()
+        if 'is_graded' not in test_result_columns:
+            print("Migrating database: Adding grading columns to TestResult table...")
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE test_result ADD COLUMN is_graded BOOLEAN DEFAULT 1"))
+                conn.execute(db.text("ALTER TABLE test_result ADD COLUMN mcq_score INTEGER DEFAULT 0"))
+                conn.execute(db.text("ALTER TABLE test_result ADD COLUMN open_ended_score INTEGER DEFAULT 0"))
                 conn.commit()
 
         # Check and migrate Feedback table
@@ -350,6 +362,11 @@ def create_app():
             print("Migrating database: Adding created_at to Question table...")
             with db.engine.connect() as conn:
                 conn.execute(db.text("ALTER TABLE question ADD COLUMN created_at DATETIME"))
+                conn.commit()
+        if 'q_type' not in question_columns:
+            print("Migrating database: Adding q_type to Question table...")
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE question ADD COLUMN q_type VARCHAR(20) DEFAULT 'mcq'"))
                 conn.commit()
 
         # Subject — creator_id / created_at

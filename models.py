@@ -51,6 +51,7 @@ class Subject(db.Model):
     grades = db.Column(db.String(20), nullable=False)  # e.g. "5,6" or "7,8,9"
     is_protected = db.Column(db.Boolean, default=False)  # Anti-cheat protection
     question_count = db.Column(db.Integer, default=20)
+    open_ended_count = db.Column(db.Integer, default=0)
     time_limit = db.Column(db.Integer, default=30)
     show_results = db.Column(db.Boolean, default=True)
     is_visible = db.Column(db.Boolean, default=True)
@@ -67,22 +68,23 @@ class Question(db.Model):
     quarter = db.Column(db.Integer, nullable=False)
     difficulty = db.Column(db.Integer, default=2)  # 1=easy,2=medium,3=hard
     lesson = db.Column(db.Integer, nullable=True)
+    q_type = db.Column(db.String(20), default='mcq')  # 'mcq' or 'open_ended'
     question_text = db.Column(db.Text, nullable=False)
     question_text_ru = db.Column(db.Text)
     question_text_en = db.Column(db.Text)
-    option_a = db.Column(db.String(200), nullable=False)
+    option_a = db.Column(db.String(200), nullable=True)
     option_a_ru = db.Column(db.String(200))
     option_a_en = db.Column(db.String(200))
-    option_b = db.Column(db.String(200), nullable=False)
+    option_b = db.Column(db.String(200), nullable=True)
     option_b_ru = db.Column(db.String(200))
     option_b_en = db.Column(db.String(200))
-    option_c = db.Column(db.String(200), nullable=False)
+    option_c = db.Column(db.String(200), nullable=True)
     option_c_ru = db.Column(db.String(200))
     option_c_en = db.Column(db.String(200))
-    option_d = db.Column(db.String(200), nullable=False)
+    option_d = db.Column(db.String(200), nullable=True)
     option_d_ru = db.Column(db.String(200))
     option_d_en = db.Column(db.String(200))
-    correct_answer = db.Column(db.String(1), nullable=False)  # A, B, C, or D
+    correct_answer = db.Column(db.String(1), nullable=True)  # A, B, C, or D
     creator_id = db.Column(db.Integer, db.ForeignKey('admin.id'), nullable=True, index=True)
     created_at = db.Column(db.DateTime, default=tashkent_now)
 
@@ -104,6 +106,9 @@ class TestResult(db.Model):
     quarter = db.Column(db.Integer, nullable=False)
     subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
     score = db.Column(db.Integer, nullable=False)
+    mcq_score = db.Column(db.Integer, default=0)
+    open_ended_score = db.Column(db.Integer, default=0)
+    is_graded = db.Column(db.Boolean, default=True)
     total_questions = db.Column(db.Integer, default=20)
     percentage = db.Column(db.Float, nullable=False)
     grade_text = db.Column(db.String(20), nullable=False)

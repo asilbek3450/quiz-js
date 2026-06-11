@@ -149,6 +149,11 @@
         background: #fef2f2;
     }
 
+    .result-item.pending {
+        border-left-color: #f59e0b;
+        background: #fffbeb;
+    }
+
     .question-number {
         font-weight: bold;
         color: #475569;
@@ -212,7 +217,11 @@
         {% endif %}
 
         <h1 class="result-title">{{ _('Test yakunlandi!') }}</h1>
+        {% if not is_graded %}
+        <p class="result-subtitle text-warning fw-bold mb-3"><i class="fas fa-clock me-1"></i> {{ _('Natijangiz to\'liq emas. Yozma javoblar o\'qituvchi tomonidan tekshirilishi kutilmoqda.') }}</p>
+        {% else %}
         <p class="result-subtitle">{{ _('Sizning natijalaringiz') }}</p>
+        {% endif %}
 
         <div class="score-display">
             <div class="score-item">
@@ -240,12 +249,14 @@
 
 
         {% for result in results %}
-        <div class="result-item {% if result.is_correct %}correct{% else %}incorrect{% endif %}">
+        <div class="result-item {% if result.is_correct == True %}correct{% elif result.is_correct == False %}incorrect{% else %}pending{% endif %}">
             <div class="question-number">
-                {% if result.is_correct %}
+                {% if result.is_correct == True %}
                 <i class="fas fa-check-circle text-success"></i>
-                {% else %}
+                {% elif result.is_correct == False %}
                 <i class="fas fa-times-circle text-danger"></i>
+                {% else %}
+                <i class="fas fa-clock text-warning"></i>
                 {% endif %}
                 {{ _('Savol') }} {{ loop.index }}
             </div>
@@ -257,7 +268,7 @@
             {% endif %}
             <div class="answer-info">
                 {% if result.user_answer %}
-                <span class="answer-badge {% if result.is_correct %}badge-correct{% else %}badge-incorrect{% endif %}">
+                <span class="answer-badge {% if result.is_correct == True %}badge-correct{% elif result.is_correct == False %}badge-incorrect{% else %}badge-info{% endif %}">
                     {{ _('Sizning javobingiz') }}: {{ result.user_answer }}
                 </span>
                 {% else %}
@@ -266,7 +277,7 @@
                 </span>
                 {% endif %}
 
-                {% if not result.is_correct %}
+                {% if result.is_correct == False and result.q_type != 'open_ended' %}
                 <span class="answer-badge badge-info">
                     {{ _('To\'g\'ri javob') }}: {{ result.correct_answer }}
                 </span>

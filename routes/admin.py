@@ -602,6 +602,7 @@ def question_add():
             subject_id = int(request.form.get('subject_id', 0))
             grade = int(request.form.get('grade', 0))
             quarter = int(request.form.get('quarter', 0))
+            q_type = request.form.get('q_type', 'mcq')
             q_text = request.form.get('question_text', '').strip()
             opt_a = request.form.get('option_a', '').strip()
             opt_b = request.form.get('option_b', '').strip()
@@ -609,9 +610,14 @@ def question_add():
             opt_d = request.form.get('option_d', '').strip()
             correct = request.form.get('correct_answer', '').upper().strip()
 
-            if not all([subject_id, grade, quarter, q_text, opt_a, opt_b, opt_c, opt_d, correct]):
-                flash(_('Barcha maydonlarni to\'ldiring'), 'warning')
-                return redirect(url_for('admin.question_add'))
+            if q_type == 'mcq':
+                if not all([subject_id, grade, quarter, q_text, opt_a, opt_b, opt_c, opt_d, correct]):
+                    flash(_('Barcha maydonlarni to\'ldiring'), 'warning')
+                    return redirect(url_for('admin.question_add'))
+            else:
+                if not all([subject_id, grade, quarter, q_text]):
+                    flash(_('Barcha maydonlarni to\'ldiring'), 'warning')
+                    return redirect(url_for('admin.question_add'))
 
             subject = Subject.query.get(subject_id)
             if not subject:
@@ -627,6 +633,7 @@ def question_add():
                 subject_id=subject_id,
                 grade=grade,
                 quarter=quarter,
+                q_type=q_type,
                 question_text=q_text,
                 question_text_ru=auto_translate(q_text, 'ru'),
                 question_text_en=auto_translate(q_text, 'en'),
@@ -693,28 +700,46 @@ def question_edit(id):
             question.grade = int(request.form['grade'])
             question.quarter = int(request.form['quarter'])
 
+            q_type = request.form.get('q_type', 'mcq')
+            question.q_type = q_type
+
             q_text = request.form['question_text']
             question.question_text = q_text
             question.question_text_ru = auto_translate(q_text, 'ru')
             question.question_text_en = auto_translate(q_text, 'en')
 
-            question.option_a = request.form['option_a']
-            question.option_a_ru = auto_translate(question.option_a, 'ru')
-            question.option_a_en = auto_translate(question.option_a, 'en')
+            if q_type == 'mcq':
+                question.option_a = request.form['option_a']
+                question.option_a_ru = auto_translate(question.option_a, 'ru')
+                question.option_a_en = auto_translate(question.option_a, 'en')
 
-            question.option_b = request.form['option_b']
-            question.option_b_ru = auto_translate(question.option_b, 'ru')
-            question.option_b_en = auto_translate(question.option_b, 'en')
+                question.option_b = request.form['option_b']
+                question.option_b_ru = auto_translate(question.option_b, 'ru')
+                question.option_b_en = auto_translate(question.option_b, 'en')
 
-            question.option_c = request.form['option_c']
-            question.option_c_ru = auto_translate(question.option_c, 'ru')
-            question.option_c_en = auto_translate(question.option_c, 'en')
+                question.option_c = request.form['option_c']
+                question.option_c_ru = auto_translate(question.option_c, 'ru')
+                question.option_c_en = auto_translate(question.option_c, 'en')
 
-            question.option_d = request.form['option_d']
-            question.option_d_ru = auto_translate(question.option_d, 'ru')
-            question.option_d_en = auto_translate(question.option_d, 'en')
+                question.option_d = request.form['option_d']
+                question.option_d_ru = auto_translate(question.option_d, 'ru')
+                question.option_d_en = auto_translate(question.option_d, 'en')
 
-            question.correct_answer = request.form['correct_answer'].upper()
+                question.correct_answer = request.form['correct_answer'].upper()
+            else:
+                question.option_a = ""
+                question.option_a_ru = ""
+                question.option_a_en = ""
+                question.option_b = ""
+                question.option_b_ru = ""
+                question.option_b_en = ""
+                question.option_c = ""
+                question.option_c_ru = ""
+                question.option_c_en = ""
+                question.option_d = ""
+                question.option_d_ru = ""
+                question.option_d_en = ""
+                question.correct_answer = ""
 
             if uploaded_image and uploaded_image.filename:
                 saved_image_path = save_question_image_upload(uploaded_image)
@@ -1100,6 +1125,55 @@ def results():
                          excellent_count=excellent_count,
                          avg_percentage=round(avg_percentage, 1),
                          avg_score=round(avg_score, 1))
+
+@admin_bp.route('/result/grade/<int:id>', methods=['GET', 'POST'])
+@staff_required
+def result_grade(id):
+    import json
+    from utils.grading import calculate_grade
+    
+    result = TestResult.query.get_or_404(id)
+    if not is_admin_role():
+        if result.subject_id not in scoped_subject_ids():
+            return _forbidden_response(_('Bu natijani tekshirishga huquqingiz yo‘q'))
+            
+    if result.is_graded:
+        flash(_('Bu natija allaqachon tekshirilgan.'), 'info')
+        return redirect(url_for('admin.results'))
+        
+    try:
+        answers = json.loads(result.answers_json) if result.answers_json else {}
+    except:
+        answers = {}
+        
+    question_ids = list(answers.keys())
+    questions = Question.query.filter(Question.id.in_(question_ids)).all()
+    open_ended_questions = [q for q in questions if q.q_type == 'open_ended']
+    
+    if request.method == 'POST':
+        open_ended_score = 0
+        for q in open_ended_questions:
+            score_val = request.form.get(f'score_{q.id}')
+            if score_val == '1':
+                open_ended_score += 1
+                
+        result.open_ended_score = open_ended_score
+        result.score = (result.mcq_score or 0) + open_ended_score
+        
+        if result.total_questions > 0:
+            result.percentage = (result.score / result.total_questions) * 100
+        else:
+            result.percentage = 0
+            
+        grade_info = calculate_grade(result.score, result.total_questions, result.subject_id)
+        result.grade_text = grade_info['label']
+        result.is_graded = True
+        
+        db.session.commit()
+        flash(_('Natija muvaffaqiyatli baholandi'), 'success')
+        return redirect(url_for('admin.results'))
+        
+    return render_template('admin_result_grade.html', result=result, questions=open_ended_questions, answers=answers)
 
 @admin_bp.route('/result/delete/<int:id>', methods=['POST'])
 @staff_required

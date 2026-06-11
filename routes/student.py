@@ -613,7 +613,9 @@ def result():
     question_ids = session['question_ids']
     answers = session.get('answers', {})
     
-    score = 0
+    mcq_score = 0
+    open_ended_score = 0
+    is_graded = True
     results = []
     lang = str(get_locale())
     subject_id = session['subject_id']
@@ -626,12 +628,19 @@ def result():
         if not question:
             continue
         user_answer = answers.get(str(qid), '').strip().lower()
-        correct_answer = str(question.correct_answer).strip().lower()
         
-        is_correct = user_answer == correct_answer
+        visual_user_answer = ''
+        visual_correct_answer = ''
+        is_correct = False
+        is_open_ended = question.q_type == 'open_ended'
         
-        if is_correct:
-            score += 1
+        if not is_open_ended:
+            correct_answer = str(question.correct_answer).strip().lower()
+            is_correct = user_answer == correct_answer
+            if is_correct:
+                mcq_score += 1
+        else:
+            is_graded = False
         
         if lang == 'ru':
              q_text_display = question.question_text_ru or question.question_text
@@ -647,10 +656,12 @@ def result():
         # Calculate visual label for display
         option_map = session.get('option_map', {})
         db_keys = ['a', 'b', 'c', 'd']
-        visual_user_answer = ''
-        visual_correct_answer = ''
         
-        if str(qid) in option_map:
+        if is_open_ended:
+            visual_user_answer = answers.get(str(qid), '')
+            visual_correct_answer = _("O'qituvchi tekshirishi kutilmoqda")
+            is_correct = None # null indicates pending
+        elif str(qid) in option_map:
             if user_answer in db_keys:
                 orig_idx = db_keys.index(user_answer)
                 try:
@@ -675,11 +686,13 @@ def result():
             'image_url': get_question_image_url(qid),
             'user_answer': visual_user_answer, 
             'correct_answer': visual_correct_answer, 
-            'is_correct': is_correct
+            'is_correct': is_correct,
+            'q_type': question.q_type
         })
     
     total = len(question_ids)
-    percentage = (score / total) * 100
+    score = mcq_score + open_ended_score
+    percentage = (score / total) * 100 if total > 0 else 0
     
     start_time = session.get('start_time')
     duration_text = "00:00"
@@ -703,6 +716,9 @@ def result():
         quarter=session['quarter'],
         subject_id=subject_id,
         score=score,
+        mcq_score=mcq_score,
+        open_ended_score=open_ended_score,
+        is_graded=is_graded,
         total_questions=total,
         percentage=percentage,
         grade_text=grade_text,
@@ -724,6 +740,7 @@ def result():
     
     return render_template('student_result.html', 
                          score=score, 
+                         is_graded=is_graded,
                          total=total, 
                          percentage=percentage,
                          grade_info=grade_info,

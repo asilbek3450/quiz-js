@@ -145,7 +145,7 @@
                 <div class="card-body p-4">
                     <form method="POST" enctype="multipart/form-data" id="questionForm">
                         <div class="row g-3 mb-4">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label class="form-label small fw-bold text-muted uppercase">Fan</label>
                                 <select name="subject_id" class="form-select border-0 bg-light rounded-3 py-2" required id="subjectSelect">
                                     {% for subject in subjects %}
@@ -156,7 +156,7 @@
                                     {% endfor %}
                                 </select>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label class="form-label small fw-bold text-muted uppercase">Sinf</label>
                                 <select name="grade" class="form-select border-0 bg-light rounded-3 py-2" required id="gradeSelect">
                                     {% for g in range(1, 12) %}
@@ -166,7 +166,7 @@
                                     {% endfor %}
                                 </select>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label class="form-label small fw-bold text-muted uppercase">Chorak</label>
                                 <select name="quarter" class="form-select border-0 bg-light rounded-3 py-2" required>
                                     {% for q in range(1, 5) %}
@@ -174,6 +174,13 @@
                                         {{ q }}-chorak
                                     </option>
                                     {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-muted uppercase">Savol Turi</label>
+                                <select name="q_type" id="q_type" class="form-select border-0 bg-light rounded-3 py-2" required>
+                                    <option value="mcq" {% if question and question.q_type=='mcq' %}selected{% endif %}>Variantli (Test)</option>
+                                    <option value="open_ended" {% if question and question.q_type=='open_ended' %}selected{% endif %}>Yozma (Ochiq)</option>
                                 </select>
                             </div>
                         </div>
@@ -222,6 +229,7 @@
 
                         <hr class="my-5 opacity-10">
 
+                        <div id="options_wrapper">
                         <!-- Options Section -->
                         <h5 class="fw-bold mb-4 d-flex align-items-center">
                             <span class="bg-success bg-opacity-10 text-success p-2 rounded-3 me-2">
@@ -230,7 +238,7 @@
                             Javob variantlari
                         </h5>
 
-                        <div class="row g-4 mb-5">
+                        <div class="row g-4 mb-5" id="options_section">
                             {% for opt_key, opt_label, opt_color in [('option_a', 'A', '#4f46e5'), ('option_b', 'B', '#10b981'), ('option_c', 'C', '#f59e0b'), ('option_d', 'D', '#ef4444')] %}
                             <div class="col-md-6">
                                 <div class="option-container h-100">
@@ -252,7 +260,7 @@
                         </div>
 
                         <!-- Correct Answer Selection -->
-                        <div class="mb-5 pt-3 border-top">
+                        <div class="mb-5 pt-3 border-top" id="correct_answer_section">
                             <label class="form-label small fw-bold text-muted uppercase mb-3 text-center d-block w-100">To'g'ri javobni belgilang</label>
                             <div class="row g-3">
                                 {% for opt in ['A', 'B', 'C', 'D'] %}
@@ -267,6 +275,7 @@
                                 {% endfor %}
                             </div>
                         </div>
+                        </div> <!-- /options_wrapper -->
 
                         <div class="d-flex gap-3">
                             <button type="submit" class="btn btn-primary flex-fill py-3 rounded-4 shadow-lg border-0 fw-bold" 
@@ -623,6 +632,25 @@
     $('#physics-tab, #chemistry-tab, #greek-tab').on('shown.bs.tab', function () {
         mathField.focus();
     });
+
+    // Q Type Logic
+    document.getElementById('q_type').addEventListener('change', function() {
+        var isMcq = this.value === 'mcq';
+        document.getElementById('options_wrapper').style.display = isMcq ? 'block' : 'none';
+        
+        var optionInputs = document.querySelectorAll('#options_section input[type="text"]');
+        optionInputs.forEach(function(input) {
+            if (isMcq) input.setAttribute('required', 'required');
+            else input.removeAttribute('required');
+        });
+        var radioInputs = document.querySelectorAll('input[name="correct_answer"]');
+        radioInputs.forEach(function(input) {
+            if (isMcq) input.setAttribute('required', 'required');
+            else input.removeAttribute('required');
+        });
+    });
+    // Trigger on load
+    document.getElementById('q_type').dispatchEvent(new Event('change'));
 
     // Initialize subject selection linkage
     document.getElementById('subjectSelect').dispatchEvent(new Event('change'));

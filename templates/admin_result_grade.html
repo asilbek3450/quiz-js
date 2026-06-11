@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Natijani tekshirish - Admin{% endblock %}
+
+{% block content %}
+<div class="container pb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm" style="border-radius: 24px;">
+                <div class="card-header border-0 p-4" style="background: linear-gradient(135deg, #4f46e5, #0ea5e9); border-radius: 24px 24px 0 0;">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-white bg-opacity-20 p-3 rounded-3 me-3">
+                            <i class="fas fa-check-double text-white fs-4"></i>
+                        </div>
+                        <div>
+                            <h3 class="mb-0 text-white fw-bold">
+                                {{ _('Yozma javoblarni tekshirish') }}
+                            </h3>
+                            <p class="text-white text-opacity-75 mb-0 small">{{ result.full_name }} ning yozma javoblari</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-4 p-md-5">
+                    {% if not questions %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                        <h4 class="fw-bold">{{ _('Barcha savollar tekshirilgan') }}</h4>
+                        <a href="{{ url_for('admin.results') }}" class="btn btn-primary mt-3">Orqaga qaytish</a>
+                    </div>
+                    {% else %}
+                    <form method="POST">
+                        {% for q in questions %}
+                        <div class="mb-5 pb-4 {% if not loop.last %}border-bottom{% endif %}">
+                            <div class="d-flex mb-3">
+                                <div class="me-3">
+                                    <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 1rem;">{{ loop.index }}</span>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h5 class="fw-bold text-dark lh-base">{{ q.question_text | markdown | safe }}</h5>
+                                </div>
+                            </div>
+                            
+                            <div class="ms-5 mt-3 p-4 bg-light rounded-4 border-start border-4 border-info">
+                                <label class="text-muted small text-uppercase fw-bold mb-2 d-block"><i class="fas fa-user-edit me-1"></i> {{ _('O\'quvchi javobi') }}</label>
+                                <p class="fs-5 mb-0 font-monospace text-dark">{{ answers.get(q.id|string, _('Javob berilmagan')) }}</p>
+                            </div>
+                            
+                            <div class="ms-5 mt-4">
+                                <label class="text-muted small text-uppercase fw-bold mb-3 d-block"><i class="fas fa-balance-scale me-1"></i> {{ _('Baholash') }}</label>
+                                <div class="row g-3">
+                                    <div class="col-sm-6">
+                                        <input type="radio" class="btn-check" name="score_{{ q.id }}" id="score_{{ q.id }}_1" value="1" required>
+                                        <label class="btn btn-outline-success w-100 py-3 rounded-4 fw-bold shadow-sm d-flex flex-column align-items-center justify-content-center h-100" for="score_{{ q.id }}_1">
+                                            <i class="fas fa-check-circle fs-4 mb-2"></i>
+                                            <span>To'g'ri (1 ball)</span>
+                                        </label>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <input type="radio" class="btn-check" name="score_{{ q.id }}" id="score_{{ q.id }}_0" value="0" required>
+                                        <label class="btn btn-outline-danger w-100 py-3 rounded-4 fw-bold shadow-sm d-flex flex-column align-items-center justify-content-center h-100" for="score_{{ q.id }}_0">
+                                            <i class="fas fa-times-circle fs-4 mb-2"></i>
+                                            <span>Noto'g'ri (0 ball)</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        <div class="d-flex gap-3 mt-5 pt-3 border-top">
+                            <button type="submit" class="btn btn-primary flex-fill py-3 rounded-4 shadow-lg border-0 fw-bold" style="background: linear-gradient(135deg, #4f46e5, #4338ca);">
+                                <i class="fas fa-save me-2"></i> {{ _('Saqlash va Natijani Hisoblash') }}
+                            </button>
+                            <a href="{{ url_for('admin.results') }}" class="btn btn-light py-3 px-4 rounded-4 fw-bold text-muted">Bekor qilish</a>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-check:checked + .btn-outline-success {
+        background-color: #10b981;
+        color: white;
+        border-color: #10b981;
+    }
+    .btn-check:checked + .btn-outline-danger {
+        background-color: #ef4444;
+        color: white;
+        border-color: #ef4444;
+    }
+    .btn-outline-success {
+        border-color: #e2e8f0;
+        color: #10b981;
+    }
+    .btn-outline-danger {
+        border-color: #e2e8f0;
+        color: #ef4444;
+    }
+</style>
+{% endblock %}
