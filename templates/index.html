@@ -14,10 +14,13 @@
             {{ _('Informatika va zamonaviy texnologiyalar bo\'yicha') }} <br>
             {{ _('online test sinovlari — bilimingizni sinab ko\'ring') }}
         </p>
-        <div class="mb-5">
+        <div class="mb-5 d-flex flex-column flex-sm-row gap-3 justify-content-center align-items-center">
             <button class="btn btn-soft-primary btn-lg px-5 pill-btn fw-bold shadow-sm" onclick="toggleChat()">
                 <i class="fas fa-comment-dots me-2"></i> {{ _('Feedback qoldirish') }}
             </button>
+            <a href="{{ url_for('main.download_app') }}" class="btn btn-soft-download btn-lg px-5 pill-btn fw-bold shadow-sm">
+                <i class="fas fa-download me-2"></i> {{ _('Yuklab olish') }}
+            </a>
         </div>
     </div>
 </div>
@@ -248,6 +251,17 @@
 
     .btn-soft-primary:hover {
         background: var(--primary);
+        color: white;
+    }
+
+    .btn-soft-download {
+        background: rgba(16, 185, 129, 0.12);
+        color: #047857;
+        border: 1px solid rgba(16, 185, 129, 0.22);
+    }
+
+    .btn-soft-download:hover {
+        background: #047857;
         color: white;
     }
 

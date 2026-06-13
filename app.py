@@ -124,6 +124,7 @@ def create_app():
             {"path": "/about",              "changefreq": "monthly", "priority": "0.7"},
             {"path": "/contact",            "changefreq": "yearly",  "priority": "0.5"},
             {"path": "/services",           "changefreq": "monthly", "priority": "0.7"},
+            {"path": "/download",           "changefreq": "monthly", "priority": "0.7"},
             {"path": "/privacy",            "changefreq": "yearly",  "priority": "0.4"},
             {"path": "/blog",               "changefreq": "weekly",  "priority": "0.8"},
             # Arena static pages

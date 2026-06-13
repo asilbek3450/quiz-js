@@ -1,5 +1,10 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, send_from_directory
 import os
+from pathlib import Path
+
+from flask import (
+    Blueprint, abort, current_app, redirect, render_template, request, send_file,
+    send_from_directory, session, url_for,
+)
 from flask_babel import gettext as _
 from extensions import db
 from models import Subject
@@ -33,6 +38,32 @@ def blog():
 @main_bp.get("/privacy")
 def privacy():
     return render_template("privacy.html")
+
+
+def _android_apk_path():
+    return Path(current_app.root_path) / "android-app" / "app" / "release" / "JS-TEST.apk"
+
+
+@main_bp.get("/download")
+def download_app():
+    apk_path = _android_apk_path()
+    apk_size_mb = apk_path.stat().st_size / (1024 * 1024) if apk_path.exists() else None
+    return render_template("download_app.html", apk_size_mb=apk_size_mb)
+
+
+@main_bp.get("/download/android-apk")
+def download_android_apk():
+    apk_path = _android_apk_path()
+    if not apk_path.exists():
+        abort(404)
+
+    return send_file(
+        apk_path,
+        mimetype="application/vnd.android.package-archive",
+        as_attachment=True,
+        download_name="JS-Test.apk",
+        max_age=0,
+    )
 
 @main_bp.route('/set_language/<lang>')
 def set_language(lang):
