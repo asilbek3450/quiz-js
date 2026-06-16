@@ -380,8 +380,13 @@ def control_start():
             remaining = [q for q in current_other + current_medium + current_hard if q.id not in used_ids]
             selected_questions.extend(_safe_sample(remaining, 20 - len(selected_questions)))
             
-        # Ensure the final selection is shuffled so review questions are mixed in
-        random.shuffle(selected_questions)
+        # Ensure the final selection is shuffled so review questions are mixed in,
+        # but keep open-ended questions at the very end
+        mcq_qs = [q for q in selected_questions if q.q_type != 'open_ended']
+        open_qs = [q for q in selected_questions if q.q_type == 'open_ended']
+        random.shuffle(mcq_qs)
+        random.shuffle(open_qs)
+        selected_questions = mcq_qs + open_qs
             
         session['question_ids'] = [q.id for q in selected_questions]
         session['current_question'] = 0
