@@ -29,6 +29,31 @@ def _pick_text(lang: str = 'uz', level: str = 'easy', exclude: str = None) -> st
     return random.choice(texts)
 
 
+def _transform_text(text: str, punctuation: bool, numbers: bool, capitalization: bool) -> str:
+    if not capitalization:
+        text = text.lower()
+    
+    if not punctuation:
+        puncts = ".,;:!?()[]{}\"“”'ʻʼ‘-"
+        text = "".join(c for c in text if c not in puncts)
+        text = " ".join(text.split())
+
+    words = text.split()
+    
+    if not numbers:
+        words = ["".join(c for c in w if not c.isdigit()) for w in words]
+        words = [w for w in words if w]
+    else:
+        new_words = []
+        for w in words:
+            new_words.append(w)
+            if random.random() < 0.15:
+                new_words.append(str(random.randint(0, 9999)))
+        words = new_words
+        
+    return " ".join(words)
+
+
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
 def _new_uid() -> str:
@@ -83,6 +108,10 @@ def solo():
     name  = (data.get('name') or '').strip()[:30]
     lang  = data.get('lang',  'uz')
     level = data.get('level', 'easy')
+    punctuation = data.get('punctuation', False)
+    numbers = data.get('numbers', False)
+    capitalization = data.get('capitalization', False)
+
     if not name:
         return jsonify({'error': 'Ism kiritilmadi'}), 400
 
@@ -91,7 +120,8 @@ def solo():
     _cleanup()
 
     code = _gen_code()
-    text = _pick_text(lang, level)
+    base_text = _pick_text(lang, level)
+    text = _transform_text(base_text, punctuation, numbers, capitalization)
     now  = time.time()
 
     with _lock:
@@ -124,7 +154,9 @@ def create_room():
     uid  = _get_uid()
     session['typing_name'] = name
     code = _gen_code()
-    text = _pick_text('uz', 'easy')
+    
+    base_text = _pick_text('uz', 'easy')
+    text = _transform_text(base_text, False, False, False)
 
     with _lock:
         ROOMS[code] = {
@@ -275,7 +307,12 @@ def start_race(code):
         data  = request.get_json(silent=True) or {}
         lang  = data.get('lang',  'uz')
         level = data.get('level', 'easy')
-        room['text']          = _pick_text(lang, level, exclude=room.get('text'))
+        punctuation = data.get('punctuation', False)
+        numbers = data.get('numbers', False)
+        capitalization = data.get('capitalization', False)
+        
+        base_text = _pick_text(lang, level, exclude=room.get('text'))
+        room['text']          = _transform_text(base_text, punctuation, numbers, capitalization)
         room['state']         = 'countdown'
         room['countdown_end'] = time.time() + 3.5
 
@@ -296,12 +333,16 @@ def reset_room(code):
         data  = request.get_json(silent=True) or {}
         lang  = data.get('lang',  'uz')
         level = data.get('level', 'easy')
+        punctuation = data.get('punctuation', False)
+        numbers = data.get('numbers', False)
+        capitalization = data.get('capitalization', False)
 
         room['state']         = 'waiting'
         room['start_time']    = None
         room['countdown_end'] = None
         room['finish_count']  = 0
-        room['text']          = _pick_text(lang, level, exclude=room.get('text'))
+        base_text = _pick_text(lang, level, exclude=room.get('text'))
+        room['text']          = _transform_text(base_text, punctuation, numbers, capitalization)
         room['reset_count']   = room.get('reset_count', 0) + 1
         room['created_at']    = time.time()
 

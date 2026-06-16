@@ -502,6 +502,14 @@ footer span { color: #444 !important; }
           <button class="s-chip" onclick="setSetting('level', 'hard', this)">Qiyin</button>
         </div>
       </div>
+      <div class="setting-group">
+        <span class="setting-label">Qo'shimcha:</span>
+        <div class="setting-chips">
+          <button class="s-chip" onclick="toggleRoomSetting('punc', this)"><i class="fas fa-at"></i> Tinish belgilari</button>
+          <button class="s-chip" onclick="toggleRoomSetting('num', this)"><i class="fas fa-hashtag"></i> Raqamlar</button>
+          <button class="s-chip" onclick="toggleRoomSetting('cap', this)"><i class="fas fa-font"></i> Katta harflar</button>
+        </div>
+      </div>
     </div>
 
     <button class="start-btn" id="start-btn" onclick="startRace()">
@@ -870,6 +878,9 @@ function startProgressSend() {
 // ── Settings management ───────────────────────────────────────────────────────
 let currentLang = 'uz';
 let currentLevel = 'easy';
+let currentPunc = false;
+let currentNum = false;
+let currentCap = false;
 let textVar = TEXT; // Global matn o'zgaruvchisi
 
 function setSetting(type, val, el) {
@@ -877,6 +888,13 @@ function setSetting(type, val, el) {
   if (type === 'level') currentLevel = val;
   el.parentNode.querySelectorAll('.s-chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
+}
+
+function toggleRoomSetting(type, el) {
+  if (type === 'punc') currentPunc = !currentPunc;
+  else if (type === 'num') currentNum = !currentNum;
+  else if (type === 'cap') currentCap = !currentCap;
+  el.classList.toggle('active');
 }
 
 // ── Start race (creator) ──────────────────────────────────────────────────────
@@ -887,7 +905,13 @@ async function startRace() {
     const res = await fetch('/typing/api/room/' + ROOM_CODE + '/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-      body: JSON.stringify({ lang: currentLang, level: currentLevel }),
+      body: JSON.stringify({ 
+        lang: currentLang, 
+        level: currentLevel,
+        punctuation: currentPunc,
+        numbers: currentNum,
+        capitalization: currentCap
+      }),
     });
     if (!res.ok) {
       const d = await res.json();
@@ -907,7 +931,13 @@ async function doReplay() {
     const res = await fetch('/typing/api/room/' + ROOM_CODE + '/reset', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-      body: JSON.stringify({ lang: currentLang, level: currentLevel }),
+      body: JSON.stringify({ 
+        lang: currentLang, 
+        level: currentLevel,
+        punctuation: currentPunc,
+        numbers: currentNum,
+        capitalization: currentCap
+      }),
     });
     if (!res.ok) {
       if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-redo"></i> Yangi poyga'; }

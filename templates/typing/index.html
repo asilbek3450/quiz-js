@@ -341,6 +341,13 @@ footer span { color: #555 !important; }
       <button class="chip" data-level="hard" onclick="setSetting('level','hard',this)">Qiyin</button>
     </div>
 
+    <div class="mode-row">
+      <span class="mode-label">Qo'shimcha:</span>
+      <button class="chip" onclick="toggleSoloSetting('punc', this)"><i class="fas fa-at"></i> Tinish belgilari</button>
+      <button class="chip" onclick="toggleSoloSetting('num', this)"><i class="fas fa-hashtag"></i> Raqamlar</button>
+      <button class="chip" onclick="toggleSoloSetting('cap', this)"><i class="fas fa-font"></i> Katta harflar</button>
+    </div>
+
     <button class="t-btn t-btn-solo" id="solo-btn" onclick="doSolo()">
       <i class="fas fa-bolt me-2"></i>Boshlash
     </button>
@@ -414,12 +421,22 @@ footer span { color: #555 !important; }
 const CSRF = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 let soloLang = 'uz';
 let soloLevel = 'easy';
+let soloPunc = false;
+let soloNum = false;
+let soloCap = false;
 
 function setSetting(type, val, el) {
   if (type === 'lang') soloLang = val;
   else soloLevel = val;
   el.parentNode.querySelectorAll('.chip').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
+}
+
+function toggleSoloSetting(type, el) {
+  if (type === 'punc') soloPunc = !soloPunc;
+  else if (type === 'num') soloNum = !soloNum;
+  else if (type === 'cap') soloCap = !soloCap;
+  el.classList.toggle('active');
 }
 
 // ── Solo ──────────────────────────────────────────────────────────────────────
@@ -439,7 +456,14 @@ async function doSolo() {
     const res = await fetch('/typing/solo', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-      body: JSON.stringify({ name, lang: soloLang, level: soloLevel }),
+      body: JSON.stringify({ 
+        name, 
+        lang: soloLang, 
+        level: soloLevel,
+        punctuation: soloPunc,
+        numbers: soloNum,
+        capitalization: soloCap
+      }),
     });
     const data = await res.json();
     if (!res.ok) {
