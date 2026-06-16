@@ -43,10 +43,12 @@
                     {% if question.q_type == 'open_ended' %}
                     <div class="mb-4">
                         <label class="form-label fw-bold text-muted uppercase small">{{ _('Javobingizni kiriting') }}</label>
-                        <textarea class="form-control border-2 bg-light rounded-4 p-3 fs-5" rows="6" 
-                            placeholder="{{ _('Javobingizni yozing...') }}"
-                            onchange="submitAnswer('{{ question.id }}', this.value)"
-                            onkeyup="debouncedSubmitAnswer('{{ question.id }}', this.value)">{{ answers.get(question.id|string, '') }}</textarea>
+                        <!-- MathLive script is loaded below -->
+                        <math-field class="form-control border-2 bg-light rounded-4 p-3 fs-4" 
+                            style="min-height: 80px;"
+                            placeholder="\text{ {{ _('Javobni shu yerga yozing...') }} }"
+                            oninput="debouncedSubmitAnswer('{{ question.id }}', this.value)">{{ answers.get(question.id|string, '') }}</math-field>
+                        <small class="text-muted mt-2 d-block">{{ _("Kasr, ildiz va boshqa belgilarni kiritish uchun paydo bo'lgan maxsus klaviaturadan foydalaning.") }}</small>
                     </div>
                     {% else %}
                     <div class="row g-3">
@@ -457,12 +459,14 @@
                 {{ _('Ha, yakunlash') }} <i class="fas fa-arrow-right ms-2"></i>
             </a>
         </div>
+        </div>
     </div>
 </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
+<script defer src="//unpkg.com/mathlive"></script>
 <!-- Protection Overlay -->
 <div id="violation-overlay"
     style="display: {{ 'flex' if is_blocked else 'none' }}; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #e74c3c; z-index: 9999; color: white; flex-direction: column; justify-content: center; align-items: center; text-align: center;">

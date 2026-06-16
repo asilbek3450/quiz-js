@@ -1130,7 +1130,7 @@ def results():
 @staff_required
 def result_grade(id):
     import json
-    from utils.grading import calculate_grade
+    from routes.student import calculate_grade
     
     result = TestResult.query.get_or_404(id)
     if not is_admin_role():

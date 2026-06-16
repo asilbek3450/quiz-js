@@ -46,13 +46,9 @@
                             <label class="form-label fw-bold small text-uppercase text-muted">{{ _('Sinf') }}</label>
                             <select name="grade" class="form-select" required id="grade-select">
                                 <option value="" selected disabled>{{ _('Tanlang...') }}</option>
-                                <option value="5">5-{{ _('sinf') }}</option>
-                                <option value="6">6-{{ _('sinf') }}</option>
-                                <option value="7">7-{{ _('sinf') }}</option>
-                                <option value="8">8-{{ _('sinf') }}</option>
-                                <option value="9">9-{{ _('sinf') }}</option>
-                                <option value="10">10-{{ _('sinf') }}</option>
-                                <option value="11">11-{{ _('sinf') }}</option>
+                                {% for g in range(1, 12) %}
+                                <option value="{{ g }}">{{ g }}-{{ _('sinf') }}</option>
+                                {% endfor %}
                             </select>
                         </div>
 
@@ -64,16 +60,22 @@
                                 placeholder="{{ _('Masalan: 1') }}" max="5">
                         </div>
 
-                        <div class="col-12">
+                        <div class="col-12" id="quarter-section">
                             <label class="form-label fw-bold small text-uppercase text-muted">{{ _('Chorak') }}</label>
-                            <div class="row g-2">
+                            <div class="row g-2" id="quarter-radios">
                                 {% for i in range(1, 5) %}
-                                <div class="col-3">
+                                <div class="col-3 quarter-option">
                                     <input type="radio" class="btn-check" name="quarter" id="q{{ i }}" value="{{ i }}"
                                         required>
                                     <label class="btn btn-outline-primary w-100" for="q{{ i }}">{{ i }}</label>
                                 </div>
                                 {% endfor %}
+                                <div class="col-12 yillik-option" style="display: none;">
+                                    <input type="radio" class="btn-check" name="quarter" id="q0" value="0">
+                                    <label class="btn btn-outline-success w-100 py-3 fw-bold fs-5" for="q0">
+                                        <i class="fas fa-calendar-alt me-2"></i>{{ _('Yillik') }}
+                                    </label>
+                                </div>
                             </div>
                         </div>
 
@@ -141,21 +143,73 @@
 <script>
     const subjects = [
         {% for subject in subjects %}
-    {
-        id: { { subject.id } },
-        name: "{{ subject.name }}",
+        {
+            id: {{ subject.id }},
+            name: "{{ subject.name }}",
             grades: [{{ subject.grades }}]
         },
-    {% endfor %}
+        {% endfor %}
     ];
 
     const gradeSelect = document.getElementById('grade-select');
     const subjectSelect = document.getElementById('subject-select');
     const subjectWarning = document.getElementById('subject-warning');
+    const quarterOptions = document.querySelectorAll('.quarter-option');
+    const yillikOption = document.querySelector('.yillik-option');
+    const q0Radio = document.getElementById('q0');
+
+    async function updateQuarterUI() {
+        const grade = gradeSelect.value;
+        const subjectId = subjectSelect.value;
+
+        // Dastlab hammasini yashiramiz
+        quarterOptions.forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.quarter-option input').forEach(r => r.checked = false);
+        yillikOption.style.display = 'none';
+        q0Radio.checked = false;
+        q0Radio.required = false;
+
+        const submitBtn = document.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+
+        if (subjectId && grade) {
+            try {
+                const response = await fetch(`/student/api/available_quarters?subject_id=${subjectId}&grade=${grade}`);
+                const availableQuarters = await response.json();
+                
+                let hasAnyQuarter = false;
+
+                // Agar bazada 0-chorak bo'lsa, Yillik chiqadi
+                if (availableQuarters.includes(0)) {
+                    yillikOption.style.display = 'block';
+                    q0Radio.checked = true;
+                    q0Radio.required = true;
+                    hasAnyQuarter = true;
+                } else {
+                    // Aks holda mavjud choraklar ko'rsatiladi
+                    quarterOptions.forEach(el => {
+                        const input = el.querySelector('input');
+                        const qVal = parseInt(input.value);
+                        if (availableQuarters.includes(qVal)) {
+                            el.style.display = 'block';
+                            hasAnyQuarter = true;
+                        }
+                    });
+                }
+                
+                // Savollar mavjud bo'lsa tugmani faollashtiramiz
+                if (submitBtn && hasAnyQuarter) submitBtn.disabled = false;
+                
+            } catch (err) {
+                console.error("Failed to fetch available quarters", err);
+                if (submitBtn) submitBtn.disabled = false;
+            }
+        }
+    }
 
     gradeSelect.addEventListener('change', function () {
         const selectedGrade = parseInt(this.value);
-        subjectSelect.innerHTML = '<option value="" selected disabled>{{ _('Fanni tanlang') }}</option>';
+        subjectSelect.innerHTML = '<option value="" selected disabled>{{ _("Fanni tanlang") }}</option>';
 
         const availableSubjects = subjects.filter(sub => sub.grades.includes(selectedGrade));
 
@@ -172,6 +226,18 @@
             subjectSelect.disabled = true;
             subjectWarning.classList.remove('d-none');
         }
+        // Reset quarter UI
+        quarterOptions.forEach(el => el.style.display = 'block');
+        yillikOption.style.display = 'none';
+        q0Radio.checked = false;
+        document.querySelectorAll('.quarter-option input').forEach(r => r.checked = false);
+        
+        // Update UI if subject is selected
+        if(subjectSelect.value) {
+            updateQuarterUI();
+        }
     });
+
+    subjectSelect.addEventListener('change', updateQuarterUI);
 </script>
 {% endblock %}

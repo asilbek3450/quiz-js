@@ -83,18 +83,60 @@ def _safe_sample(seq, k: int):
 
 
 def _build_balanced_practice_set(subject_id: int, grade: int, quarter: int):
-    # Practice-only questions for this quarter
+    subject = Subject.query.get(subject_id)
+    mcq_needed = subject.question_count if subject else 20
+    open_needed = subject.open_ended_count if subject else 0
+    total_needed = mcq_needed + open_needed
+
+    # ── Yillik rejim (quarter == 0): barcha choraklardagi savollar ──
+    if quarter == 0:
+        all_mcq = (
+            Question.query.filter_by(subject_id=subject_id, grade=grade)
+            .filter(Question.q_type != 'open_ended')
+            .filter(~Question.control_works.any())
+            .all()
+        )
+        all_open = (
+            Question.query.filter_by(subject_id=subject_id, grade=grade, q_type='open_ended')
+            .filter(~Question.control_works.any())
+            .all()
+        )
+
+        if len(all_mcq) < mcq_needed:
+            return None, len(all_mcq) + len(all_open)
+
+        selected_mcq = _safe_sample(all_mcq, mcq_needed)
+        selected_open = _safe_sample(all_open, open_needed)
+        selected = selected_mcq + selected_open
+
+        if len(selected) < total_needed:
+            # Fill shortfall from MCQ pool
+            used_ids = {q.id for q in selected}
+            remaining = [q for q in all_mcq if q.id not in used_ids]
+            selected.extend(_safe_sample(remaining, total_needed - len(selected)))
+
+        if len(selected) < mcq_needed:
+            return None, len(all_mcq) + len(all_open)
+
+        random.shuffle(selected)
+        return selected, len(all_mcq) + len(all_open)
+
+    # ── Chorak rejimi (quarter 1-4): eski logika ──
     base = (
         Question.query.filter_by(subject_id=subject_id, grade=grade, quarter=quarter)
         .filter(~Question.control_works.any())
         .all()
     )
 
-    if len(base) < 15:
-        # We still might be able to build 20 with review, but likely not
+    # Split into MCQ and open-ended for this quarter
+    base_mcq = [q for q in base if (q.q_type or 'mcq') != 'open_ended']
+    base_open = [q for q in base if (q.q_type or 'mcq') == 'open_ended']
+
+    min_mcq = max(mcq_needed - 5, 10)  # at least 10 MCQ from this quarter
+    if len(base_mcq) < min_mcq:
         return None, len(base)
 
-    # Review pool from previous quarters (practice-only)
+    # Review pool from previous quarters (practice-only, MCQ only)
     review_pool = []
     if quarter > 1:
         review_pool = (
@@ -102,6 +144,7 @@ def _build_balanced_practice_set(subject_id: int, grade: int, quarter: int):
                 Question.subject_id == subject_id,
                 Question.grade == grade,
                 Question.quarter < quarter,
+                Question.q_type != 'open_ended',
             )
             .filter(~Question.control_works.any())
             .all()
@@ -110,9 +153,9 @@ def _build_balanced_practice_set(subject_id: int, grade: int, quarter: int):
     review_qs = _safe_sample(review_pool, 5)
     used_ids = {q.id for q in review_qs}
 
-    base_medium = [q for q in base if (q.difficulty or 2) == 2 and q.id not in used_ids]
-    base_hard = [q for q in base if (q.difficulty or 2) >= 3 and q.id not in used_ids]
-    base_other = [q for q in base if q.id not in used_ids and q not in base_medium and q not in base_hard]
+    base_medium = [q for q in base_mcq if (q.difficulty or 2) == 2 and q.id not in used_ids]
+    base_hard = [q for q in base_mcq if (q.difficulty or 2) >= 3 and q.id not in used_ids]
+    base_other = [q for q in base_mcq if q.id not in used_ids and q not in base_medium and q not in base_hard]
 
     selected = []
     selected.extend(review_qs)
@@ -123,20 +166,26 @@ def _build_balanced_practice_set(subject_id: int, grade: int, quarter: int):
     selected.extend(hard_pick)
     used_ids.update(q.id for q in selected)
 
-    # Fill any missing slots from remaining base
-    if len(selected) < 20:
+    # Fill MCQ slots
+    if len(selected) < mcq_needed:
         remaining = [q for q in base_other + base_medium + base_hard if q.id not in used_ids]
-        selected.extend(_safe_sample(remaining, 20 - len(selected)))
+        selected.extend(_safe_sample(remaining, mcq_needed - len(selected)))
 
-    if len(selected) < 20:
-        # If still short, try to top up from review pool
+    if len(selected) < mcq_needed:
         more_review = [q for q in review_pool if q.id not in used_ids]
-        selected.extend(_safe_sample(more_review, 20 - len(selected)))
+        selected.extend(_safe_sample(more_review, mcq_needed - len(selected)))
 
-    if len(selected) < 20:
+    if len(selected) < mcq_needed:
         return None, len(base)
 
     random.shuffle(selected)
+
+    # Add open-ended questions at the end
+    if open_needed > 0:
+        open_pick = _safe_sample(base_open, open_needed)
+        random.shuffle(open_pick)
+        selected.extend(open_pick)
+
     return selected, len(base)
 
 def calculate_grade(score, total=20, subject_id=None):
@@ -232,6 +281,22 @@ def start():
             s.display_name = s.name
             
     return render_template('student_start.html', subjects=subjects, active_test_info=active_test_info)
+
+@student_bp.route('/api/available_quarters')
+def available_quarters():
+    subject_id = request.args.get('subject_id', type=int)
+    grade = request.args.get('grade', type=int)
+    if not subject_id or not grade:
+        return jsonify([])
+    
+    # Baza orqali shu fan va sinf uchun qaysi choraklarda savollar borligini aniqlash
+    quarters = db.session.query(Question.quarter).filter_by(
+        subject_id=subject_id, 
+        grade=grade
+    ).filter(~Question.control_works.any()).distinct().all()
+    
+    available = [q[0] for q in quarters if q[0] is not None]
+    return jsonify(available)
 
 @student_bp.route('/control_start', methods=['GET', 'POST'])
 def control_start():

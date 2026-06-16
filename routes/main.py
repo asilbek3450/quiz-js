@@ -17,13 +17,11 @@ def index():
 
 @main_bp.get("/about")
 def about():
-    return render_template("page.html", page_title="About", h1=_("Platforma haqida"),
-                           seo_description=_("Informatika va zamonaviy texnologiyalar bo'yicha test platformasi haqida ma'lumot."))
+    return render_template("about.html", page_title="About", h1=_("Platforma haqida"))
 
 @main_bp.get("/contact")
 def contact():
-    return render_template("page.html", page_title="Contact", h1=_("Aloqa"),
-                           seo_description=_("Bog'lanish uchun aloqa sahifasi. Taklif va savollaringizni yuboring."))
+    return render_template("contact.html", page_title="Contact", h1=_("Aloqa"))
 
 @main_bp.get("/services")
 def services():
